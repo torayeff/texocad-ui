@@ -52,21 +52,10 @@ body {
 /* Consistent affordance for clickable UI controls */
 button:not(:disabled),
 a[href],
-[role="button"],
-[role="tab"],
-[role="menuitem"],
-[role="option"],
-summary,
-label[for],
-select,
-input[type="checkbox"],
-input[type="radio"],
-input[type="range"] {
+summary {
   cursor: pointer;
 }
 
-button:disabled,
-[aria-disabled="true"],
 :disabled {
   cursor: not-allowed;
 }

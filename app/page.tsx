@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useTheme } from "next-themes";
@@ -66,6 +66,10 @@ export default function Home() {
   }, [resolvedTheme, setTheme]);
 
   const ThemeIcon = isDark ? Moon : Sun;
+  const viewerKey = stlUrl ?? "empty";
+  const viewerPaneStyle = {
+    "--viewer-width": `${splitPct}%`,
+  } as CSSProperties;
 
   return (
     <main className="flex h-screen flex-col bg-background">
@@ -94,15 +98,11 @@ export default function Home() {
       </header>
 
       <div ref={contentRef} className="relative flex min-h-0 flex-1 flex-col md:flex-row">
-        <div className="min-h-0 flex-[3] border-b border-border md:hidden">
-          <Viewer stlUrl={stlUrl} currentModel={currentModel} />
-        </div>
-        <div className="min-h-0 flex-[2] md:hidden">
-          <Chat onStlUpdate={handleStlUpdate} />
-        </div>
-
-        <div className="hidden h-full min-w-0 md:block" style={{ width: `${splitPct}%` }}>
-          <Viewer stlUrl={stlUrl} currentModel={currentModel} />
+        <div
+          className="min-h-0 flex-[3] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
+          style={viewerPaneStyle}
+        >
+          <Viewer key={viewerKey} stlUrl={stlUrl} currentModel={currentModel} />
         </div>
 
         <div
@@ -119,7 +119,7 @@ export default function Home() {
               }`}
           />
         </div>
-        <div className="hidden h-full min-w-[320px] flex-1 border-l border-border md:block">
+        <div className="min-h-0 flex-[2] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
           <Chat onStlUpdate={handleStlUpdate} />
         </div>
       </div>

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { Message, AIMessage } from "@langchain/langgraph-sdk";
 import type { DefaultToolCall, ToolCallWithResult, ToolCallState } from "@langchain/langgraph-sdk/react";
+import { getMessageTextContent } from "./message-content";
 
 export function PanelTimer({ active }: { active: boolean }) {
   const [seconds, setSeconds] = useState(0);
@@ -265,17 +266,7 @@ export const AITextContent = React.memo(function AITextContent({
 }: {
   message: Message;
 }) {
-  const textContent =
-    typeof message.content === "string"
-      ? message.content
-      : Array.isArray(message.content)
-        ? message.content
-          .filter(
-            (b): b is { type: "text"; text: string } => b.type === "text",
-          )
-          .map((b) => b.text)
-          .join("")
-        : "";
+  const textContent = getMessageTextContent(message.content);
 
   if (!textContent.trim()) return null;
 
@@ -293,17 +284,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 }: {
   message: Message;
 }) {
-  const textContent =
-    typeof message.content === "string"
-      ? message.content
-      : Array.isArray(message.content)
-        ? message.content
-          .filter(
-            (b): b is { type: "text"; text: string } => b.type === "text",
-          )
-          .map((b) => b.text)
-          .join("")
-        : "";
+  const textContent = getMessageTextContent(message.content);
 
   if (message.type !== "human") return null;
 

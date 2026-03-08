@@ -44,8 +44,11 @@ export const ChatInput = React.memo(function ChatInput({
     <div className="sticky bottom-0 z-10 p-4 bg-background">
       <div className="relative flex items-end gap-2 rounded-3xl border border-border bg-muted/20 px-2 py-2 focus-within:border-border/80 focus-within:bg-background focus-within:ring-1 focus-within:ring-border/40 transition-colors">
         <button
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors mb-0.5"
-          aria-label="Add attachment"
+          type="button"
+          disabled
+          aria-label="Attachments coming soon"
+          title="Attachments coming soon"
+          className="mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground opacity-50"
         >
           <Plus size={18} />
         </button>
@@ -65,7 +68,7 @@ export const ChatInput = React.memo(function ChatInput({
           <button
             onClick={stopGeneration}
             aria-label="Stop generation"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background cursor-pointer transition-colors hover:opacity-90 mb-0.5"
+            className="mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:opacity-90"
           >
             <Square size={14} fill="currentColor" />
           </button>
@@ -74,7 +77,7 @@ export const ChatInput = React.memo(function ChatInput({
             onClick={sendMessage}
             disabled={!input.trim()}
             aria-label="Send message"
-            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full cursor-pointer transition-colors mb-0.5 ${input.trim()
+            className={`mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors ${input.trim()
               ? "bg-foreground text-background hover:opacity-90"
               : "bg-muted text-muted-foreground"
               } disabled:cursor-not-allowed disabled:opacity-50`}

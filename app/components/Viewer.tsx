@@ -159,6 +159,7 @@ function Scene({
   wireframe,
   autoRotate,
   isDark,
+  onLoadError,
 }: {
   url: string | null;
   viewCommand: ViewCommand | null;
@@ -166,6 +167,7 @@ function Scene({
   wireframe: boolean;
   autoRotate: boolean;
   isDark: boolean;
+  onLoadError: (message: string | null) => void;
 }) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [radius, setRadius] = useState(DEFAULT_RADIUS);
@@ -220,7 +222,12 @@ function Scene({
   }, [getThree, fitDistance, updateCameraBounds]);
 
   useEffect(() => {
-    if (!url) return;
+    if (!url) {
+      onLoadError(null);
+      return;
+    }
+
+    onLoadError(null);
     const loader = new STLLoader();
     let cancelled = false;
 
@@ -258,6 +265,7 @@ function Scene({
           controlsRef.current.update();
         }
         updateCameraBounds(r);
+        onLoadError(null);
 
         setGeometry((prev) => {
           prev?.dispose();
@@ -266,7 +274,14 @@ function Scene({
       },
       undefined,
       (err) => {
-        if (!cancelled) console.error("Failed to load STL:", err);
+        if (!cancelled) {
+          setGeometry((prev) => {
+            prev?.dispose();
+            return null;
+          });
+          onLoadError("Failed to load model. Try generating it again.");
+          console.error("Failed to load STL:", err);
+        }
       }
     );
 
@@ -277,7 +292,7 @@ function Scene({
         return null;
       });
     };
-  }, [url, getThree, fitDistance, updateCameraBounds]);
+  }, [url, getThree, fitDistance, onLoadError, updateCameraBounds]);
 
   useEffect(() => {
     if (!viewCommand) return;
@@ -365,14 +380,8 @@ export default function Viewer({
   const [showGrid, setShowGrid] = useState(true);
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const cmdIdRef = useRef(0);
-  const [prevStlUrl, setPrevStlUrl] = useState(stlUrl);
-
-  if (stlUrl !== prevStlUrl) {
-    setPrevStlUrl(stlUrl);
-    setViewCommand(null);
-    setActiveView("iso");
-  }
 
   const isDark = mounted && resolvedTheme === "dark";
   const bgColor = isDark ? "#09090b" : "#f4f4f5";
@@ -407,7 +416,7 @@ export default function Viewer({
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`cursor-pointer px-2.5 py-1 text-xs font-medium rounded transition-colors ${activeView === v
+            className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${activeView === v
               ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
@@ -442,7 +451,7 @@ export default function Viewer({
         <button
           onClick={fitView}
           title="Fit View"
-          className="cursor-pointer p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Maximize2 size={14} strokeWidth={1.75} />
         </button>
@@ -450,7 +459,7 @@ export default function Viewer({
         <button
           onClick={() => setShowGrid((g) => !g)}
           title="Toggle Grid"
-          className={`cursor-pointer p-1.5 rounded transition-colors hover:bg-muted ${showGrid
+          className={`rounded p-1.5 transition-colors hover:bg-muted ${showGrid
             ? "text-accent"
             : "text-muted-foreground hover:text-foreground"
             }`}
@@ -460,7 +469,7 @@ export default function Viewer({
         <button
           onClick={() => setWireframe((w) => !w)}
           title="Toggle Wireframe"
-          className={`cursor-pointer p-1.5 rounded transition-colors hover:bg-muted ${wireframe
+          className={`rounded p-1.5 transition-colors hover:bg-muted ${wireframe
             ? "text-accent"
             : "text-muted-foreground hover:text-foreground"
             }`}
@@ -470,7 +479,7 @@ export default function Viewer({
         <button
           onClick={() => setAutoRotate((r) => !r)}
           title="Toggle Auto Rotate"
-          className={`cursor-pointer p-1.5 rounded transition-colors hover:bg-muted ${autoRotate
+          className={`rounded p-1.5 transition-colors hover:bg-muted ${autoRotate
             ? "text-accent"
             : "text-muted-foreground hover:text-foreground"
             }`}
@@ -494,10 +503,15 @@ export default function Viewer({
           wireframe={wireframe}
           autoRotate={autoRotate}
           isDark={isDark}
+          onLoadError={setLoadError}
         />
       </Canvas>
 
-      {!stlUrl && (
+      {loadError ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <p className="text-sm text-error">{loadError}</p>
+        </div>
+      ) : !stlUrl && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <p className="text-sm text-muted-foreground">
             No model loaded. Generate one in the chat.

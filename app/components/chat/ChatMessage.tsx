@@ -5,6 +5,7 @@ import type { DefaultToolCall, ToolCallWithResult } from "@langchain/langgraph-s
 import type { Message } from "@langchain/langgraph-sdk";
 
 import { MessageBubble, ThinkingBlock, ToolCallCard, TodoCard, AITextContent } from "./MessageFormatters";
+import { getMessageTextContent } from "./message-content";
 
 export const ChatMessage = React.memo(function ChatMessage({
   message,
@@ -23,15 +24,7 @@ export const ChatMessage = React.memo(function ChatMessage({
 
   if (message.type === "ai") {
     const hasToolCalls = toolCalls && toolCalls.length > 0;
-    const textContent =
-      typeof message.content === "string"
-        ? message.content
-        : Array.isArray(message.content)
-          ? (message.content as Array<{ type: string; text?: string }>)
-            .filter((b) => b.type === "text")
-            .map((b) => b.text ?? "")
-            .join("")
-          : "";
+    const textContent = getMessageTextContent(message.content);
     const hasText = textContent.trim().length > 0;
 
     if (!hasToolCalls && !hasText && !isStreaming) return null;

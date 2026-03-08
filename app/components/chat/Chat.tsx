@@ -145,7 +145,7 @@ export default function Chat({ onStlUpdate }: ChatProps) {
           onClick={() => setViewMode((v) => v === "chat" ? "raw" : "chat")}
           aria-label={viewMode === "chat" ? "Switch to Raw JSON view" : "Switch to Chat view"}
           title={viewMode === "chat" ? "Switch to Raw JSON" : "Switch to Chat UI"}
-          className="rounded-md p-1.5 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
         >
           {viewMode === "chat" ? <FileJson size={14} /> : <MessageSquare size={14} />}
         </button>
@@ -168,7 +168,7 @@ export default function Chat({ onStlUpdate }: ChatProps) {
                       <button
                         key={prompt}
                         onClick={() => handleExamplePrompt(prompt)}
-                        className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground cursor-pointer hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors"
+                        className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors"
                       >
                         {prompt}
                       </button>
@@ -216,7 +216,7 @@ export default function Chat({ onStlUpdate }: ChatProps) {
           <button
             onClick={scrollToBottom}
             aria-label="Scroll to bottom"
-            className="absolute bottom-4 right-4 flex items-center justify-center h-8 w-8 rounded-full bg-accent text-accent-foreground cursor-pointer shadow-md hover:bg-accent/90 transition-opacity"
+            className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90 transition-opacity"
           >
             <ArrowDown size={16} />
           </button>
