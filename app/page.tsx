@@ -1,65 +1,128 @@
+"use client";
+
+import { useState, useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
+import { useTheme } from "next-themes";
+import { Moon, Sun } from "lucide-react";
+import { API_BASE } from "@/app/lib/config";
+import { useMounted } from "@/app/lib/use-mounted";
+import Chat from "@/app/components/chat/Chat";
+
+const Viewer = dynamic(() => import("@/app/components/Viewer"), { ssr: false });
 
 export default function Home() {
+  const [stlUrl, setStlUrl] = useState<string | null>(null);
+  const [currentModel, setCurrentModel] = useState<{
+    filename: string;
+    threadId: string;
+  } | null>(null);
+  const [splitPct, setSplitPct] = useState(62);
+  const [isResizing, setIsResizing] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const { resolvedTheme, setTheme } = useTheme();
+  const mounted = useMounted();
+  const isDark = mounted && resolvedTheme === "dark";
+
+  const handleStlUpdate = useCallback(
+    (filename: string, threadId: string) => {
+      setStlUrl(
+        `${API_BASE}/api/files/${threadId}/${filename}?t=${Date.now()}`
+      );
+      setCurrentModel({ filename, threadId });
+    },
+    []
+  );
+
+  const startResize = useCallback(() => {
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const onMove = (event: MouseEvent) => {
+      const container = contentRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const pct = ((event.clientX - rect.left) / rect.width) * 100;
+      setSplitPct(Math.min(80, Math.max(35, pct)));
+    };
+
+    const onUp = () => setIsResizing(false);
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isResizing]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  }, [resolvedTheme, setTheme]);
+
+  const ThemeIcon = isDark ? Moon : Sun;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="flex h-screen flex-col bg-background">
+      <header className="flex h-14 items-center justify-between border-b border-border px-4">
+        <div className="flex items-center gap-2.5">
+          <Image
+            src={isDark ? "/logo-white.png" : "/logo-black.png"}
+            alt="TexoCAD"
+            width={22}
+            height={22}
+          />
+          <span className="text-sm font-medium text-foreground">TexoCAD</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={toggleTheme}
+            aria-label={
+              isDark ? "Switch to light mode" : "Switch to dark mode"
+            }
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <ThemeIcon size={16} />
+          </button>
         </div>
-      </main>
-    </div>
+      </header>
+
+      <div ref={contentRef} className="relative flex min-h-0 flex-1 flex-col md:flex-row">
+        <div className="min-h-0 flex-[3] border-b border-border md:hidden">
+          <Viewer stlUrl={stlUrl} currentModel={currentModel} />
+        </div>
+        <div className="min-h-0 flex-[2] md:hidden">
+          <Chat onStlUpdate={handleStlUpdate} />
+        </div>
+
+        <div className="hidden h-full min-w-0 md:block" style={{ width: `${splitPct}%` }}>
+          <Viewer stlUrl={stlUrl} currentModel={currentModel} />
+        </div>
+
+        <div
+          className="relative hidden w-0 md:block"
+          role="presentation"
+        >
+          <button
+            type="button"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize panels"
+            onMouseDown={startResize}
+            className={`absolute inset-y-0 -left-1 z-10 w-2 !cursor-col-resize bg-transparent transition-colors ${isResizing ? "bg-accent/20" : "hover:bg-muted/80"
+              }`}
+          />
+        </div>
+        <div className="hidden h-full min-w-[320px] flex-1 border-l border-border md:block">
+          <Chat onStlUpdate={handleStlUpdate} />
+        </div>
+      </div>
+    </main>
   );
 }
