@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import {
-  FileJson,
-  MessageSquare,
-  ArrowDown,
-  Loader2,
-} from "lucide-react";
+import { MessageSquare, ArrowDown, Loader2 } from "lucide-react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { LANGGRAPH_API_URL, ASSISTANT_ID } from "@/app/lib/config";
@@ -27,7 +22,6 @@ export interface ChatProps {
 
 export default function Chat({ onStlUpdate }: ChatProps) {
   const [input, setInput] = useState("");
-  const [viewMode, setViewMode] = useState<"chat" | "raw">("chat");
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -139,77 +133,59 @@ export default function Chat({ onStlUpdate }: ChatProps) {
         </div>
       ) : null}
 
-      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2">
-        <span className="text-xs text-muted-foreground">TexoCAD</span>
-        <button
-          onClick={() => setViewMode((v) => v === "chat" ? "raw" : "chat")}
-          aria-label={viewMode === "chat" ? "Switch to Raw JSON view" : "Switch to Chat view"}
-          title={viewMode === "chat" ? "Switch to Raw JSON" : "Switch to Chat UI"}
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {viewMode === "chat" ? <FileJson size={14} /> : <MessageSquare size={14} />}
-        </button>
-      </div>
-
       <div className="relative flex-1 overflow-hidden">
         <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
           className="h-full overflow-y-auto scroll-on-hover px-4 py-5 space-y-4"
         >
-          {viewMode === "chat" ? (
-            <>
-              {visibleMessages.length === 0 && !isLoading && (
-                <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
-                  <MessageSquare size={34} className="opacity-30" />
-                  <p className="text-sm">Enter a prompt to generate a 3D model</p>
-                  <div className="flex flex-wrap justify-center gap-2 max-w-xs">
-                    {EXAMPLE_PROMPTS.map((prompt) => (
-                      <button
-                        key={prompt}
-                        onClick={() => handleExamplePrompt(prompt)}
-                        className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {visibleMessages.map((message, idx) => {
-                const isLastAi = isLoading && idx === visibleMessages.length - 1 && message.type === "ai";
-                const toolCalls = message.type === "ai" ? getToolCalls(message) : undefined;
-
-                return (
-                  <ChatMessage
-                    key={message.id ?? idx}
-                    message={message}
-                    isStreaming={isLastAi}
-                    toolCalls={toolCalls}
-                    visibleTodoCallIds={visibleTodoCallIds}
-                  />
-                );
-              })}
-
-              {isLoading && visibleMessages.length > 0 &&
-                visibleMessages[visibleMessages.length - 1].type === "human" && (
-                  <div className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground">
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>Thinking...</span>
-                  </div>
-                )}
-
-              <div ref={messagesEndRef} />
-            </>
-          ) : (
-            <div className="h-full">
-              <pre className="h-full w-full overflow-auto rounded-lg bg-muted p-4 text-xs font-mono text-foreground">
-                {JSON.stringify(messages, null, 2)}
-              </pre>
-              <div ref={messagesEndRef} />
+          {visibleMessages.length === 0 && !isLoading && (
+            <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
+              <MessageSquare size={34} className="opacity-30" />
+              <p className="text-sm">Enter a prompt to generate a 3D model</p>
+              <div className="flex flex-wrap justify-center gap-2 max-w-xs">
+                {EXAMPLE_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => handleExamplePrompt(prompt)}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
+
+          {visibleMessages.map((message, idx) => {
+            const isLastAi =
+              isLoading &&
+              idx === visibleMessages.length - 1 &&
+              message.type === "ai";
+            const toolCalls =
+              message.type === "ai" ? getToolCalls(message) : undefined;
+
+            return (
+              <ChatMessage
+                key={message.id ?? idx}
+                message={message}
+                isStreaming={isLastAi}
+                toolCalls={toolCalls}
+                visibleTodoCallIds={visibleTodoCallIds}
+              />
+            );
+          })}
+
+          {isLoading &&
+            visibleMessages.length > 0 &&
+            visibleMessages[visibleMessages.length - 1].type === "human" && (
+              <div className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground">
+                <Loader2 size={14} className="animate-spin" />
+                <span>Thinking...</span>
+              </div>
+            )}
+
+          <div ref={messagesEndRef} />
         </div>
 
         {showScrollBtn && (
