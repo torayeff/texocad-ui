@@ -5,7 +5,7 @@ import { MessageSquare, ArrowDown, Loader2 } from "lucide-react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { LANGGRAPH_API_URL, ASSISTANT_ID } from "@/app/lib/config";
-import { AgentState, isGeomExportEvent } from "./types";
+import { AgentState, GeomExportEvent, isGeomExportEvent } from "./types";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 
@@ -17,10 +17,10 @@ export const EXAMPLE_PROMPTS = [
 ];
 
 export interface ChatProps {
-  onStlUpdate: (filename: string, threadId: string) => void;
+  onGeomExport: (event: GeomExportEvent) => void;
 }
 
-export default function Chat({ onStlUpdate }: ChatProps) {
+export default function Chat({ onGeomExport }: ChatProps) {
   const [input, setInput] = useState("");
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -28,17 +28,17 @@ export default function Chat({ onStlUpdate }: ChatProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isNearBottomRef = useRef(true);
 
-  const onStlUpdateRef = useRef(onStlUpdate);
+  const onGeomExportRef = useRef(onGeomExport);
   useEffect(() => {
-    onStlUpdateRef.current = onStlUpdate;
-  }, [onStlUpdate]);
+    onGeomExportRef.current = onGeomExport;
+  }, [onGeomExport]);
 
   const stream = useStream<AgentState>({
     apiUrl: LANGGRAPH_API_URL,
     assistantId: ASSISTANT_ID,
     onCustomEvent: (data: unknown) => {
-      if (isGeomExportEvent(data) && data.filename.endsWith(".stl")) {
-        onStlUpdateRef.current(data.filename, data.thread_id);
+      if (isGeomExportEvent(data)) {
+        onGeomExportRef.current(data);
       }
     },
   });

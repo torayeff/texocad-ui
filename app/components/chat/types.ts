@@ -8,6 +8,7 @@ export interface GeomExportEvent {
   type: "geom_export";
   filename: string;
   thread_id: string;
+  url: string;
 }
 
 export function isGeomExportEvent(data: unknown): data is GeomExportEvent {
@@ -17,6 +18,7 @@ export function isGeomExportEvent(data: unknown): data is GeomExportEvent {
     "type" in data &&
     (data as GeomExportEvent).type === "geom_export" &&
     "filename" in data &&
-    "thread_id" in data
+    "thread_id" in data &&
+    "url" in data
   );
 }

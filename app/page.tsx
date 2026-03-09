@@ -5,18 +5,18 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
-import { API_BASE } from "@/app/lib/config";
 import { useMounted } from "@/app/lib/use-mounted";
 import Chat from "@/app/components/chat/Chat";
+import type { GeomExportEvent } from "@/app/components/chat/types";
 
 const Viewer = dynamic(() => import("@/app/components/Viewer"), { ssr: false });
 
 export default function Home() {
   const [stlUrl, setStlUrl] = useState<string | null>(null);
-  const [currentModel, setCurrentModel] = useState<{
-    filename: string;
-    threadId: string;
-  } | null>(null);
+  const [downloadUrls, setDownloadUrls] = useState<{
+    stl?: string;
+    step?: string;
+  }>({});
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -25,15 +25,21 @@ export default function Home() {
   const mounted = useMounted();
   const isDark = mounted && resolvedTheme === "dark";
 
-  const handleStlUpdate = useCallback(
-    (filename: string, threadId: string) => {
-      setStlUrl(
-        `${API_BASE}/api/files/${threadId}/${filename}?t=${Date.now()}`
-      );
-      setCurrentModel({ filename, threadId });
-    },
-    []
-  );
+  const handleGeomExport = useCallback((event: GeomExportEvent) => {
+    fetch(`/api/blob?url=${encodeURIComponent(event.url)}`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        const sasUrl = data?.sasUrl;
+        if (!sasUrl) return;
+        if (event.filename.endsWith(".stl")) {
+          setStlUrl(sasUrl);
+          setDownloadUrls((prev) => ({ ...prev, stl: sasUrl }));
+        } else if (event.filename.endsWith(".step")) {
+          setDownloadUrls((prev) => ({ ...prev, step: sasUrl }));
+        }
+      })
+      .catch(() => { });
+  }, []);
 
   const startResize = useCallback(() => {
     setIsResizing(true);
@@ -102,7 +108,7 @@ export default function Home() {
           className="min-h-0 flex-[3] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
           style={viewerPaneStyle}
         >
-          <Viewer key={viewerKey} stlUrl={stlUrl} currentModel={currentModel} />
+          <Viewer key={viewerKey} stlUrl={stlUrl} downloadUrls={downloadUrls} />
         </div>
 
         <div
@@ -120,7 +126,7 @@ export default function Home() {
           />
         </div>
         <div className="min-h-0 flex-[2] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
-          <Chat onStlUpdate={handleStlUpdate} />
+          <Chat onGeomExport={handleGeomExport} />
         </div>
       </div>
     </main>

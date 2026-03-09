@@ -11,7 +11,6 @@ import {
 import { STLLoader, OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import { Maximize2, Grid3x3, Box, RotateCw, Download } from "lucide-react";
-import { API_BASE } from "@/app/lib/config";
 import { useMounted } from "@/app/lib/use-mounted";
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -368,10 +367,10 @@ function Scene({
 
 export default function Viewer({
   stlUrl,
-  currentModel,
+  downloadUrls,
 }: {
   stlUrl: string | null;
-  currentModel: { filename: string; threadId: string } | null;
+  downloadUrls: { stl?: string; step?: string };
 }) {
   const { resolvedTheme } = useTheme();
   const mounted = useMounted();
@@ -396,13 +395,11 @@ export default function Viewer({
   }, []);
 
   const handleDownload = (format: "stl" | "step") => {
-    if (!currentModel) return;
-    const ext = format === "stl" ? ".stl" : ".step";
-    const filename = currentModel.filename.replace(/\.[^/.]+$/, ext);
-    const url = `${API_BASE}/api/files/${currentModel.threadId}/${filename}`;
+    const url = downloadUrls[format];
+    if (!url) return;
     const link = document.createElement("a");
     link.href = url;
-    link.download = filename;
+    link.download = format === "stl" ? "model.stl" : "model.step";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -430,7 +427,7 @@ export default function Viewer({
       <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
         <button
           onClick={() => handleDownload("stl")}
-          disabled={!currentModel}
+          disabled={!downloadUrls.stl}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card/80 backdrop-blur-sm border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           <Download size={13} />
@@ -438,7 +435,7 @@ export default function Viewer({
         </button>
         <button
           onClick={() => handleDownload("step")}
-          disabled={!currentModel}
+          disabled={!downloadUrls.step}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card/80 backdrop-blur-sm border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           <Download size={13} />
