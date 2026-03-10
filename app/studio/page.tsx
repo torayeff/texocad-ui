@@ -1,10 +1,11 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
+import { Moon, Sun } from "lucide-react";
 import { useState, useCallback, useEffect, useRef, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
 import { useMounted } from "@/app/lib/use-mounted";
 import Chat from "@/app/components/chat/Chat";
 import type { GeomExportEvent } from "@/app/components/chat/types";
@@ -84,13 +85,14 @@ export default function StudioPage() {
           <Image
             src={isDark ? "/logo-white.png" : "/logo-black.png"}
             alt="TexoCAD"
-            width={22}
-            height={22}
+            width={28}
+            height={28}
           />
           <span className="text-sm font-medium text-foreground">TexoCAD</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
+          <UserButton />
           <button
             onClick={toggleTheme}
             aria-label={

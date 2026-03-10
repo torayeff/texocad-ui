@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ThemeProvider from "@/app/components/ThemeProvider";
@@ -5,7 +6,7 @@ import "./globals.css";
 
 const SITE_NAME = "TexoCAD";
 const SITE_URL = "https://texocad.com";
-const SITE_TITLE = "TexoCAD - Turn Text Into CAD Models";
+const SITE_TITLE = "TexoCAD - Text to CAD";
 const SITE_DESCRIPTION =
   "Turn natural language prompts into 3D CAD models with TexoCAD. Describe a part in plain English, generate geometry, and export STL or STEP files.";
 
@@ -74,7 +75,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ClerkProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
