@@ -207,6 +207,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                   ),
                 })),
               );
+            } else if (event === "error") {
+              setError((data.message as string) ?? "Unknown server error");
             } else if (event === "done") {
               // no-op
             } else {
