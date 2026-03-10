@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MessageSquare, ArrowDown, Loader2 } from "lucide-react";
-import { useStream } from "@langchain/langgraph-sdk/react";
 
-import { LANGGRAPH_API_URL, ASSISTANT_ID } from "@/app/lib/config";
-import { AgentState, GeomExportEvent, isGeomExportEvent } from "./types";
+import { useChat } from "@/app/lib/useChat";
+import { isGeomExportEvent } from "./types";
+import type { GeomExportEvent } from "./types";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 
@@ -33,39 +33,31 @@ export default function Chat({ onGeomExport }: ChatProps) {
     onGeomExportRef.current = onGeomExport;
   }, [onGeomExport]);
 
-  const stream = useStream<AgentState>({
-    apiUrl: LANGGRAPH_API_URL,
-    assistantId: ASSISTANT_ID,
-    onCustomEvent: (data: unknown) => {
+  const { messages, isLoading, error, submit, stop } = useChat({
+    onCustomEvent: (data) => {
       if (isGeomExportEvent(data)) {
         onGeomExportRef.current(data);
       }
     },
   });
 
-  const { messages, isLoading, error, getToolCalls } = stream;
-  const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
-
-  const visibleMessages = messages.filter((m) => m.type !== "tool");
-
   const visibleTodoCallIds = useMemo(() => {
     const ids = new Set<string>();
     let lastTodoId: string | undefined;
-    for (const m of visibleMessages) {
-      if (m.type === "human") {
+    for (const m of messages) {
+      if (m.role === "human") {
         if (lastTodoId) ids.add(lastTodoId);
         lastTodoId = undefined;
         continue;
       }
-      if (m.type !== "ai") continue;
-      const tcs = getToolCalls(m);
-      for (const tc of tcs) {
-        if (tc.call.name === "write_todos") lastTodoId = tc.id;
+      if (m.role !== "ai") continue;
+      for (const tc of m.toolCalls) {
+        if (tc.name === "write_todos") lastTodoId = tc.id;
       }
     }
     if (lastTodoId) ids.add(lastTodoId);
     return ids;
-  }, [visibleMessages, getToolCalls]);
+  }, [messages]);
 
   useEffect(() => {
     if (isNearBottomRef.current) {
@@ -92,16 +84,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
 
-    const newMessage = { type: "human" as const, content: trimmed };
-    stream.submit(
-      { messages: [newMessage] },
-      {
-        optimisticValues(prev) {
-          const prevMessages = Array.isArray(prev.messages) ? prev.messages : [];
-          return { messages: [...prevMessages, newMessage] };
-        },
-      },
-    );
+    submit(trimmed);
 
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -109,11 +92,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
     requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-  }, [input, isLoading, stream]);
-
-  const stopGeneration = useCallback(() => {
-    stream.stop();
-  }, [stream]);
+  }, [input, isLoading, submit]);
 
   const handleExamplePrompt = useCallback((prompt: string) => {
     setInput(prompt);
@@ -127,9 +106,9 @@ export default function Chat({ onGeomExport }: ChatProps) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      {errorMessage ? (
+      {error ? (
         <div className="flex items-center gap-2 px-4 py-2 bg-error/10 border-b border-error/20 text-error text-xs">
-          <span>Error: {errorMessage}</span>
+          <span>Error: {error}</span>
         </div>
       ) : null}
 
@@ -139,7 +118,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
           onScroll={handleScroll}
           className="h-full overflow-y-auto scroll-on-hover px-4 py-5 space-y-4"
         >
-          {visibleMessages.length === 0 && !isLoading && (
+          {messages.length === 0 && !isLoading && (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
               <MessageSquare size={34} className="opacity-30" />
               <p className="text-sm">Enter a prompt to generate a 3D model</p>
@@ -157,28 +136,25 @@ export default function Chat({ onGeomExport }: ChatProps) {
             </div>
           )}
 
-          {visibleMessages.map((message, idx) => {
+          {messages.map((message, idx) => {
             const isLastAi =
               isLoading &&
-              idx === visibleMessages.length - 1 &&
-              message.type === "ai";
-            const toolCalls =
-              message.type === "ai" ? getToolCalls(message) : undefined;
+              idx === messages.length - 1 &&
+              message.role === "ai";
 
             return (
               <ChatMessage
-                key={message.id ?? idx}
+                key={message.id}
                 message={message}
                 isStreaming={isLastAi}
-                toolCalls={toolCalls}
                 visibleTodoCallIds={visibleTodoCallIds}
               />
             );
           })}
 
           {isLoading &&
-            visibleMessages.length > 0 &&
-            visibleMessages[visibleMessages.length - 1].type === "human" && (
+            messages.length > 0 &&
+            messages[messages.length - 1].role === "human" && (
               <div className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground">
                 <Loader2 size={14} className="animate-spin" />
                 <span>Thinking...</span>
@@ -204,7 +180,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
         setInput={setInput}
         isLoading={isLoading}
         sendMessage={sendMessage}
-        stopGeneration={stopGeneration}
+        stopGeneration={stop}
         inputRef={textareaRef}
       />
     </div>

@@ -58,8 +58,8 @@ export default function Home() {
 
     const onUp = () => setIsResizing(false);
 
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener("mousemove", onMove, { passive: true });
+    window.addEventListener("mouseup", onUp, { passive: true });
 
     return () => {
       window.removeEventListener("mousemove", onMove);

@@ -1,31 +1,26 @@
 "use client";
 
 import React from "react";
-import type { DefaultToolCall, ToolCallWithResult } from "@langchain/langgraph-sdk/react";
-import type { Message } from "@langchain/langgraph-sdk";
 
+import type { ChatMessage as ChatMessageType } from "./types";
 import { MessageBubble, ThinkingBlock, ToolCallCard, TodoCard, AITextContent } from "./MessageFormatters";
-import { getMessageTextContent } from "./message-content";
 
 export const ChatMessage = React.memo(function ChatMessage({
   message,
   isStreaming = false,
-  toolCalls,
   visibleTodoCallIds,
 }: {
-  message: Message;
+  message: ChatMessageType;
   isStreaming?: boolean;
-  toolCalls?: ToolCallWithResult<DefaultToolCall>[];
   visibleTodoCallIds?: Set<string>;
 }) {
-  if (message.type === "human") {
+  if (message.role === "human") {
     return <MessageBubble message={message} />;
   }
 
-  if (message.type === "ai") {
-    const hasToolCalls = toolCalls && toolCalls.length > 0;
-    const textContent = getMessageTextContent(message.content);
-    const hasText = textContent.trim().length > 0;
+  if (message.role === "ai") {
+    const hasToolCalls = message.toolCalls.length > 0;
+    const hasText = message.content.trim().length > 0;
 
     if (!hasToolCalls && !hasText && !isStreaming) return null;
 
@@ -36,8 +31,8 @@ export const ChatMessage = React.memo(function ChatMessage({
         <ThinkingBlock message={message} isStreaming={isThinking} />
         {hasToolCalls && (
           <div className="flex flex-col gap-1.5">
-            {toolCalls.map((tc) => {
-              if (tc.call.name === "write_todos") {
+            {message.toolCalls.map((tc) => {
+              if (tc.name === "write_todos") {
                 if (!visibleTodoCallIds?.has(tc.id)) return null;
                 return <TodoCard key={tc.id} toolCall={tc} />;
               }

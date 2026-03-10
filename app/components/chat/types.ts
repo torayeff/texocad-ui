@@ -1,7 +1,19 @@
-import type { Message } from "@langchain/langgraph-sdk";
+export type ToolCallState = "pending" | "completed" | "error";
 
-export interface AgentState {
-  messages: Message[];
+export interface ToolCallInfo {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
+  result?: string;
+  state: ToolCallState;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "human" | "ai";
+  content: string;
+  thinking?: string;
+  toolCalls: ToolCallInfo[];
 }
 
 export interface GeomExportEvent {

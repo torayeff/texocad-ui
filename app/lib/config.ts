@@ -1,5 +1,2 @@
-export const LANGGRAPH_API_URL =
-  process.env.NEXT_PUBLIC_LANGGRAPH_API_URL ?? "http://localhost:2024";
-
-export const ASSISTANT_ID =
-  process.env.NEXT_PUBLIC_ASSISTANT_ID ?? "texocad";
+export const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";

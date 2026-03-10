@@ -12,9 +12,10 @@ import {
   Circle,
   Loader2,
 } from "lucide-react";
-import type { Message, AIMessage } from "@langchain/langgraph-sdk";
-import type { DefaultToolCall, ToolCallWithResult, ToolCallState } from "@langchain/langgraph-sdk/react";
-import { getMessageTextContent } from "./message-content";
+
+import type { ChatMessage, ToolCallInfo, ToolCallState } from "./types";
+
+const REMARK_PLUGINS = [remarkGfm];
 
 export function PanelTimer({ active }: { active: boolean }) {
   const [seconds, setSeconds] = useState(0);
@@ -61,59 +62,21 @@ function useAutoScroll<T extends HTMLElement>() {
   return [ref, onScroll] as const;
 }
 
-type MessageWithExtras = AIMessage & {
-  additional_kwargs?: {
-    reasoning?: {
-      summary?: Array<{ type: string; text: string }>;
-    };
-  };
-  contentBlocks?: Array<{ type: string; thinking?: string }>;
+const TOOL_CALL_STATUS_CLASS: Record<ToolCallState, string> = {
+  pending: "text-muted-foreground animate-pulse",
+  completed: "text-success",
+  error: "text-error",
 };
 
 export const ThinkingBlock = React.memo(function ThinkingBlock({
   message,
   isStreaming = false,
 }: {
-  message: Message;
+  message: ChatMessage;
   isStreaming?: boolean;
 }) {
   const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>();
-  const msg = message as MessageWithExtras;
-  let reasoning: string | undefined;
-
-  if (msg.additional_kwargs?.reasoning?.summary) {
-    const content = msg.additional_kwargs.reasoning.summary
-      .filter((item) => item.type === "summary_text")
-      .map((item) => item.text)
-      .join("");
-    if (content.trim()) reasoning = content;
-  }
-
-  if (!reasoning && msg.contentBlocks?.length) {
-    const thinking = msg.contentBlocks
-      .filter((b) => b.type === "thinking" && b.thinking)
-      .map((b) => b.thinking)
-      .join("\n");
-    if (thinking) reasoning = thinking;
-  }
-
-  if (!reasoning && Array.isArray(msg.content)) {
-    const blocks = msg.content as Array<Record<string, unknown>>;
-
-    const thinkingText = blocks
-      .filter((b) => typeof b === "object" && b?.type === "thinking" && "thinking" in b)
-      .map((b) => b.thinking as string)
-      .join("\n");
-    if (thinkingText) reasoning = thinkingText;
-
-    if (!reasoning) {
-      const reasoningText = blocks
-        .filter((b) => typeof b === "object" && b?.type === "reasoning_content" && b.reasoning_content)
-        .map((b) => (b.reasoning_content as { text: string }).text)
-        .join("\n");
-      if (reasoningText) reasoning = reasoningText;
-    }
-  }
+  const reasoning = message.thinking;
 
   if (!reasoning) return null;
 
@@ -130,7 +93,7 @@ export const ThinkingBlock = React.memo(function ThinkingBlock({
       </summary>
       <div ref={scrollRef} onScroll={handleScroll} className="px-3.5 pb-2.5 max-h-60 overflow-y-auto">
         <div className="prose-chat text-muted-foreground">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
             {reasoning}
           </ReactMarkdown>
         </div>
@@ -139,20 +102,14 @@ export const ThinkingBlock = React.memo(function ThinkingBlock({
   );
 });
 
-const TOOL_CALL_STATUS_CLASS: Record<ToolCallState, string> = {
-  pending: "text-muted-foreground animate-pulse",
-  completed: "text-success",
-  error: "text-error",
-};
-
 export const ToolCallCard = React.memo(function ToolCallCard({
   toolCall,
 }: {
-  toolCall: ToolCallWithResult<DefaultToolCall>;
+  toolCall: ToolCallInfo;
 }) {
   const [inputScrollRef, handleInputScroll] = useAutoScroll<HTMLPreElement>();
   const [outputScrollRef, handleOutputScroll] = useAutoScroll<HTMLPreElement>();
-  const { call, result, state } = toolCall;
+  const { name, args, result, state } = toolCall;
   const cls = `flex-shrink-0 ${TOOL_CALL_STATUS_CLASS[state]}`;
 
   const statusIcon =
@@ -160,15 +117,11 @@ export const ToolCallCard = React.memo(function ToolCallCard({
       state === "error" ? <CircleX size={14} className={cls} /> :
         <CircleDashed size={14} className={cls} />;
 
-  const resultContent = result
-    ? typeof result.content === "string" ? result.content : JSON.stringify(result.content, null, 2)
-    : null;
-
   return (
     <details open className="group rounded-xl border border-border/50 bg-muted/30 overflow-hidden">
       <summary className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
         <Wrench size={14} className="flex-shrink-0 text-muted-foreground/70" />
-        <span className="font-mono">{call.name}</span>
+        <span className="font-mono">{name}</span>
         <div className="ml-auto flex items-center gap-1.5">
           <PanelTimer active={state === "pending"} />
           {statusIcon}
@@ -177,7 +130,7 @@ export const ToolCallCard = React.memo(function ToolCallCard({
       </summary>
 
       <div className="border-t border-border/40">
-        {call.args && Object.keys(call.args).length > 0 && (
+        {args && Object.keys(args).length > 0 && (
           <details className="group/inner border-b border-border/40">
             <summary className="px-3 py-1.5 text-[10px] uppercase tracking-wide text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
               Input
@@ -185,13 +138,13 @@ export const ToolCallCard = React.memo(function ToolCallCard({
             </summary>
             <div className="px-3 pb-2">
               <pre ref={inputScrollRef} onScroll={handleInputScroll} className="text-xs font-mono text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
-                {JSON.stringify(call.args, null, 2)}
+                {JSON.stringify(args, null, 2)}
               </pre>
             </div>
           </details>
         )}
 
-        {resultContent && (
+        {result && (
           <details className="group/inner">
             <summary className="px-3 py-1.5 text-[10px] uppercase tracking-wide text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
               Output
@@ -199,7 +152,7 @@ export const ToolCallCard = React.memo(function ToolCallCard({
             </summary>
             <div className="px-3 pb-2">
               <pre ref={outputScrollRef} onScroll={handleOutputScroll} className="text-xs font-mono text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
-                {resultContent}
+                {result}
               </pre>
             </div>
           </details>
@@ -223,10 +176,10 @@ const TODO_STATUS_ICON: Record<string, React.ReactNode> = {
 export const TodoCard = React.memo(function TodoCard({
   toolCall,
 }: {
-  toolCall: ToolCallWithResult<DefaultToolCall>;
+  toolCall: ToolCallInfo;
 }) {
-  const { call, state } = toolCall;
-  const todos: TodoItem[] = call.args?.todos ?? [];
+  const { args, state } = toolCall;
+  const todos: TodoItem[] = (args?.todos as TodoItem[]) ?? [];
   const completedCount = todos.filter((t) => t.status === "completed").length;
   const allDone = todos.length > 0 && completedCount === todos.length;
 
@@ -264,16 +217,14 @@ export const TodoCard = React.memo(function TodoCard({
 export const AITextContent = React.memo(function AITextContent({
   message,
 }: {
-  message: Message;
+  message: ChatMessage;
 }) {
-  const textContent = getMessageTextContent(message.content);
-
-  if (!textContent.trim()) return null;
+  if (!message.content.trim()) return null;
 
   return (
     <div className="prose-chat">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {textContent}
+      <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
+        {message.content}
       </ReactMarkdown>
     </div>
   );
@@ -282,17 +233,15 @@ export const AITextContent = React.memo(function AITextContent({
 export const MessageBubble = React.memo(function MessageBubble({
   message,
 }: {
-  message: Message;
+  message: ChatMessage;
 }) {
-  const textContent = getMessageTextContent(message.content);
-
-  if (message.type !== "human") return null;
+  if (message.role !== "human") return null;
 
   return (
     <div className="flex justify-end">
       <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
         <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-          {textContent}
+          {message.content}
         </p>
       </div>
     </div>
