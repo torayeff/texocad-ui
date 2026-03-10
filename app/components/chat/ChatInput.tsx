@@ -6,6 +6,7 @@ import { Square, ArrowUp, Plus } from "lucide-react";
 interface ChatInputProps {
   input: string;
   setInput: (value: string) => void;
+  isBusy: boolean;
   isLoading: boolean;
   sendMessage: () => void;
   stopGeneration: () => void;
@@ -15,6 +16,7 @@ interface ChatInputProps {
 export const ChatInput = React.memo(function ChatInput({
   input,
   setInput,
+  isBusy,
   isLoading,
   sendMessage,
   stopGeneration,
@@ -56,6 +58,7 @@ export const ChatInput = React.memo(function ChatInput({
         <textarea
           ref={inputRef}
           value={input}
+          disabled={isBusy}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Describe a part..."
@@ -75,7 +78,7 @@ export const ChatInput = React.memo(function ChatInput({
         ) : (
           <button
             onClick={sendMessage}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isBusy}
             aria-label="Send message"
             className={`mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors ${input.trim()
               ? "bg-foreground text-background hover:opacity-90"

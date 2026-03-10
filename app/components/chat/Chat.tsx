@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MessageSquare, ArrowDown, Loader2 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useChat } from "@/app/lib/useChat";
 import { isGeomExportEvent } from "./types";
@@ -27,13 +28,36 @@ export default function Chat({ onGeomExport }: ChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isNearBottomRef = useRef(true);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlThreadId = searchParams.get("thread_id");
 
   const onGeomExportRef = useRef(onGeomExport);
   useEffect(() => {
     onGeomExportRef.current = onGeomExport;
   }, [onGeomExport]);
 
-  const { messages, isLoading, error, submit, stop } = useChat({
+  const handleThreadIdChange = useCallback(
+    (nextThreadId: string | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (nextThreadId) {
+        params.set("thread_id", nextThreadId);
+      } else {
+        params.delete("thread_id");
+      }
+
+      const nextQuery = params.toString();
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const { messages, isHydrating, isLoading, error, submit, stop } = useChat({
+    threadId: urlThreadId,
+    onThreadIdChange: handleThreadIdChange,
     onCustomEvent: (data) => {
       if (isGeomExportEvent(data)) {
         onGeomExportRef.current(data);
@@ -82,7 +106,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
 
   const sendMessage = useCallback(() => {
     const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
+    if (!trimmed || isLoading || isHydrating) return;
 
     submit(trimmed);
 
@@ -92,7 +116,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
     requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-  }, [input, isLoading, submit]);
+  }, [input, isHydrating, isLoading, submit]);
 
   const handleExamplePrompt = useCallback((prompt: string) => {
     setInput(prompt);
@@ -119,7 +143,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
           className="h-full overflow-y-auto scroll-on-hover px-4 py-6"
         >
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
-            {messages.length === 0 && !isLoading && (
+            {messages.length === 0 && !isLoading && !isHydrating && (
               <div className="flex min-h-full flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-center text-muted-foreground">
                 <MessageSquare size={34} className="opacity-30" />
                 <div className="space-y-1">
@@ -141,6 +165,13 @@ export default function Chat({ onGeomExport }: ChatProps) {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {messages.length === 0 && isHydrating && (
+              <div className="flex min-h-full items-center justify-center gap-2 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-sm text-muted-foreground">
+                <Loader2 size={16} className="animate-spin" />
+                <span>Loading conversation...</span>
               </div>
             )}
 
@@ -188,6 +219,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
         input={input}
         setInput={setInput}
         isLoading={isLoading}
+        isBusy={isLoading || isHydrating}
         sendMessage={sendMessage}
         stopGeneration={stop}
         inputRef={textareaRef}

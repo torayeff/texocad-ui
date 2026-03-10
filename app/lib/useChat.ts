@@ -1,9 +1,10 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import { useState, useRef, useCallback, useEffect } from "react";
 
 import { BACKEND_URL } from "./config";
-import type { ChatMessage, ToolCallInfo, AIBlock } from "@/app/components/chat/types";
+import type { AIBlock, ChatMessage, ToolCallInfo } from "@/app/components/chat/types";
 
 interface SSEEvent {
   event: string;
@@ -12,16 +13,31 @@ interface SSEEvent {
 
 interface UseChatOptions {
   onCustomEvent?: (data: Record<string, unknown>) => void;
+  onThreadIdChange?: (threadId: string | null) => void;
+  threadId?: string | null;
 }
 
 interface UseChatReturn {
   messages: ChatMessage[];
+  isHydrating: boolean;
   isLoading: boolean;
   error: string | null;
   threadId: string | null;
   submit: (content: string) => void;
   stop: () => void;
 }
+
+class BackendRequestError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "BackendRequestError";
+    this.status = status;
+  }
+}
+
+type GetTokenFn = () => Promise<string | null>;
 
 let nextToolId = 0;
 function genToolId(): string {
@@ -32,29 +48,91 @@ function genMsgId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function createThread(): Promise<string> {
-  const res = await fetch(`${BACKEND_URL}/api/threads`, { method: "POST" });
-  if (!res.ok) throw new Error(`Failed to create thread: ${res.status}`);
-  const body = await res.json();
+async function fetchWithAuth(
+  getToken: GetTokenFn,
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  const token = await getToken();
+  if (!token) {
+    throw new Error("Missing Clerk session token");
+  }
+
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+
+  return fetch(input, { ...init, headers });
+}
+
+async function readErrorMessage(res: Response): Promise<string> {
+  const contentType = res.headers.get("content-type");
+  if (contentType?.includes("application/json")) {
+    const body = (await res.json().catch(() => null)) as
+      | { detail?: unknown; message?: unknown }
+      | null;
+    if (typeof body?.detail === "string") return body.detail;
+    if (typeof body?.message === "string") return body.message;
+  }
+
+  const bodyText = await res.text().catch(() => "");
+  return bodyText || `Request failed: ${res.status}`;
+}
+
+async function createThread(getToken: GetTokenFn): Promise<string> {
+  const res = await fetchWithAuth(getToken, `${BACKEND_URL}/api/threads`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    throw new BackendRequestError(res.status, await readErrorMessage(res));
+  }
+
+  const body = (await res.json()) as { thread_id?: unknown };
+  if (typeof body.thread_id !== "string") {
+    throw new Error("Thread creation response is missing thread_id");
+  }
+
   return body.thread_id;
+}
+
+async function fetchHistory(
+  threadId: string,
+  getToken: GetTokenFn,
+): Promise<ChatMessage[]> {
+  const res = await fetchWithAuth(
+    getToken,
+    `${BACKEND_URL}/api/threads/${threadId}/history`,
+  );
+  if (!res.ok) {
+    throw new BackendRequestError(res.status, await readErrorMessage(res));
+  }
+
+  const body = (await res.json()) as { messages?: unknown };
+  return normalizeHistoryMessages(body.messages);
 }
 
 async function* streamSSE(
   threadId: string,
   content: string,
   signal: AbortSignal,
+  getToken: GetTokenFn,
 ): AsyncGenerator<SSEEvent> {
-  const res = await fetch(
+  const res = await fetchWithAuth(
+    getToken,
     `${BACKEND_URL}/api/threads/${threadId}/runs/stream`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Accept: "text/event-stream",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ content }),
       signal,
     },
   );
 
-  if (!res.ok) throw new Error(`Stream request failed: ${res.status}`);
+  if (!res.ok) {
+    throw new BackendRequestError(res.status, await readErrorMessage(res));
+  }
   if (!res.body) throw new Error("Response body is null");
 
   const reader = res.body.getReader();
@@ -95,44 +173,142 @@ async function* streamSSE(
   }
 }
 
+function normalizeHistoryMessages(rawMessages: unknown): ChatMessage[] {
+  if (!Array.isArray(rawMessages)) return [];
+
+  return rawMessages.flatMap((message) => {
+    if (!message || typeof message !== "object") return [];
+
+    const role = (message as { role?: unknown }).role;
+    if (role !== "human" && role !== "ai") return [];
+
+    const content = (message as { content?: unknown }).content;
+    return [
+      {
+        id: genMsgId(),
+        role,
+        content: typeof content === "string" ? content : String(content ?? ""),
+        toolCalls: [],
+        blocks: [],
+      },
+    ];
+  });
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+function isInvalidThreadError(error: unknown): boolean {
+  return (
+    error instanceof BackendRequestError &&
+    (error.status === 401 || error.status === 403 || error.status === 404)
+  );
+}
+
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const {
+    onCustomEvent,
+    onThreadIdChange,
+    threadId: optionThreadId = null,
+  } = options;
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isHydrating, setIsHydrating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(optionThreadId);
 
   const abortRef = useRef<AbortController | null>(null);
-  const threadIdRef = useRef(threadId);
-  const isLoadingRef = useRef(isLoading);
-  const onCustomEventRef = useRef(options.onCustomEvent);
+  const threadIdRef = useRef<string | null>(optionThreadId);
+  const isBusyRef = useRef(false);
+  const hydratedThreadIdRef = useRef<string | null>(null);
+  const onCustomEventRef = useRef(onCustomEvent);
 
-  useEffect(() => { threadIdRef.current = threadId; }, [threadId]);
-  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
-  useEffect(() => { onCustomEventRef.current = options.onCustomEvent; }, [options.onCustomEvent]);
+  const setActiveThreadId = useCallback((nextThreadId: string | null) => {
+    threadIdRef.current = nextThreadId;
+    setThreadId(nextThreadId);
+  }, []);
 
   useEffect(() => {
+    isBusyRef.current = isLoading || isHydrating;
+  }, [isHydrating, isLoading]);
+
+  useEffect(() => {
+    onCustomEventRef.current = onCustomEvent;
+  }, [onCustomEvent]);
+
+  useEffect(() => {
+    const nextThreadId = optionThreadId;
+    if (nextThreadId === threadIdRef.current) return;
+
+    abortRef.current?.abort();
+    abortRef.current = null;
+    hydratedThreadIdRef.current = null;
+    setIsHydrating(false);
+    setIsLoading(false);
+    setActiveThreadId(nextThreadId);
+    setMessages([]);
+  }, [optionThreadId, setActiveThreadId]);
+
+  useEffect(() => {
+    if (!threadId || !isLoaded || !isSignedIn) return;
+    if (hydratedThreadIdRef.current === threadId) return;
+
     let cancelled = false;
-    createThread()
-      .then((id) => {
-        if (!cancelled) setThreadId(id);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(String(err));
-      });
+    hydratedThreadIdRef.current = threadId;
+    setIsHydrating(true);
+    setError(null);
+
+    (async () => {
+      try {
+        const historyMessages = await fetchHistory(threadId, getToken);
+        if (cancelled || threadIdRef.current !== threadId) return;
+        setMessages(historyMessages);
+      } catch (err: unknown) {
+        if (cancelled || threadIdRef.current !== threadId) return;
+
+        setMessages([]);
+        setError(getErrorMessage(err));
+
+        if (isInvalidThreadError(err)) {
+          hydratedThreadIdRef.current = null;
+          setActiveThreadId(null);
+          onThreadIdChange?.(null);
+        }
+      } finally {
+        if (!cancelled && threadIdRef.current === threadId) {
+          setIsHydrating(false);
+        }
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [getToken, isLoaded, isSignedIn, onThreadIdChange, setActiveThreadId, threadId]);
 
   const submit = useCallback(
     (content: string) => {
-      if (!threadIdRef.current || isLoadingRef.current) return;
-      const currentThreadId = threadIdRef.current;
+      const trimmedContent = content.trim();
+      if (!trimmedContent || isBusyRef.current) return;
+
+      if (!isLoaded) {
+        setError("Authentication is still loading. Please try again.");
+        return;
+      }
+
+      if (!isSignedIn) {
+        setError("You must be signed in to use the studio.");
+        return;
+      }
 
       const humanMsg: ChatMessage = {
         id: genMsgId(),
         role: "human",
-        content,
+        content: trimmedContent,
         toolCalls: [],
         blocks: [],
       };
@@ -157,11 +333,23 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       }
 
       (async () => {
+        let activeThreadId = threadIdRef.current;
+
         try {
+          if (!activeThreadId) {
+            activeThreadId = await createThread(getToken);
+            if (controller.signal.aborted) return;
+
+            hydratedThreadIdRef.current = activeThreadId;
+            setActiveThreadId(activeThreadId);
+            onThreadIdChange?.(activeThreadId);
+          }
+
           for await (const { event, data } of streamSSE(
-            currentThreadId,
-            content,
+            activeThreadId,
+            trimmedContent,
             controller.signal,
+            getToken,
           )) {
             const agent = (data.agent as string) ?? "";
             const isSubagent = Boolean(data.subagent);
@@ -255,22 +443,25 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
           }
         } catch (err: unknown) {
           if ((err as DOMException)?.name === "AbortError") return;
-          setError(err instanceof Error ? err.message : String(err));
+          setError(getErrorMessage(err));
         } finally {
           setIsLoading(false);
-          abortRef.current = null;
+          if (abortRef.current === controller) {
+            abortRef.current = null;
+          }
         }
       })();
     },
-    [],
+    [getToken, isLoaded, isSignedIn, onThreadIdChange, setActiveThreadId],
   );
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
+    abortRef.current = null;
     setIsLoading(false);
   }, []);
 
-  return { messages, isLoading, error, threadId, submit, stop };
+  return { messages, isHydrating, isLoading, error, threadId, submit, stop };
 }
 
 function updateLastAi(
