@@ -6,27 +6,22 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useChat } from "@/app/lib/useChat";
 import { isGeomExportEvent } from "./types";
+export type { GeomExportEvent } from "./types";
 import type { GeomExportEvent } from "./types";
-import { ChatMessage } from "./ChatMessage";
-import { ChatInput } from "./ChatInput";
-
-export const EXAMPLE_PROMPTS = [
-  "A hollow cylinder with a threaded cap",
-  "A mounting bracket with 4 screw holes",
-  "A standard gear with 20 involute teeth",
-  "A phone stand with an adjustable angle",
-];
 
 export interface ChatProps {
   onGeomExport: (event: GeomExportEvent) => void;
 }
 
+import { ChatMessage } from "./ChatMessage";
+import { ChatInput, type ChatInputHandle } from "./ChatInput";
+import { EmptyChatState } from "./EmptyChatState";
+
 export default function Chat({ onGeomExport }: ChatProps) {
-  const [input, setInput] = useState("");
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const chatInputRef = useRef<ChatInputHandle>(null);
   const isNearBottomRef = useRef(true);
   const pathname = usePathname();
   const router = useRouter();
@@ -64,13 +59,15 @@ export default function Chat({ onGeomExport }: ChatProps) {
       }
     },
   });
+  const isBusy = isLoading || isHydrating;
+  const isEmpty = messages.length === 0;
 
-  const visibleTodoCallIds = useMemo(() => {
-    const ids = new Set<string>();
+  const visibleTodoCallIdsKey = useMemo(() => {
+    const ids: string[] = [];
     let lastTodoId: string | undefined;
     for (const m of messages) {
       if (m.role === "human") {
-        if (lastTodoId) ids.add(lastTodoId);
+        if (lastTodoId) ids.push(lastTodoId);
         lastTodoId = undefined;
         continue;
       }
@@ -79,52 +76,54 @@ export default function Chat({ onGeomExport }: ChatProps) {
         if (tc.name === "write_todos") lastTodoId = tc.id;
       }
     }
-    if (lastTodoId) ids.add(lastTodoId);
-    return ids;
+    if (lastTodoId) ids.push(lastTodoId);
+    return ids.sort().join(",");
   }, [messages]);
+
+  const visibleTodoCallIds = useMemo(
+    () => new Set(visibleTodoCallIdsKey ? visibleTodoCallIdsKey.split(",") : []),
+    [visibleTodoCallIdsKey]
+  );
 
   useEffect(() => {
     if (isNearBottomRef.current) {
-      const el = messagesContainerRef.current;
-      if (el) {
-        el.scrollTop = el.scrollHeight;
-      }
+      requestAnimationFrame(() => {
+        const el = messagesContainerRef.current;
+        if (el) {
+          el.scrollTop = el.scrollHeight;
+        }
+      });
     }
   }, [messages, isLoading]);
 
   const handleScroll = useCallback(() => {
-    const el = messagesContainerRef.current;
-    if (!el) return;
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    isNearBottomRef.current = distanceFromBottom <= 100;
-    setShowScrollBtn(distanceFromBottom > 100);
+    requestAnimationFrame(() => {
+      const el = messagesContainerRef.current;
+      if (!el) return;
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      isNearBottomRef.current = distanceFromBottom <= 100;
+      setShowScrollBtn(distanceFromBottom > 100);
+    });
   }, []);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const sendMessage = useCallback(() => {
-    const trimmed = input.trim();
-    if (!trimmed || isLoading || isHydrating) return;
+  const sendMessage = useCallback((content: string) => {
+    if (isBusy) return;
+    submit(content);
 
-    submit(trimmed);
-
-    setInput("");
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
     isNearBottomRef.current = true;
     requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-  }, [input, isHydrating, isLoading, submit]);
+  }, [isBusy, submit]);
 
   const handleExamplePrompt = useCallback((prompt: string) => {
-    setInput(prompt);
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height =
-        Math.min(textareaRef.current.scrollHeight, 200) + "px";
+    if (chatInputRef.current) {
+      chatInputRef.current.setPrompt(prompt);
+      chatInputRef.current.focus();
     }
   }, []);
 
@@ -143,36 +142,12 @@ export default function Chat({ onGeomExport }: ChatProps) {
           className="h-full overflow-y-auto scroll-on-hover px-4 py-6"
         >
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
-            {messages.length === 0 && !isLoading && !isHydrating && (
-              <div className="flex min-h-full flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-center text-muted-foreground">
-                <MessageSquare size={34} className="opacity-30" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground/90">
-                    Enter a prompt to generate a 3D model
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Start simple, then refine with follow-up prompts.
-                  </p>
-                </div>
-                <div className="flex max-w-lg flex-wrap justify-center gap-2">
-                  {EXAMPLE_PROMPTS.map((prompt) => (
-                    <button
-                      key={prompt}
-                      onClick={() => handleExamplePrompt(prompt)}
-                      className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-accent hover:bg-accent/5 hover:text-accent transition-colors"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.length === 0 && isHydrating && (
-              <div className="flex min-h-full items-center justify-center gap-2 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-sm text-muted-foreground">
-                <Loader2 size={16} className="animate-spin" />
-                <span>Loading conversation...</span>
-              </div>
+            {isEmpty && (
+              <EmptyChatState
+                isHydrating={isHydrating}
+                isBusy={isBusy}
+                onExamplePrompt={handleExamplePrompt}
+              />
             )}
 
             {messages.map((message, idx) => {
@@ -216,13 +191,11 @@ export default function Chat({ onGeomExport }: ChatProps) {
       </div>
 
       <ChatInput
-        input={input}
-        setInput={setInput}
+        ref={chatInputRef}
         isLoading={isLoading}
-        isBusy={isLoading || isHydrating}
-        sendMessage={sendMessage}
+        isBusy={isBusy}
+        onSubmit={sendMessage}
         stopGeneration={stop}
-        inputRef={textareaRef}
       />
     </div>
   );

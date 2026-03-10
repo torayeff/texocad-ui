@@ -1,15 +1,26 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useState, useRef, useCallback, useEffect } from "react";
 
-import { BACKEND_URL } from "./config";
-import type { AIBlock, ChatMessage, ToolCallInfo } from "@/app/components/chat/types";
+import {
+  applyTextChunk,
+  applyThinkingChunk,
+  applyToolCall,
+  applyToolResult,
+  applyUsagePayload,
+  createEmptyAiMessage,
+  createHumanMessage,
+  hydrateHistory,
+} from "./chatMessageState";
+import type { HydratedHistory } from "./chatMessageState";
+import type { ChatMessage } from "@/app/components/chat/types";
 
 interface SSEEvent {
   event: string;
   data: Record<string, unknown>;
 }
+
+const CHAT_API_BASE = "/api/threads";
 
 interface UseChatOptions {
   onCustomEvent?: (data: Record<string, unknown>) => void;
@@ -37,31 +48,14 @@ class BackendRequestError extends Error {
   }
 }
 
-type GetTokenFn = () => Promise<string | null>;
-
-let nextToolId = 0;
-function genToolId(): string {
-  return `tc_${++nextToolId}`;
-}
-
-function genMsgId(): string {
-  return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-async function fetchWithAuth(
-  getToken: GetTokenFn,
+async function fetchChatApi(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<Response> {
-  const token = await getToken();
-  if (!token) {
-    throw new Error("Missing Clerk session token");
-  }
-
-  const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${token}`);
-
-  return fetch(input, { ...init, headers });
+  return fetch(input, {
+    ...init,
+    credentials: "same-origin",
+  });
 }
 
 async function readErrorMessage(res: Response): Promise<string> {
@@ -78,8 +72,8 @@ async function readErrorMessage(res: Response): Promise<string> {
   return bodyText || `Request failed: ${res.status}`;
 }
 
-async function createThread(getToken: GetTokenFn): Promise<string> {
-  const res = await fetchWithAuth(getToken, `${BACKEND_URL}/api/threads`, {
+async function createThread(): Promise<string> {
+  const res = await fetchChatApi(CHAT_API_BASE, {
     method: "POST",
   });
   if (!res.ok) {
@@ -96,39 +90,30 @@ async function createThread(getToken: GetTokenFn): Promise<string> {
 
 async function fetchHistory(
   threadId: string,
-  getToken: GetTokenFn,
-): Promise<ChatMessage[]> {
-  const res = await fetchWithAuth(
-    getToken,
-    `${BACKEND_URL}/api/threads/${threadId}/history`,
-  );
+): Promise<HydratedHistory> {
+  const res = await fetchChatApi(`${CHAT_API_BASE}/${threadId}/history`);
   if (!res.ok) {
     throw new BackendRequestError(res.status, await readErrorMessage(res));
   }
 
-  const body = (await res.json()) as { messages?: unknown };
-  return normalizeHistoryMessages(body.messages);
+  const body = (await res.json()) as { events?: unknown };
+  return hydrateHistory(body.events);
 }
 
 async function* streamSSE(
   threadId: string,
   content: string,
   signal: AbortSignal,
-  getToken: GetTokenFn,
 ): AsyncGenerator<SSEEvent> {
-  const res = await fetchWithAuth(
-    getToken,
-    `${BACKEND_URL}/api/threads/${threadId}/runs/stream`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "text/event-stream",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ content }),
-      signal,
+  const res = await fetchChatApi(`${CHAT_API_BASE}/${threadId}/runs/stream`, {
+    method: "POST",
+    headers: {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({ content }),
+    signal,
+  });
 
   if (!res.ok) {
     throw new BackendRequestError(res.status, await readErrorMessage(res));
@@ -173,28 +158,6 @@ async function* streamSSE(
   }
 }
 
-function normalizeHistoryMessages(rawMessages: unknown): ChatMessage[] {
-  if (!Array.isArray(rawMessages)) return [];
-
-  return rawMessages.flatMap((message) => {
-    if (!message || typeof message !== "object") return [];
-
-    const role = (message as { role?: unknown }).role;
-    if (role !== "human" && role !== "ai") return [];
-
-    const content = (message as { content?: unknown }).content;
-    return [
-      {
-        id: genMsgId(),
-        role,
-        content: typeof content === "string" ? content : String(content ?? ""),
-        toolCalls: [],
-        blocks: [],
-      },
-    ];
-  });
-}
-
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return String(error);
@@ -208,7 +171,6 @@ function isInvalidThreadError(error: unknown): boolean {
 }
 
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
   const {
     onCustomEvent,
     onThreadIdChange,
@@ -226,6 +188,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const isBusyRef = useRef(false);
   const hydratedThreadIdRef = useRef<string | null>(null);
   const onCustomEventRef = useRef(onCustomEvent);
+  const onThreadIdChangeRef = useRef(onThreadIdChange);
 
   const setActiveThreadId = useCallback((nextThreadId: string | null) => {
     threadIdRef.current = nextThreadId;
@@ -241,6 +204,10 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   }, [onCustomEvent]);
 
   useEffect(() => {
+    onThreadIdChangeRef.current = onThreadIdChange;
+  }, [onThreadIdChange]);
+
+  useEffect(() => {
     const nextThreadId = optionThreadId;
     if (nextThreadId === threadIdRef.current) return;
 
@@ -254,7 +221,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   }, [optionThreadId, setActiveThreadId]);
 
   useEffect(() => {
-    if (!threadId || !isLoaded || !isSignedIn) return;
+    if (!threadId) return;
     if (hydratedThreadIdRef.current === threadId) return;
 
     let cancelled = false;
@@ -264,9 +231,12 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
     (async () => {
       try {
-        const historyMessages = await fetchHistory(threadId, getToken);
+        const historyMessages = await fetchHistory(threadId);
         if (cancelled || threadIdRef.current !== threadId) return;
-        setMessages(historyMessages);
+        setMessages(historyMessages.messages);
+        for (const customEvent of historyMessages.customEvents) {
+          onCustomEventRef.current?.(customEvent);
+        }
       } catch (err: unknown) {
         if (cancelled || threadIdRef.current !== threadId) return;
 
@@ -276,7 +246,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         if (isInvalidThreadError(err)) {
           hydratedThreadIdRef.current = null;
           setActiveThreadId(null);
-          onThreadIdChange?.(null);
+          onThreadIdChangeRef.current?.(null);
         }
       } finally {
         if (!cancelled && threadIdRef.current === threadId) {
@@ -288,30 +258,14 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     return () => {
       cancelled = true;
     };
-  }, [getToken, isLoaded, isSignedIn, onThreadIdChange, setActiveThreadId, threadId]);
+  }, [setActiveThreadId, threadId]);
 
   const submit = useCallback(
     (content: string) => {
       const trimmedContent = content.trim();
       if (!trimmedContent || isBusyRef.current) return;
 
-      if (!isLoaded) {
-        setError("Authentication is still loading. Please try again.");
-        return;
-      }
-
-      if (!isSignedIn) {
-        setError("You must be signed in to use the studio.");
-        return;
-      }
-
-      const humanMsg: ChatMessage = {
-        id: genMsgId(),
-        role: "human",
-        content: trimmedContent,
-        toolCalls: [],
-        blocks: [],
-      };
+      const humanMsg = createHumanMessage(trimmedContent);
 
       setMessages((prev) => [...prev, humanMsg]);
       setIsLoading(true);
@@ -320,16 +274,12 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       const controller = new AbortController();
       abortRef.current = controller;
 
-      const aiId = genMsgId();
       let aiInserted = false;
 
       function ensureAiMessage() {
         if (aiInserted) return;
         aiInserted = true;
-        setMessages((prev) => [
-          ...prev,
-          { id: aiId, role: "ai", content: "", toolCalls: [], blocks: [] },
-        ]);
+        setMessages((prev) => [...prev, createEmptyAiMessage()]);
       }
 
       (async () => {
@@ -337,19 +287,18 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
         try {
           if (!activeThreadId) {
-            activeThreadId = await createThread(getToken);
+            activeThreadId = await createThread();
             if (controller.signal.aborted) return;
 
             hydratedThreadIdRef.current = activeThreadId;
             setActiveThreadId(activeThreadId);
-            onThreadIdChange?.(activeThreadId);
+            onThreadIdChangeRef.current?.(activeThreadId);
           }
 
           for await (const { event, data } of streamSSE(
             activeThreadId,
             trimmedContent,
             controller.signal,
-            getToken,
           )) {
             const agent = (data.agent as string) ?? "";
             const isSubagent = Boolean(data.subagent);
@@ -358,82 +307,45 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
               ensureAiMessage();
               const chunk = data.content as string;
               setMessages((prev) =>
-                updateLastAi(prev, (msg) => ({
-                  ...msg,
-                  thinking: (msg.thinking ?? "") + chunk,
-                  blocks: appendStreamBlock(msg.blocks, "thinking", chunk, agent, isSubagent),
-                })),
+                updateLastAi(prev, (msg) =>
+                  applyThinkingChunk(msg, chunk, agent, isSubagent),
+                ),
               );
             } else if (event === "text") {
               ensureAiMessage();
               const chunk = data.content as string;
               setMessages((prev) =>
-                updateLastAi(prev, (msg) => ({
-                  ...msg,
-                  content: msg.content + chunk,
-                  blocks: appendStreamBlock(msg.blocks, "text", chunk, agent, isSubagent),
-                })),
+                updateLastAi(prev, (msg) =>
+                  applyTextChunk(msg, chunk, agent, isSubagent),
+                ),
               );
             } else if (event === "tool_call") {
               ensureAiMessage();
-              const tc: ToolCallInfo = {
-                id: genToolId(),
-                name: data.name as string,
-                args: (data.args as Record<string, unknown>) ?? {},
-                state: "pending",
-                agent,
-                isSubagent,
-              };
-              const block: AIBlock = { kind: "tool_call", toolCallId: tc.id, agent, isSubagent };
               setMessages((prev) =>
-                updateLastAi(prev, (msg) => ({
-                  ...msg,
-                  toolCalls: [...msg.toolCalls, tc],
-                  blocks: [...msg.blocks, block],
-                })),
+                updateLastAi(prev, (msg) =>
+                  applyToolCall(
+                    msg,
+                    (data.name as string) || "tool",
+                    (data.args as Record<string, unknown>) ?? {},
+                    agent,
+                    isSubagent,
+                  ),
+                ),
               );
             } else if (event === "tool_result") {
               const name = data.name as string;
               const resultContent = data.content as string;
               setMessages((prev) =>
-                updateLastAi(prev, (msg) => {
-                  const { toolCalls, toolCallId } = completePendingToolCall(
-                    msg.toolCalls,
-                    name,
-                    resultContent,
-                  );
-                  const block: AIBlock = { kind: "tool_result", toolCallId, agent, isSubagent };
-                  return { ...msg, toolCalls, blocks: [...msg.blocks, block] };
-                }),
+                updateLastAi(prev, (msg) =>
+                  applyToolResult(msg, name, resultContent, agent, isSubagent),
+                ),
               );
             } else if (event === "error") {
               setError((data.message as string) ?? "Unknown server error");
             } else if (event === "usage") {
               ensureAiMessage();
-              const agents = (
-                data.agents as Record<
-                  string,
-                  { input_tokens?: number; output_tokens?: number }
-                >
-              ) ?? {};
-              const { inputTokens, outputTokens } = Object.values(agents).reduce(
-                (totals, agentUsage) => ({
-                  inputTokens: totals.inputTokens + (agentUsage.input_tokens ?? 0),
-                  outputTokens: totals.outputTokens + (agentUsage.output_tokens ?? 0),
-                }),
-                { inputTokens: 0, outputTokens: 0 },
-              );
-              const runtimeSeconds =
-                typeof data.runtime === "number" ? data.runtime : undefined;
-
               setMessages((prev) =>
-                updateLastAi(prev, (msg) => ({
-                  ...msg,
-                  usage:
-                    inputTokens > 0 || outputTokens > 0
-                      ? { inputTokens, outputTokens, runtimeSeconds }
-                      : msg.usage,
-                })),
+                updateLastAi(prev, (msg) => applyUsagePayload(msg, data)),
               );
             } else if (event === "done") {
               // no-op
@@ -452,7 +364,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         }
       })();
     },
-    [getToken, isLoaded, isSignedIn, onThreadIdChange, setActiveThreadId],
+    [setActiveThreadId],
   );
 
   const stop = useCallback(() => {
@@ -470,40 +382,12 @@ function updateLastAi(
 ): ChatMessage[] {
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].role === "ai") {
+      const updated = updater(messages[i]);
+      if (updated === messages[i]) return messages;
       const copy = [...messages];
-      copy[i] = updater(copy[i]);
+      copy[i] = updated;
       return copy;
     }
   }
   return messages;
-}
-
-function completePendingToolCall(
-  toolCalls: ToolCallInfo[],
-  name: string,
-  result: string,
-): { toolCalls: ToolCallInfo[]; toolCallId: string } {
-  const idx = toolCalls.findIndex(
-    (tc) => tc.name === name && tc.state === "pending",
-  );
-  if (idx === -1) return { toolCalls, toolCallId: "" };
-  const copy = [...toolCalls];
-  copy[idx] = { ...copy[idx], result, state: "completed" };
-  return { toolCalls: copy, toolCallId: copy[idx].id };
-}
-
-function appendStreamBlock(
-  blocks: AIBlock[],
-  kind: "thinking" | "text",
-  chunk: string,
-  agent: string,
-  isSubagent: boolean,
-): AIBlock[] {
-  const last = blocks[blocks.length - 1];
-  if (last && last.kind === kind && last.agent === agent && last.isSubagent === isSubagent) {
-    const copy = [...blocks];
-    copy[copy.length - 1] = { ...last, content: last.content + chunk };
-    return copy;
-  }
-  return [...blocks, { kind, content: chunk, agent, isSubagent }];
 }

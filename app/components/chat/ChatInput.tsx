@@ -3,25 +3,40 @@
 import React, { useCallback } from "react";
 import { Square, ArrowUp, Plus } from "lucide-react";
 
-interface ChatInputProps {
-  input: string;
-  setInput: (value: string) => void;
-  isBusy: boolean;
-  isLoading: boolean;
-  sendMessage: () => void;
-  stopGeneration: () => void;
-  inputRef?: React.Ref<HTMLTextAreaElement>;
+export interface ChatInputHandle {
+  setPrompt: (text: string) => void;
+  focus: () => void;
 }
 
-export const ChatInput = React.memo(function ChatInput({
-  input,
-  setInput,
+interface ChatInputProps {
+  isBusy: boolean;
+  isLoading: boolean;
+  onSubmit: (text: string) => void;
+  stopGeneration: () => void;
+}
+
+export const ChatInput = React.memo(React.forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
   isBusy,
   isLoading,
-  sendMessage,
+  onSubmit,
   stopGeneration,
-  inputRef,
-}: ChatInputProps) {
+}: ChatInputProps, ref) {
+  const [input, setInput] = React.useState("");
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  React.useImperativeHandle(ref, () => ({
+    setPrompt: (text: string) => {
+      setInput(text);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + "px";
+      }
+    },
+    focus: () => {
+      textareaRef.current?.focus();
+    }
+  }), []);
+
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setInput(e.target.value);
@@ -29,8 +44,18 @@ export const ChatInput = React.memo(function ChatInput({
       ta.style.height = "auto";
       ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
     },
-    [setInput]
+    []
   );
+
+  const sendMessage = useCallback(() => {
+    const trimmed = input.trim();
+    if (!trimmed || isBusy) return;
+    onSubmit(trimmed);
+    setInput("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  }, [input, isBusy, onSubmit]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -56,7 +81,7 @@ export const ChatInput = React.memo(function ChatInput({
         </button>
 
         <textarea
-          ref={inputRef}
+          ref={textareaRef}
           value={input}
           disabled={isBusy}
           onChange={handleInputChange}
@@ -91,4 +116,4 @@ export const ChatInput = React.memo(function ChatInput({
       </div>
     </div>
   );
-});
+}));
