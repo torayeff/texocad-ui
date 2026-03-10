@@ -11,13 +11,26 @@ import {
   ListTodo,
   Circle,
   Loader2,
+  Bot,
 } from "lucide-react";
 
 import type { ChatMessage, ToolCallInfo, ToolCallState } from "./types";
+import { findToolCall } from "./groupBlocks";
+import type { BlockGroup } from "./groupBlocks";
 
 const REMARK_PLUGINS = [remarkGfm];
 
-export function PanelTimer({ active }: { active: boolean }) {
+function formatDuration(seconds: number): string {
+  return Number.isInteger(seconds) ? `${seconds}s` : `${seconds.toFixed(1)}s`;
+}
+
+export function PanelTimer({
+  active,
+  fixedSeconds,
+}: {
+  active: boolean;
+  fixedSeconds?: number;
+}) {
   const [seconds, setSeconds] = useState(0);
   const startRef = useRef(0);
 
@@ -33,16 +46,24 @@ export function PanelTimer({ active }: { active: boolean }) {
     return () => clearInterval(interval);
   }, [active]);
 
+  if (fixedSeconds !== undefined) {
+    return (
+      <span className="text-[10px] font-medium tabular-nums text-muted-foreground/60">
+        {formatDuration(fixedSeconds)}
+      </span>
+    );
+  }
+
   if (!active && seconds === 0) return null;
 
   return (
-    <span className="text-[10px] text-muted-foreground/60 font-medium tabular-nums">
-      {seconds}s
+    <span className="text-[10px] font-medium tabular-nums text-muted-foreground/60">
+      {formatDuration(seconds)}
     </span>
   );
 }
 
-function useAutoScroll<T extends HTMLElement>() {
+export function useAutoScroll<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const stickRef = useRef(true);
 
@@ -63,44 +84,16 @@ function useAutoScroll<T extends HTMLElement>() {
 }
 
 const TOOL_CALL_STATUS_CLASS: Record<ToolCallState, string> = {
-  pending: "text-muted-foreground animate-pulse",
+  pending: "text-success",
   completed: "text-success",
   error: "text-error",
 };
 
-export const ThinkingBlock = React.memo(function ThinkingBlock({
-  message,
-  isStreaming = false,
-}: {
-  message: ChatMessage;
-  isStreaming?: boolean;
-}) {
-  const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>();
-  const reasoning = message.thinking;
-
-  if (!reasoning) return null;
-
-  return (
-    <details open className="group rounded-xl border border-border/50 bg-muted/30 overflow-hidden">
-      <summary className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
-        <Brain size={14} className="flex-shrink-0 text-muted-foreground/70" />
-        <span>Thinking{isStreaming ? "..." : ""}</span>
-        <div className="ml-auto flex items-center gap-1.5">
-          <PanelTimer active={isStreaming} />
-          {!isStreaming && <CircleCheck size={14} className="flex-shrink-0 text-success" />}
-          <ChevronDown size={14} className="flex-shrink-0 text-muted-foreground/50 transition-transform group-open:rotate-180" />
-        </div>
-      </summary>
-      <div ref={scrollRef} onScroll={handleScroll} className="px-3.5 pb-2.5 max-h-60 overflow-y-auto">
-        <div className="prose-chat text-muted-foreground">
-          <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
-            {reasoning}
-          </ReactMarkdown>
-        </div>
-      </div>
-    </details>
-  );
-});
+const TOOL_CALL_STATUS_LABEL: Record<ToolCallState, string> = {
+  pending: "Running",
+  completed: "Done",
+  error: "Failed",
+};
 
 export const ToolCallCard = React.memo(function ToolCallCard({
   toolCall,
@@ -118,45 +111,56 @@ export const ToolCallCard = React.memo(function ToolCallCard({
         <CircleDashed size={14} className={cls} />;
 
   return (
-    <details open className="group rounded-xl border border-border/50 bg-muted/30 overflow-hidden">
-      <summary className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
-        <Wrench size={14} className="flex-shrink-0 text-muted-foreground/70" />
-        <span className="font-mono">{name}</span>
+    <details className="group">
+      <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
+        <Wrench size={13} className="flex-shrink-0 text-muted-foreground/60" />
+        <span className="min-w-0 truncate font-mono text-[11px] font-medium text-foreground/85">
+          {name}
+        </span>
+        {state !== "completed" ? (
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${state === "pending" ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}
+          >
+            {TOOL_CALL_STATUS_LABEL[state]}
+          </span>
+        ) : null}
         <div className="ml-auto flex items-center gap-1.5">
           <PanelTimer active={state === "pending"} />
           {statusIcon}
-          <ChevronDown size={14} className="flex-shrink-0 text-muted-foreground/50 transition-transform group-open:rotate-180" />
+          <ChevronDown size={13} className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open:rotate-180" />
         </div>
       </summary>
 
-      <div className="border-t border-border/40">
-        {args && Object.keys(args).length > 0 && (
-          <details className="group/inner border-b border-border/40">
-            <summary className="px-3 py-1.5 text-[10px] uppercase tracking-wide text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
+      <div className="mt-2 space-y-3 border-l border-border/30 pl-4">
+        {args && Object.keys(args).length > 0 ? (
+          <section className="space-y-1.5">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
               Input
-              <span className="ml-1 group-open/inner:hidden">...</span>
-            </summary>
-            <div className="px-3 pb-2">
-              <pre ref={inputScrollRef} onScroll={handleInputScroll} className="text-xs font-mono text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
-                {JSON.stringify(args, null, 2)}
-              </pre>
-            </div>
-          </details>
-        )}
+            </p>
+            <pre
+              ref={inputScrollRef}
+              onScroll={handleInputScroll}
+              className="max-h-40 overflow-y-auto rounded-lg bg-muted/40 px-3 py-2 text-[11px] font-mono whitespace-pre-wrap break-all text-foreground"
+            >
+              {JSON.stringify(args, null, 2)}
+            </pre>
+          </section>
+        ) : null}
 
-        {result && (
-          <details className="group/inner">
-            <summary className="px-3 py-1.5 text-[10px] uppercase tracking-wide text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors">
+        {result ? (
+          <section className="space-y-1.5">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
               Output
-              <span className="ml-1 group-open/inner:hidden">...</span>
-            </summary>
-            <div className="px-3 pb-2">
-              <pre ref={outputScrollRef} onScroll={handleOutputScroll} className="text-xs font-mono text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
-                {result}
-              </pre>
-            </div>
-          </details>
-        )}
+            </p>
+            <pre
+              ref={outputScrollRef}
+              onScroll={handleOutputScroll}
+              className="max-h-40 overflow-y-auto rounded-lg bg-muted/40 px-3 py-2 text-[11px] font-mono whitespace-pre-wrap break-all text-foreground"
+            >
+              {result}
+            </pre>
+          </section>
+        ) : null}
       </div>
     </details>
   );
@@ -169,7 +173,7 @@ interface TodoItem {
 
 const TODO_STATUS_ICON: Record<string, React.ReactNode> = {
   completed: <CircleCheck size={14} className="flex-shrink-0 text-success" />,
-  in_progress: <Loader2 size={14} className="flex-shrink-0 text-accent animate-spin" />,
+  in_progress: <Loader2 size={14} className="flex-shrink-0 text-success animate-spin" />,
   pending: <Circle size={14} className="flex-shrink-0 text-muted-foreground/50" />,
 };
 
@@ -184,22 +188,27 @@ export const TodoCard = React.memo(function TodoCard({
   const allDone = todos.length > 0 && completedCount === todos.length;
 
   return (
-    <div className="rounded-xl border border-border/50 bg-muted/30 overflow-hidden">
-      <div className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-muted-foreground">
-        <ListTodo size={14} className="flex-shrink-0 text-muted-foreground/70" />
-        <span>Tasks</span>
-        <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+    <details className="group">
+      <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
+        <ListTodo size={13} className="flex-shrink-0 text-muted-foreground/60" />
+        <span className="font-medium text-foreground/85">Tasks</span>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground/80">
           {completedCount}/{todos.length}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           <PanelTimer active={state === "pending"} />
-          {allDone && <CircleCheck size={14} className="flex-shrink-0 text-success" />}
+          {state === "pending" ? (
+            <Loader2 size={13} className="flex-shrink-0 animate-spin text-success" />
+          ) : allDone ? (
+            <CircleCheck size={14} className="flex-shrink-0 text-success" />
+          ) : null}
+          <ChevronDown size={13} className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open:rotate-180" />
         </div>
-      </div>
-      {todos.length > 0 && (
-        <ul className="border-t border-border/40 px-3.5 py-2 space-y-1.5">
+      </summary>
+      {todos.length > 0 ? (
+        <ul className="mt-2 space-y-2 border-l border-border/30 pl-4">
           {todos.map((todo, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs">
+            <li key={i} className="flex items-start gap-2 text-sm">
               <span className="mt-0.5">
                 {TODO_STATUS_ICON[todo.status] ?? TODO_STATUS_ICON.pending}
               </span>
@@ -209,24 +218,137 @@ export const TodoCard = React.memo(function TodoCard({
             </li>
           ))}
         </ul>
-      )}
-    </div>
+      ) : null}
+    </details>
   );
 });
 
-export const AITextContent = React.memo(function AITextContent({
-  message,
+export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
+  content,
+  isStreaming = false,
+  defaultOpen = false,
 }: {
-  message: ChatMessage;
+  content: string;
+  isStreaming?: boolean;
+  defaultOpen?: boolean;
 }) {
-  if (!message.content.trim()) return null;
+  const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>();
+
+  if (!content) return null;
+
+  return (
+    <details open={defaultOpen || undefined} className="group">
+      <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
+        <Brain size={13} className="flex-shrink-0 text-muted-foreground/60" />
+        <span>Thinking{isStreaming ? "..." : ""}</span>
+        <div className="ml-auto flex items-center gap-1.5">
+          <PanelTimer active={isStreaming} />
+          {!isStreaming && <CircleCheck size={14} className="flex-shrink-0 text-success" />}
+          <ChevronDown size={13} className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open:rotate-180" />
+        </div>
+      </summary>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="mt-2 max-h-60 overflow-y-auto border-l border-border/30 pl-4"
+      >
+        <div className="prose-chat text-muted-foreground">
+          <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
+            {content}
+          </ReactMarkdown>
+        </div>
+      </div>
+    </details>
+  );
+});
+
+export const InlineTextContent = React.memo(function InlineTextContent({
+  content,
+}: {
+  content: string;
+}) {
+  if (!content.trim()) return null;
 
   return (
     <div className="prose-chat">
       <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
-        {message.content}
+        {content}
       </ReactMarkdown>
     </div>
+  );
+});
+
+export const SubagentGroup = React.memo(function SubagentGroup({
+  group,
+  toolCalls,
+  isStreaming = false,
+  visibleTodoCallIds,
+}: {
+  group: BlockGroup & { kind: "subagent" };
+  toolCalls: ToolCallInfo[];
+  isStreaming?: boolean;
+  visibleTodoCallIds?: Set<string>;
+}) {
+  const allDone = group.blocks.every((b) => {
+    if (b.kind === "tool_call" || b.kind === "tool_result") {
+      const tc = findToolCall(toolCalls, b.toolCallId);
+      return tc?.state === "completed";
+    }
+    return true;
+  });
+  const active = isStreaming || !allDone;
+
+  return (
+    <details className="group/sub">
+      <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
+        <Bot size={13} className="flex-shrink-0 text-muted-foreground/60" />
+        <span className="font-medium text-foreground/85">{group.agent}</span>
+        {active ? (
+          <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+            Active
+          </span>
+        ) : null}
+        <div className="ml-auto flex items-center gap-1.5">
+          <PanelTimer active={active} />
+          {!active && <CircleCheck size={14} className="flex-shrink-0 text-success" />}
+          <ChevronDown size={13} className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/sub:rotate-180" />
+        </div>
+      </summary>
+      <div className="mt-2 flex flex-col gap-2 border-l border-border/30 pl-4">
+        {group.blocks.map((block, i) => {
+          switch (block.kind) {
+            case "thinking": {
+              const isLast = isStreaming && i === group.blocks.length - 1;
+              return (
+                <InlineThinkingBlock
+                  key={i}
+                  content={block.content}
+                  isStreaming={isLast}
+                  defaultOpen={false}
+                />
+              );
+            }
+            case "text":
+              return <InlineTextContent key={i} content={block.content} />;
+            case "tool_call":
+            case "tool_result": {
+              if (block.kind === "tool_result") return null;
+              const tc = findToolCall(toolCalls, block.toolCallId);
+              if (!tc) return null;
+              if (tc.name === "write_todos") {
+                if (!visibleTodoCallIds?.has(tc.id)) return null;
+                return <TodoCard key={tc.id} toolCall={tc} />;
+              }
+              return <ToolCallCard key={tc.id} toolCall={tc} />;
+            }
+            default: {
+              const exhaustiveCheck: never = block;
+              return exhaustiveCheck;
+            }
+          }
+        })}
+      </div>
+    </details>
   );
 });
 

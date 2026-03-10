@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
 import { BACKEND_URL } from "./config";
-import type { ChatMessage, ToolCallInfo } from "@/app/components/chat/types";
+import type { ChatMessage, ToolCallInfo, AIBlock } from "@/app/components/chat/types";
 
 interface SSEEvent {
   event: string;
@@ -134,6 +134,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         role: "human",
         content,
         toolCalls: [],
+        blocks: [],
       };
 
       setMessages((prev) => [...prev, humanMsg]);
@@ -151,7 +152,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         aiInserted = true;
         setMessages((prev) => [
           ...prev,
-          { id: aiId, role: "ai", content: "", toolCalls: [] },
+          { id: aiId, role: "ai", content: "", toolCalls: [], blocks: [] },
         ]);
       }
 
@@ -162,6 +163,9 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
             content,
             controller.signal,
           )) {
+            const agent = (data.agent as string) ?? "";
+            const isSubagent = Boolean(data.subagent);
+
             if (event === "thinking") {
               ensureAiMessage();
               const chunk = data.content as string;
@@ -169,6 +173,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                 updateLastAi(prev, (msg) => ({
                   ...msg,
                   thinking: (msg.thinking ?? "") + chunk,
+                  blocks: appendStreamBlock(msg.blocks, "thinking", chunk, agent, isSubagent),
                 })),
               );
             } else if (event === "text") {
@@ -178,6 +183,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                 updateLastAi(prev, (msg) => ({
                   ...msg,
                   content: msg.content + chunk,
+                  blocks: appendStreamBlock(msg.blocks, "text", chunk, agent, isSubagent),
                 })),
               );
             } else if (event === "tool_call") {
@@ -187,28 +193,60 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                 name: data.name as string,
                 args: (data.args as Record<string, unknown>) ?? {},
                 state: "pending",
+                agent,
+                isSubagent,
               };
+              const block: AIBlock = { kind: "tool_call", toolCallId: tc.id, agent, isSubagent };
               setMessages((prev) =>
                 updateLastAi(prev, (msg) => ({
                   ...msg,
                   toolCalls: [...msg.toolCalls, tc],
+                  blocks: [...msg.blocks, block],
                 })),
               );
             } else if (event === "tool_result") {
               const name = data.name as string;
               const resultContent = data.content as string;
               setMessages((prev) =>
-                updateLastAi(prev, (msg) => ({
-                  ...msg,
-                  toolCalls: completePendingToolCall(
+                updateLastAi(prev, (msg) => {
+                  const { toolCalls, toolCallId } = completePendingToolCall(
                     msg.toolCalls,
                     name,
                     resultContent,
-                  ),
-                })),
+                  );
+                  const block: AIBlock = { kind: "tool_result", toolCallId, agent, isSubagent };
+                  return { ...msg, toolCalls, blocks: [...msg.blocks, block] };
+                }),
               );
             } else if (event === "error") {
               setError((data.message as string) ?? "Unknown server error");
+            } else if (event === "usage") {
+              ensureAiMessage();
+              const agents = (
+                data.agents as Record<
+                  string,
+                  { input_tokens?: number; output_tokens?: number }
+                >
+              ) ?? {};
+              const { inputTokens, outputTokens } = Object.values(agents).reduce(
+                (totals, agentUsage) => ({
+                  inputTokens: totals.inputTokens + (agentUsage.input_tokens ?? 0),
+                  outputTokens: totals.outputTokens + (agentUsage.output_tokens ?? 0),
+                }),
+                { inputTokens: 0, outputTokens: 0 },
+              );
+              const runtimeSeconds =
+                typeof data.runtime === "number" ? data.runtime : undefined;
+
+              setMessages((prev) =>
+                updateLastAi(prev, (msg) => ({
+                  ...msg,
+                  usage:
+                    inputTokens > 0 || outputTokens > 0
+                      ? { inputTokens, outputTokens, runtimeSeconds }
+                      : msg.usage,
+                })),
+              );
             } else if (event === "done") {
               // no-op
             } else {
@@ -253,12 +291,28 @@ function completePendingToolCall(
   toolCalls: ToolCallInfo[],
   name: string,
   result: string,
-): ToolCallInfo[] {
+): { toolCalls: ToolCallInfo[]; toolCallId: string } {
   const idx = toolCalls.findIndex(
     (tc) => tc.name === name && tc.state === "pending",
   );
-  if (idx === -1) return toolCalls;
+  if (idx === -1) return { toolCalls, toolCallId: "" };
   const copy = [...toolCalls];
   copy[idx] = { ...copy[idx], result, state: "completed" };
-  return copy;
+  return { toolCalls: copy, toolCallId: copy[idx].id };
+}
+
+function appendStreamBlock(
+  blocks: AIBlock[],
+  kind: "thinking" | "text",
+  chunk: string,
+  agent: string,
+  isSubagent: boolean,
+): AIBlock[] {
+  const last = blocks[blocks.length - 1];
+  if (last && last.kind === kind && last.agent === agent && last.isSubagent === isSubagent) {
+    const copy = [...blocks];
+    copy[copy.length - 1] = { ...last, content: last.content + chunk };
+    return copy;
+  }
+  return [...blocks, { kind, content: chunk, agent, isSubagent }];
 }

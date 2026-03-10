@@ -116,52 +116,61 @@ export default function Chat({ onGeomExport }: ChatProps) {
         <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className="h-full overflow-y-auto scroll-on-hover px-4 py-5 space-y-4"
+          className="h-full overflow-y-auto scroll-on-hover px-4 py-6"
         >
-          {messages.length === 0 && !isLoading && (
-            <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
-              <MessageSquare size={34} className="opacity-30" />
-              <p className="text-sm">Enter a prompt to generate a 3D model</p>
-              <div className="flex flex-wrap justify-center gap-2 max-w-xs">
-                {EXAMPLE_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    onClick={() => handleExamplePrompt(prompt)}
-                    className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {messages.map((message, idx) => {
-            const isLastAi =
-              isLoading &&
-              idx === messages.length - 1 &&
-              message.role === "ai";
-
-            return (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                isStreaming={isLastAi}
-                visibleTodoCallIds={visibleTodoCallIds}
-              />
-            );
-          })}
-
-          {isLoading &&
-            messages.length > 0 &&
-            messages[messages.length - 1].role === "human" && (
-              <div className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground">
-                <Loader2 size={14} className="animate-spin" />
-                <span>Thinking...</span>
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
+            {messages.length === 0 && !isLoading && (
+              <div className="flex min-h-full flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-center text-muted-foreground">
+                <MessageSquare size={34} className="opacity-30" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground/90">
+                    Enter a prompt to generate a 3D model
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Start simple, then refine with follow-up prompts.
+                  </p>
+                </div>
+                <div className="flex max-w-lg flex-wrap justify-center gap-2">
+                  {EXAMPLE_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => handleExamplePrompt(prompt)}
+                      className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-accent hover:bg-accent/5 hover:text-accent transition-colors"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-          <div ref={messagesEndRef} />
+            {messages.map((message, idx) => {
+              const isLastAi =
+                isLoading &&
+                idx === messages.length - 1 &&
+                message.role === "ai";
+
+              return (
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  isStreaming={isLastAi}
+                  visibleTodoCallIds={visibleTodoCallIds}
+                />
+              );
+            })}
+
+            {isLoading &&
+              messages.length > 0 &&
+              messages[messages.length - 1].role === "human" && (
+                <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Thinking...</span>
+                </div>
+              )}
+
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
         {showScrollBtn && (

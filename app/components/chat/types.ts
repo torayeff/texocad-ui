@@ -6,7 +6,15 @@ export interface ToolCallInfo {
   args: Record<string, unknown>;
   result?: string;
   state: ToolCallState;
+  agent?: string;
+  isSubagent?: boolean;
 }
+
+export type AIBlock =
+  | { kind: "thinking"; content: string; agent: string; isSubagent: boolean }
+  | { kind: "text"; content: string; agent: string; isSubagent: boolean }
+  | { kind: "tool_call"; toolCallId: string; agent: string; isSubagent: boolean }
+  | { kind: "tool_result"; toolCallId: string; agent: string; isSubagent: boolean };
 
 export interface ChatMessage {
   id: string;
@@ -14,6 +22,12 @@ export interface ChatMessage {
   content: string;
   thinking?: string;
   toolCalls: ToolCallInfo[];
+  blocks: AIBlock[];
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    runtimeSeconds?: number;
+  };
 }
 
 export interface GeomExportEvent {
