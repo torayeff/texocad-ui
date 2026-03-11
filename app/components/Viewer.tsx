@@ -493,7 +493,6 @@ export default function Viewer({
           intensity={isDark ? 0.3 : 0.4}
         />
         <Scene
-          key={stlUrl ?? "empty"}
           url={stlUrl}
           viewCommand={viewCommand}
           showGrid={showGrid}

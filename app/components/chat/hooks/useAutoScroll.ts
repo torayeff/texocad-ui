@@ -1,25 +1,35 @@
-import { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useCallback } from "react";
 
 export function useAutoScroll<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
   const stickRef = useRef(true);
+  const observerRef = useRef<MutationObserver | null>(null);
+  const isTickingRef = useRef(false);
 
-  useEffect(() => {
-    if (stickRef.current) {
-      requestAnimationFrame(() => {
-        const el = ref.current;
-        if (el) {
+  const ref = useCallback((el: T | null) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    if (el) {
+      const observer = new MutationObserver(() => {
+        if (stickRef.current) {
           el.scrollTop = el.scrollHeight;
         }
       });
+      observer.observe(el, { childList: true, subtree: true, characterData: true });
+      observerRef.current = observer;
     }
-  });
+  }, []);
 
-  const onScroll = useCallback(() => {
+  const onScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    if (isTickingRef.current) return;
+    isTickingRef.current = true;
+
+    const el = e.currentTarget;
     requestAnimationFrame(() => {
-      const el = ref.current;
-      if (!el) return;
       stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight <= 30;
+      isTickingRef.current = false;
     });
   }, []);
 

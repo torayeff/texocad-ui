@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ThemeProvider from "@/app/components/ThemeProvider";
+import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
 
 const SITE_NAME = "TexoCAD";
@@ -78,6 +79,7 @@ export default function RootLayout({
         <ClerkProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </ClerkProvider>
+        <Analytics />
       </body>
     </html>
   );

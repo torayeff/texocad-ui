@@ -5,17 +5,17 @@ import { MessageSquare, ArrowDown, Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useChat } from "@/app/lib/useChat";
-import { isGeomExportEvent } from "./types";
-export type { GeomExportEvent } from "./types";
-import type { GeomExportEvent } from "./types";
+import { isGeomExportEvent } from "@/app/components/chat/types";
+export type { GeomExportEvent } from "@/app/components/chat/types";
+import type { GeomExportEvent } from "@/app/components/chat/types";
 
 export interface ChatProps {
   onGeomExport: (event: GeomExportEvent) => void;
 }
 
-import { ChatMessage } from "./ChatMessage";
-import { ChatInput, type ChatInputHandle } from "./ChatInput";
-import { EmptyChatState } from "./EmptyChatState";
+import { ChatMessage } from "@/app/components/chat/ChatMessage";
+import { ChatInput, type ChatInputHandle } from "@/app/components/chat/ChatInput";
+import { EmptyChatState } from "@/app/components/chat/EmptyChatState";
 
 export default function Chat({ onGeomExport }: ChatProps) {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -62,12 +62,12 @@ export default function Chat({ onGeomExport }: ChatProps) {
   const isBusy = isLoading || isHydrating;
   const isEmpty = messages.length === 0;
 
-  const visibleTodoCallIdsKey = useMemo(() => {
-    const ids: string[] = [];
+  const visibleTodoCallIds = useMemo(() => {
+    const ids = new Set<string>();
     let lastTodoId: string | undefined;
     for (const m of messages) {
       if (m.role === "human") {
-        if (lastTodoId) ids.push(lastTodoId);
+        if (lastTodoId) ids.add(lastTodoId);
         lastTodoId = undefined;
         continue;
       }
@@ -76,14 +76,9 @@ export default function Chat({ onGeomExport }: ChatProps) {
         if (tc.name === "write_todos") lastTodoId = tc.id;
       }
     }
-    if (lastTodoId) ids.push(lastTodoId);
-    return ids.sort().join(",");
+    if (lastTodoId) ids.add(lastTodoId);
+    return ids;
   }, [messages]);
-
-  const visibleTodoCallIds = useMemo(
-    () => new Set(visibleTodoCallIdsKey ? visibleTodoCallIdsKey.split(",") : []),
-    [visibleTodoCallIdsKey]
-  );
 
   useEffect(() => {
     if (isNearBottomRef.current) {
@@ -96,13 +91,19 @@ export default function Chat({ onGeomExport }: ChatProps) {
     }
   }, [messages, isLoading]);
 
+  const isTickingRef = useRef(false);
+
   const handleScroll = useCallback(() => {
+    if (isTickingRef.current) return;
+    isTickingRef.current = true;
     requestAnimationFrame(() => {
       const el = messagesContainerRef.current;
-      if (!el) return;
-      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-      isNearBottomRef.current = distanceFromBottom <= 100;
-      setShowScrollBtn(distanceFromBottom > 100);
+      if (el) {
+        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        isNearBottomRef.current = distanceFromBottom <= 100;
+        setShowScrollBtn(distanceFromBottom > 100);
+      }
+      isTickingRef.current = false;
     });
   }, []);
 
