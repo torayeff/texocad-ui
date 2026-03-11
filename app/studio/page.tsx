@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useMounted } from "@/app/lib/use-mounted";
 import Chat from "@/app/components/chat/Chat";
-import type { GeomExportEvent } from "@/app/components/chat/types";
+import type { GeomExportEvent } from "@/app/lib/useChat";
 
 const Viewer = dynamic(() => import("@/app/components/Viewer"), { ssr: false });
 

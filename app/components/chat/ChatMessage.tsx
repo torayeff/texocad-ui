@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useCallback, useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -19,13 +19,88 @@ import type {
   AIBlock,
   ToolCallInfo,
   ToolCallState,
-} from "@/app/components/chat/types";
-import { useAutoScroll } from "@/app/components/chat/hooks/useAutoScroll";
-import { PanelTimer } from "@/app/components/chat/ui/PanelTimer";
+} from "@/app/lib/useChat";
 
-// ============================================================================
-// Types & Grouping Utilities
-// ============================================================================
+
+export function useAutoScroll<T extends HTMLElement>() {
+  const stickRef = useRef(true);
+  const observerRef = useRef<MutationObserver | null>(null);
+  const isTickingRef = useRef(false);
+
+  const ref = useCallback((el: T | null) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    if (el) {
+      const observer = new MutationObserver(() => {
+        if (stickRef.current) {
+          el.scrollTop = el.scrollHeight;
+        }
+      });
+      observer.observe(el, { childList: true, subtree: true, characterData: true });
+      observerRef.current = observer;
+    }
+  }, []);
+
+  const onScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    if (isTickingRef.current) return;
+    isTickingRef.current = true;
+
+    const el = e.currentTarget;
+    requestAnimationFrame(() => {
+      stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight <= 30;
+      isTickingRef.current = false;
+    });
+  }, []);
+
+  return [ref, onScroll] as const;
+}
+
+function formatDuration(seconds: number): string {
+  return Number.isInteger(seconds) ? `${seconds}s` : `${seconds.toFixed(1)}s`;
+}
+
+export function PanelTimer({
+  active,
+  fixedSeconds,
+}: {
+  active: boolean;
+  fixedSeconds?: number;
+}) {
+  const [seconds, setSeconds] = useState(0);
+  const startRef = useRef(0);
+
+  useEffect(() => {
+    if (!active) return;
+
+    startRef.current = Date.now();
+
+    const interval = setInterval(() => {
+      setSeconds(Math.floor((Date.now() - startRef.current) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [active]);
+
+  if (fixedSeconds !== undefined) {
+    return (
+      <span className="text-[10px] font-medium tabular-nums text-muted-foreground/60">
+        {formatDuration(fixedSeconds)}
+      </span>
+    );
+  }
+
+  if (!active && seconds === 0) return null;
+
+  return (
+    <span className="text-[10px] font-medium tabular-nums text-muted-foreground/60">
+      {formatDuration(seconds)}
+    </span>
+  );
+}
+
 
 export type BlockGroup =
   | { kind: "parent"; blocks: AIBlock[] }
@@ -53,9 +128,6 @@ export function groupBlocks(blocks: AIBlock[]): BlockGroup[] {
   return groups;
 }
 
-// ============================================================================
-// Message Utilities
-// ============================================================================
 
 export function resolveAgentName(message: ChatMessageType): string {
   for (const block of message.blocks) {
@@ -151,7 +223,7 @@ export function getAnswerBlocks(blocks: AIBlock[]): Extract<AIBlock, { kind: "te
 export function hasVisibleParentActivity(
   blocks: AIBlock[],
   toolCallMap: Map<string, ToolCallInfo>,
-  visibleTodoCallIds?: Set<string>,
+  visibleTodoCallIdsStr?: string,
 ): boolean {
   return blocks.some((block) => {
     if (block.kind === "thinking") return true;
@@ -159,24 +231,21 @@ export function hasVisibleParentActivity(
     const toolCall = toolCallMap.get(block.toolCallId);
     if (!toolCall) return false;
     if (toolCall.name !== "write_todos") return true;
-    return visibleTodoCallIds?.has(toolCall.id) ?? false;
+    return visibleTodoCallIdsStr?.includes(toolCall.id) ?? false;
   });
 }
 
 export function hasVisibleActivity(
   groups: BlockGroup[],
   toolCallMap: Map<string, ToolCallInfo>,
-  visibleTodoCallIds?: Set<string>,
+  visibleTodoCallIdsStr?: string,
 ): boolean {
   return groups.some((group) => {
     if (group.kind === "subagent") return true;
-    return hasVisibleParentActivity(group.blocks, toolCallMap, visibleTodoCallIds);
+    return hasVisibleParentActivity(group.blocks, toolCallMap, visibleTodoCallIdsStr);
   });
 }
 
-// ============================================================================
-// Text Blocks
-// ============================================================================
 
 const REMARK_PLUGINS = [remarkGfm];
 
@@ -234,9 +303,6 @@ export const InlineTextContent = React.memo(function InlineTextContent({
   );
 });
 
-// ============================================================================
-// ToolCall & Todo Blocks
-// ============================================================================
 
 const TOOL_CALL_STATUS_CLASS: Record<ToolCallState, string> = {
   pending: "text-success",
@@ -404,21 +470,18 @@ export const TodoCard = React.memo(function TodoCard({ toolCall }: { toolCall: T
   );
 });
 
-// ============================================================================
-// Subagent Group
-// ============================================================================
 
 export const SubagentGroup = React.memo(function SubagentGroup({
   group,
   toolCallMap,
   isStreaming = false,
-  visibleTodoCallIds,
+  visibleTodoCallIdsStr,
   activeThinkingBlock,
 }: {
   group: BlockGroup & { kind: "subagent" };
   toolCallMap: Map<string, ToolCallInfo>;
   isStreaming?: boolean;
-  visibleTodoCallIds?: Set<string>;
+  visibleTodoCallIdsStr?: string;
   activeThinkingBlock?: Extract<AIBlock, { kind: "thinking" }>;
 }) {
   const allDone = group.blocks.every((block) => {
@@ -471,7 +534,7 @@ export const SubagentGroup = React.memo(function SubagentGroup({
               const tc = toolCallMap.get(block.toolCallId);
               if (!tc) return null;
               if (tc.name === "write_todos") {
-                if (!visibleTodoCallIds?.has(tc.id)) return null;
+                if (!visibleTodoCallIdsStr?.includes(tc.id)) return null;
                 return <TodoCard key={tc.id} toolCall={tc} />;
               }
               return <ToolCallCard key={tc.id} toolCall={tc} />;
@@ -487,9 +550,6 @@ export const SubagentGroup = React.memo(function SubagentGroup({
   );
 });
 
-// ============================================================================
-// AI Panel Components
-// ============================================================================
 
 export function AIPanel({
   agentName,
@@ -568,9 +628,6 @@ export function ActivitySection({
   );
 }
 
-// ============================================================================
-// Messages (Human / AI)
-// ============================================================================
 
 export const HumanMessage = React.memo(function HumanMessage({
   message,
@@ -593,17 +650,16 @@ export const HumanMessage = React.memo(function HumanMessage({
 export const AIMessage = React.memo(function AIMessage({
   message,
   isStreaming,
-  visibleTodoCallIds,
+  visibleTodoCallIdsStr,
 }: {
   message: ChatMessageType;
   isStreaming: boolean;
-  visibleTodoCallIds?: Set<string>;
+  visibleTodoCallIdsStr?: string;
 }) {
   const hasBlocks = message.blocks.length > 0;
   const hasToolCalls = message.toolCalls.length > 0;
   const hasText = message.content.trim().length > 0;
 
-  // Optimizations: Use Maps and memoize expensive calculations
   const toolCallMap = useMemo(() => {
     const map = new Map<string, ToolCallInfo>();
     message.toolCalls.forEach((tc) => map.set(tc.id, tc));
@@ -623,7 +679,7 @@ export const AIMessage = React.memo(function AIMessage({
   const activeThinkingBlock = getActiveThinkingBlock(message.blocks, isStreaming);
 
   const hasActivity = hasBlocks
-    ? hasVisibleActivity(groups, toolCallMap, visibleTodoCallIds)
+    ? hasVisibleActivity(groups, toolCallMap, visibleTodoCallIdsStr)
     : Boolean(message.thinking) || hasToolCalls;
 
   if (!hasBlocks && !hasToolCalls && !hasText && !isStreaming) return null;
@@ -643,7 +699,7 @@ export const AIMessage = React.memo(function AIMessage({
         const toolCall = toolCallMap.get(block.toolCallId);
         if (!toolCall) return null;
         if (toolCall.name === "write_todos") {
-          if (!visibleTodoCallIds?.has(toolCall.id)) return null;
+          if (!visibleTodoCallIdsStr?.includes(toolCall.id)) return null;
           return <TodoCard key={toolCall.id} toolCall={toolCall} />;
         }
         return <ToolCallCard key={toolCall.id} toolCall={toolCall} />;
@@ -677,7 +733,7 @@ export const AIMessage = React.memo(function AIMessage({
             ) : null}
             {message.toolCalls.map((toolCall: ToolCallInfo) => {
               if (toolCall.name === "write_todos") {
-                if (!visibleTodoCallIds?.has(toolCall.id)) return null;
+                if (!visibleTodoCallIdsStr?.includes(toolCall.id)) return null;
                 return <TodoCard key={toolCall.id} toolCall={toolCall} />;
               }
               return <ToolCallCard key={toolCall.id} toolCall={toolCall} />;
@@ -714,7 +770,7 @@ export const AIMessage = React.memo(function AIMessage({
                   group={group}
                   toolCallMap={toolCallMap}
                   isStreaming={isStreaming && isLastGroup}
-                  visibleTodoCallIds={visibleTodoCallIds}
+                  visibleTodoCallIdsStr={visibleTodoCallIdsStr}
                   activeThinkingBlock={activeThinkingBlock}
                 />
               );
@@ -730,18 +786,15 @@ export const AIMessage = React.memo(function AIMessage({
   );
 });
 
-// ============================================================================
-// Default Export
-// ============================================================================
 
 export const ChatMessage = React.memo(function ChatMessage({
   message,
   isStreaming = false,
-  visibleTodoCallIds,
+  visibleTodoCallIdsStr,
 }: {
   message: ChatMessageType;
   isStreaming?: boolean;
-  visibleTodoCallIds?: Set<string>;
+  visibleTodoCallIdsStr?: string;
 }) {
   if (message.role === "human") {
     return <HumanMessage message={message} />;
@@ -752,7 +805,7 @@ export const ChatMessage = React.memo(function ChatMessage({
       <AIMessage
         message={message}
         isStreaming={isStreaming}
-        visibleTodoCallIds={visibleTodoCallIds}
+        visibleTodoCallIdsStr={visibleTodoCallIdsStr}
       />
     );
   }
