@@ -1,0 +1,83 @@
+---
+description: Project structure, coding conventions, and quality standards
+globs:
+alwaysApply: true
+---
+
+# Project Rules
+
+## Directory Layout
+
+```
+app/
+├── api/                         # API route handlers (server-only)
+├── <route>/                     # Each route segment
+│   ├── _components/             # Route-private UI components (PascalCase .tsx)
+│   ├── _hooks/                  # Route-private hooks (kebab-case .ts)
+│   ├── _lib/                    # Route-private logic (kebab-case .ts)
+│   └── _types/                  # Route-private type definitions (kebab-case .ts)
+├── components/                  # Shared components (used across routes)
+├── hooks/                       # Shared hooks
+└── lib/                         # Shared utilities
+    └── server/                  # Server-only code (never imported by client)
+```
+
+### Key Conventions
+
+- **Colocate route-specific code** under `<route>/_*` directories. Only promote to `app/components/`, `app/hooks/`, or `app/lib/` when genuinely shared across multiple routes.
+- **Underscore-prefixed folders** (`_components`, `_hooks`, `_lib`, `_types`) are private to the route and excluded from routing.
+- **PascalCase** for React component files (`ChatMessage.tsx`, `Scene.tsx`).
+- **kebab-case** for non-component files (`use-chat.ts`, `chat-messages.ts`, `viewer-constants.ts`, `chat-proxy.ts`).
+- **No barrel files** (index.ts re-exporting everything) — import directly from the source file.
+- **No re-exports** of types through hooks or components. Import types from `_types/` and utils from `_lib/` directly.
+
+## Import Rules
+
+- Use the `@/` path alias for all imports (maps to project root).
+- Within studio files, still use `@/app/studio/_*` paths (not relative `../../`).
+- Server-only code lives in `app/lib/server/` — never import from `lib/server/` in client components.
+- Keep all imports at the top of the file. No inline `import()` except for `next/dynamic`.
+
+## Code Quality — No Slop
+
+Every change must be free of AI-generated slop:
+
+- **No narrating comments.** Do not add comments that restate what the code does (`// Create the message`, `// Return the result`). Only comment non-obvious intent, trade-offs, or constraints.
+- **No unnecessary defensive code.** Do not add try/catch, null checks, or fallback values on trusted internal code paths unless there is a concrete failure mode.
+- **No `any` casts.** Solve type issues properly. If a cast is unavoidable, use a specific type.
+- **Early returns over nesting.** Flatten conditionals with guard clauses.
+- **Minimal edits.** Prefer focused, surgical changes. Do not rewrite surrounding code unless it is part of the task.
+
+## React & Next.js Performance
+
+Follow Vercel React best practices, prioritized by impact:
+
+### Critical
+
+- **Eliminate waterfalls.** Use `Promise.all()` for independent async operations. Move `await` into the branch where it is actually needed. Use Suspense boundaries to stream content.
+- **Minimize bundle size.** Import directly from source modules (no barrel imports). Use `next/dynamic` for heavy client components. Defer third-party scripts after hydration.
+
+### High
+
+- **Server components by default.** Only add `"use client"` when interactivity is required. Minimize data serialized from server to client components.
+- **Server-only code isolation.** Keep `app/lib/server/` separate — it must never be imported by client bundles.
+
+### Medium
+
+- **Memoize expensive renders.** Use `React.memo` for components receiving complex props that re-render frequently.
+- **Functional setState.** Use updater functions (`setX(prev => ...)`) for stable callbacks that depend on previous state.
+- **Refs for transient values.** Use `useRef` for values that change frequently but should not trigger re-renders (abort controllers, scroll positions, RAF IDs).
+- **Derive state during render.** Compute derived values inline instead of syncing with effects.
+
+### Low-Medium
+
+- **Use Map/Set for lookups.** Prefer `Map` over repeated `Array.find()` for ID-based lookups.
+- **Early exits.** Return early from functions to reduce nesting.
+- **Combine iterations.** Use a single loop instead of chained `.filter().map()` when iterating large collections.
+
+## TypeScript
+
+- Strict mode is enabled — do not weaken it.
+- Use `type` imports (`import type { ... }`) for type-only imports.
+- Prefer interfaces for object shapes, type aliases for unions and intersections.
+- Exhaustive switch handling: all discriminated union switches must handle every case or have a `never` default.

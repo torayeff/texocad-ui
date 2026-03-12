@@ -1,4 +1,4 @@
-import { proxyBackendStream } from "@/app/lib/server/chatProxy";
+import { proxyBackendStream } from "@/app/lib/server/chat-proxy";
 
 export const dynamic = "force-dynamic";
 

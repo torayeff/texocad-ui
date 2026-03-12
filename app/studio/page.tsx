@@ -6,11 +6,11 @@ import { useState, useCallback, useEffect, useRef, type CSSProperties } from "re
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { useMounted } from "@/app/lib/use-mounted";
-import Chat from "@/app/components/chat/Chat";
-import type { GeomExportEvent } from "@/app/lib/useChat";
+import { useMounted } from "@/app/hooks/use-mounted";
+import Chat from "@/app/studio/_components/chat/Chat";
+import type { GeomExportEvent } from "@/app/studio/_types/chat";
 
-const Viewer = dynamic(() => import("@/app/components/Viewer"), { ssr: false });
+const Viewer = dynamic(() => import("@/app/studio/_components/viewer/Viewer"), { ssr: false });
 
 export default function StudioPage() {
   const [stlUrl, setStlUrl] = useState<string | null>(null);

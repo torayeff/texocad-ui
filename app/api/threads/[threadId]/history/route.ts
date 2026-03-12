@@ -1,4 +1,4 @@
-import { proxyBackendJson } from "@/app/lib/server/chatProxy";
+import { proxyBackendJson } from "@/app/lib/server/chat-proxy";
 
 export async function GET(
   _request: Request,
