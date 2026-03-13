@@ -1,34 +1,29 @@
-export type ToolCallState = "pending" | "completed" | "error";
+import type {
+  Message as SDKMessage,
+  AIMessage as SDKAIMessage,
+  HumanMessage as SDKHumanMessage,
+  ToolMessage as SDKToolMessage,
+  DefaultToolCall,
+} from "@langchain/langgraph-sdk";
 
-export interface ToolCallInfo {
-  id: string;
-  name: string;
-  args: Record<string, unknown>;
-  result?: string;
-  state: ToolCallState;
-  agent?: string;
-  isSubagent?: boolean;
-}
+import type {
+  ToolCallWithResult as SDKToolCallWithResult,
+  ToolCallState,
+  SubagentStreamInterface as SDKSubagentStreamInterface,
+  SubagentStatus,
+  UseDeepAgentStream,
+  DeepAgentTypeConfigLike,
+  AgentTypeConfigLike,
+} from "@langchain/langgraph-sdk/react";
 
-export type AIBlock =
-  | { kind: "thinking"; content: string; agent: string; isSubagent: boolean }
-  | { kind: "text"; content: string; agent: string; isSubagent: boolean }
-  | { kind: "tool_call"; toolCallId: string; agent: string; isSubagent: boolean }
-  | { kind: "tool_result"; toolCallId: string; agent: string; isSubagent: boolean };
+export type Message = SDKMessage;
+export type AIMessage = SDKAIMessage;
+export type HumanMessage = SDKHumanMessage;
+export type ToolMessage = SDKToolMessage;
+export type ToolCallWithResult = SDKToolCallWithResult;
+export type SubagentStreamInterface = SDKSubagentStreamInterface;
 
-export interface ChatMessage {
-  id: string;
-  role: "human" | "ai";
-  content: string;
-  thinking?: string;
-  toolCalls: ToolCallInfo[];
-  blocks: AIBlock[];
-  usage?: {
-    inputTokens: number;
-    outputTokens: number;
-    runtimeSeconds?: number;
-  };
-}
+export type { DefaultToolCall, ToolCallState, SubagentStatus };
 
 export interface GeomExportEvent {
   type: "geom_export";
@@ -37,17 +32,31 @@ export interface GeomExportEvent {
   url: string;
 }
 
-export interface HydratedHistory {
-  messages: ChatMessage[];
-  customEvents: Record<string, unknown>[];
+export interface TodoItem {
+  id?: string;
+  content: string;
+  status: "pending" | "in_progress" | "completed";
 }
 
-export interface NormalizedHistoryEvent {
-  name: string;
-  payload: Record<string, unknown>;
+export type AgentState = {
+  messages: SDKMessage[];
+  todos?: TodoItem[];
+  [key: string]: unknown;
+};
+
+/**
+ * Phantom type that tells `useStream`'s type resolver our backend
+ * is a LangGraph DeepAgent deployment, enabling deep-agent options
+ * (`filterSubagentMessages`) and return types (`getSubagentsByMessage`, etc.).
+ */
+export interface DeepAgentType {
+  "~deepAgentTypes": DeepAgentTypeConfigLike & {
+    Subagents: unknown;
+  };
+  "~agentTypes": AgentTypeConfigLike & {
+    State: AgentState;
+    Tools: never[];
+  };
 }
 
-export interface SSEEvent {
-  event: string;
-  data: Record<string, unknown>;
-}
+export type DeepAgentStream = UseDeepAgentStream<AgentState>;

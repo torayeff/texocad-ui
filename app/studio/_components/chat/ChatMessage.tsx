@@ -1,198 +1,185 @@
 import React, { useMemo } from "react";
-import type { ChatMessage as ChatMessageType, AIBlock, ToolCallInfo } from "@/app/studio/_types/chat";
+import type {
+  Message,
+  AIMessage,
+  ToolCallWithResult,
+  SubagentStreamInterface,
+  TodoItem,
+  DeepAgentStream,
+} from "@/app/studio/_types/chat";
 import { AIPanel, ActivitySection } from "@/app/studio/_components/chat/AIPanel";
-import { SubagentGroup } from "@/app/studio/_components/chat/SubagentGroup";
+import { SubagentCard } from "@/app/studio/_components/chat/SubagentGroup";
 import { TodoCard } from "@/app/studio/_components/chat/TodoCard";
 import { ToolCallCard } from "@/app/studio/_components/chat/ToolCallCard";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/InlineBlocks";
-import {
-  groupBlocks,
-  resolveAgentName,
-  getActiveThinkingBlock,
-  getActivitySummary,
-  getStatusLabel,
-  getAnswerBlocks,
-  hasVisibleActivity,
-} from "@/app/studio/_lib/chat-utils";
-import type { BlockGroup } from "@/app/studio/_lib/chat-utils";
 
-export function HumanMessage({
-  message,
-}: {
-  message: ChatMessageType;
-}) {
-  if (message.role !== "human") return null;
+function getTextContent(content: Message["content"]): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((block): block is { type: "text"; text: string } => block.type === "text")
+    .map((block) => block.text)
+    .join("");
+}
+
+function getReasoningContent(msg: AIMessage): string | undefined {
+  const raw = msg.additional_kwargs?.reasoning_content
+    ?? msg.additional_kwargs?.thinking;
+  if (typeof raw === "string") return raw;
+  return undefined;
+}
+
+function getActivitySummary(
+  toolCalls: ToolCallWithResult[],
+  subagents: SubagentStreamInterface[],
+  thinking: string | undefined,
+): string {
+  const parts: string[] = [];
+  if (thinking) parts.push("1 thought");
+  if (toolCalls.length > 0) {
+    parts.push(`${toolCalls.length} tool${toolCalls.length === 1 ? "" : "s"}`);
+  }
+  if (subagents.length > 0) {
+    parts.push(`${subagents.length} subagent${subagents.length === 1 ? "" : "s"}`);
+  }
+  return parts.join(" · ");
+}
+
+function getStatusLabel(
+  isStreaming: boolean,
+  toolCalls: ToolCallWithResult[],
+  subagents: SubagentStreamInterface[],
+  thinking: string | undefined,
+): string | null {
+  const pendingTool = toolCalls.find((tc) => tc.state === "pending");
+  if (pendingTool) return `Running ${pendingTool.call.name.replace(/_/g, " ")}`;
+
+  const runningSubagent = subagents.find((s) => s.status === "running");
+  if (runningSubagent) {
+    const name = runningSubagent.toolCall?.args?.subagent_type ?? "subagent";
+    return `${name} active`;
+  }
+
+  if (thinking && isStreaming) return "Thinking";
+  if (isStreaming) return "Working";
+  if (toolCalls.some((tc) => tc.state === "error")) return "Needs attention";
+  return null;
+}
+
+export function HumanMessage({ message }: { message: Message }) {
+  const text = getTextContent(message.content);
 
   return (
     <div className="flex justify-end">
       <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-          {message.content}
+          {text}
         </p>
       </div>
     </div>
   );
 }
 
-export function AIMessage({
+export function AIMessageView({
   message,
   isStreaming,
-  visibleTodoCallIdsStr,
+  stream,
+  todos,
 }: {
-  message: ChatMessageType;
+  message: AIMessage;
   isStreaming: boolean;
-  visibleTodoCallIdsStr?: string;
+  stream: DeepAgentStream;
+  todos: TodoItem[];
 }) {
-  const hasBlocks = message.blocks.length > 0;
-  const hasToolCalls = message.toolCalls.length > 0;
-  const hasText = message.content.trim().length > 0;
+  const text = getTextContent(message.content);
+  const thinking = getReasoningContent(message);
 
-  const toolCallMap = useMemo(() => {
-    const map = new Map<string, ToolCallInfo>();
-    message.toolCalls.forEach((tc) => map.set(tc.id, tc));
-    return map;
-  }, [message.toolCalls]);
-
-  const groups = useMemo(() => groupBlocks(message.blocks), [message.blocks]);
-
-  const activitySummary = useMemo(
-    () => getActivitySummary(groups, message.toolCalls),
-    [groups, message.toolCalls]
+  const toolCalls = useMemo(
+    () => stream.getToolCalls(message),
+    [stream, message],
   );
 
-  const agentName = resolveAgentName(message);
-  const answerBlocks = getAnswerBlocks(message.blocks);
-  const statusLabel = getStatusLabel(message, isStreaming);
-  const activeThinkingBlock = getActiveThinkingBlock(message.blocks, isStreaming);
+  const subagents = useMemo(
+    () => (message.id ? stream.getSubagentsByMessage(message.id) : []),
+    [stream, message.id],
+  );
 
-  const hasActivity = hasBlocks
-    ? hasVisibleActivity(groups, toolCallMap, visibleTodoCallIdsStr)
-    : Boolean(message.thinking) || hasToolCalls;
+  const nonTaskToolCalls = useMemo(
+    () => toolCalls.filter((tc) => tc.call.name !== "task" && tc.call.name !== "write_todos"),
+    [toolCalls],
+  );
 
-  if (!hasBlocks && !hasToolCalls && !hasText && !isStreaming) return null;
+  const hasText = text.trim().length > 0;
+  const hasActivity = thinking || nonTaskToolCalls.length > 0 || subagents.length > 0;
+  const hasTodos = todos.length > 0;
 
-  function renderParentActivityBlock(block: AIBlock, key: string): React.ReactNode {
-    switch (block.kind) {
-      case "thinking":
-        return (
-          <InlineThinkingBlock
-            key={key}
-            content={block.content}
-            isStreaming={block === activeThinkingBlock}
-            defaultOpen={false}
-          />
-        );
-      case "tool_call": {
-        const toolCall = toolCallMap.get(block.toolCallId);
-        if (!toolCall) return null;
-        if (toolCall.name === "write_todos") {
-          if (!visibleTodoCallIdsStr?.includes(toolCall.id)) return null;
-          return <TodoCard key={toolCall.id} toolCall={toolCall} />;
-        }
-        return <ToolCallCard key={toolCall.id} toolCall={toolCall} />;
-      }
-      case "text":
-      case "tool_result":
-        return null;
-      default: {
-        return null;
-      }
-    }
-  }
+  const activitySummary = getActivitySummary(nonTaskToolCalls, subagents, thinking);
+  const statusLabel = getStatusLabel(isStreaming, toolCalls, subagents, thinking);
 
-  if (!hasBlocks) {
-    return (
-      <AIPanel
-        agentName={agentName}
-        statusLabel={statusLabel}
-        isStreaming={isStreaming}
-        usage={message.usage}
-      >
-        {hasText ? <InlineTextContent content={message.content} /> : null}
-        {hasActivity ? (
-          <ActivitySection summary={activitySummary}>
-            {message.thinking ? (
-              <InlineThinkingBlock
-                content={message.thinking}
-                isStreaming={isStreaming}
-                defaultOpen={false}
-              />
-            ) : null}
-            {message.toolCalls.map((toolCall: ToolCallInfo) => {
-              if (toolCall.name === "write_todos") {
-                if (!visibleTodoCallIdsStr?.includes(toolCall.id)) return null;
-                return <TodoCard key={toolCall.id} toolCall={toolCall} />;
-              }
-              return <ToolCallCard key={toolCall.id} toolCall={toolCall} />;
-            })}
-          </ActivitySection>
-        ) : null}
-      </AIPanel>
-    );
-  }
+  const agentName = message.name ?? "";
+  const usage = message.usage_metadata;
+
+  if (!hasText && !hasActivity && !hasTodos && !isStreaming) return null;
 
   return (
     <AIPanel
       agentName={agentName}
       statusLabel={statusLabel}
       isStreaming={isStreaming}
-      usage={message.usage}
+      usage={usage ? {
+        inputTokens: usage.input_tokens,
+        outputTokens: usage.output_tokens,
+      } : undefined}
     >
-      {answerBlocks.length > 0 ? (
-        <div className="flex flex-col gap-3">
-          {answerBlocks.map((block: Extract<AIBlock, { kind: "text" }>, index: number) => (
-            <InlineTextContent key={`answer-${index}`} content={block.content} />
-          ))}
-        </div>
-      ) : null}
+      {hasText ? <InlineTextContent content={text} /> : null}
+
+      {hasTodos ? <TodoCard todos={todos} /> : null}
 
       {hasActivity ? (
         <ActivitySection summary={activitySummary}>
-          {groups.map((group: BlockGroup, groupIndex: number) => {
-            if (group.kind === "subagent") {
-              const isLastGroup = groupIndex === groups.length - 1;
-              return (
-                <SubagentGroup
-                  key={`${group.agent}-${groupIndex}`}
-                  group={group}
-                  toolCallMap={toolCallMap}
-                  isStreaming={isStreaming && isLastGroup}
-                  visibleTodoCallIdsStr={visibleTodoCallIdsStr}
-                  activeThinkingBlock={activeThinkingBlock}
-                />
-              );
-            }
+          {thinking ? (
+            <InlineThinkingBlock
+              content={thinking}
+              isStreaming={isStreaming && !hasText}
+              defaultOpen={false}
+            />
+          ) : null}
 
-            return group.blocks.map((block: AIBlock, blockIndex: number) =>
-              renderParentActivityBlock(block, `${groupIndex}-${blockIndex}`)
-            );
-          })}
+          {nonTaskToolCalls.map((tc) => (
+            <ToolCallCard key={tc.id} toolCall={tc} />
+          ))}
+
+          {subagents.map((subagent) => (
+            <SubagentCard key={subagent.id} subagent={subagent} />
+          ))}
         </ActivitySection>
       ) : null}
     </AIPanel>
   );
 }
 
-
 export const ChatMessage = React.memo(function ChatMessage({
   message,
   isStreaming = false,
-  visibleTodoCallIdsStr,
+  stream,
+  todos,
 }: {
-  message: ChatMessageType;
+  message: Message;
   isStreaming?: boolean;
-  visibleTodoCallIdsStr?: string;
+  stream: DeepAgentStream;
+  todos: TodoItem[];
 }) {
-  if (message.role === "human") {
+  if (message.type === "human") {
     return <HumanMessage message={message} />;
   }
 
-  if (message.role === "ai") {
+  if (message.type === "ai") {
     return (
-      <AIMessage
+      <AIMessageView
         message={message}
         isStreaming={isStreaming}
-        visibleTodoCallIdsStr={visibleTodoCallIdsStr}
+        stream={stream}
+        todos={todos}
       />
     );
   }

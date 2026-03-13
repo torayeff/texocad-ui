@@ -1,8 +1,16 @@
 import React from "react";
 import { Bot, Loader2, CircleCheck, ChevronDown } from "lucide-react";
-import { formatNumber } from "@/app/studio/_lib/chat-utils";
 import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
-import type { ChatMessage as ChatMessageType } from "@/app/studio/_types/chat";
+
+interface UsageInfo {
+  inputTokens: number;
+  outputTokens: number;
+  runtimeSeconds?: number;
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString("en-US");
+}
 
 export function AIPanel({
   agentName,
@@ -14,7 +22,7 @@ export function AIPanel({
   agentName: string;
   statusLabel: string | null;
   isStreaming: boolean;
-  usage?: ChatMessageType["usage"];
+  usage?: UsageInfo;
   children: React.ReactNode;
 }) {
   return (

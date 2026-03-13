@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ArrowDown, Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useChat } from "@/app/studio/_hooks/use-chat";
-import { isGeomExportEvent } from "@/app/studio/_lib/chat-messages";
 import type { GeomExportEvent } from "@/app/studio/_types/chat";
 
 import { ChatMessage } from "@/app/studio/_components/chat/ChatMessage";
@@ -51,7 +50,18 @@ export default function Chat({ onGeomExport }: ChatProps) {
     [pathname, router, searchParams],
   );
 
-  const { messages, isHydrating, isLoading, error, submit, stop } = useChat({
+  const {
+    stream,
+    messages,
+    isLoading,
+    isHydrating,
+    isAuthReady,
+    error,
+    submit,
+    stop,
+    todos,
+    isGeomExportEvent,
+  } = useChat({
     threadId: urlThreadId,
     onThreadIdChange: handleThreadIdChange,
     onCustomEvent: (data) => {
@@ -60,26 +70,9 @@ export default function Chat({ onGeomExport }: ChatProps) {
       }
     },
   });
-  const isBusy = isLoading || isHydrating;
-  const isEmpty = messages.length === 0;
 
-  const visibleTodoCallIdsStr = useMemo(() => {
-    const ids = new Set<string>();
-    let lastTodoId: string | undefined;
-    for (const m of messages) {
-      if (m.role === "human") {
-        if (lastTodoId) ids.add(lastTodoId);
-        lastTodoId = undefined;
-        continue;
-      }
-      if (m.role !== "ai") continue;
-      for (const tc of m.toolCalls) {
-        if (tc.name === "write_todos") lastTodoId = tc.id;
-      }
-    }
-    if (lastTodoId) ids.add(lastTodoId);
-    return Array.from(ids).sort().join(",");
-  }, [messages]);
+  const isBusy = isLoading || isHydrating || !isAuthReady;
+  const isEmpty = messages.length === 0;
 
   useEffect(() => {
     if (isNearBottomRef.current) {
@@ -129,11 +122,15 @@ export default function Chat({ onGeomExport }: ChatProps) {
     }
   }, []);
 
+  const errorMessage = error
+    ? (error instanceof Error ? error.message : String(error))
+    : null;
+
   return (
     <div className="flex h-full flex-col bg-background">
-      {error ? (
+      {errorMessage ? (
         <div className="flex items-center gap-2 px-4 py-2 bg-error/10 border-b border-error/20 text-error text-xs">
-          <span>Error: {error}</span>
+          <span>Error: {errorMessage}</span>
         </div>
       ) : null}
 
@@ -156,21 +153,22 @@ export default function Chat({ onGeomExport }: ChatProps) {
               const isLastAi =
                 isLoading &&
                 idx === messages.length - 1 &&
-                message.role === "ai";
+                message.type === "ai";
 
               return (
                 <ChatMessage
-                  key={message.id}
+                  key={message.id ?? idx}
                   message={message}
                   isStreaming={isLastAi}
-                  visibleTodoCallIdsStr={visibleTodoCallIdsStr}
+                  stream={stream}
+                  todos={todos}
                 />
               );
             })}
 
             {isLoading &&
               messages.length > 0 &&
-              messages[messages.length - 1].role === "human" && (
+              messages[messages.length - 1].type === "human" && (
                 <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                   <Loader2 size={14} className="animate-spin" />
                   <span>Thinking...</span>

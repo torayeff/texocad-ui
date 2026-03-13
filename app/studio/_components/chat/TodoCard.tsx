@@ -1,25 +1,6 @@
 import React from "react";
 import { ListTodo, Loader2, CircleCheck, Circle, ChevronDown } from "lucide-react";
-import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
-import type { ToolCallInfo } from "@/app/studio/_types/chat";
-
-interface TodoItem {
-  content: string;
-  status: string;
-}
-
-function getTodoItems(value: unknown): TodoItem[] {
-  if (!Array.isArray(value)) return [];
-
-  return value.flatMap((item) => {
-    if (!item || typeof item !== "object") return [];
-
-    const { content, status } = item as Record<string, unknown>;
-    if (typeof content !== "string" || typeof status !== "string") return [];
-
-    return [{ content, status }];
-  });
-}
+import type { TodoItem } from "@/app/studio/_types/chat";
 
 const TODO_STATUS_ICON: Record<string, React.ReactNode> = {
   completed: <CircleCheck size={14} className="flex-shrink-0 text-success" />,
@@ -27,14 +8,19 @@ const TODO_STATUS_ICON: Record<string, React.ReactNode> = {
   pending: <Circle size={14} className="flex-shrink-0 text-muted-foreground/50" />,
 };
 
-export const TodoCard = React.memo(function TodoCard({ toolCall }: { toolCall: ToolCallInfo }) {
-  const { args, state } = toolCall;
-  const todos = getTodoItems(args.todos);
+export const TodoCard = React.memo(function TodoCard({
+  todos,
+}: {
+  todos: TodoItem[];
+}) {
+  if (todos.length === 0) return null;
+
   const completedCount = todos.filter((t) => t.status === "completed").length;
-  const allDone = todos.length > 0 && completedCount === todos.length;
+  const allDone = completedCount === todos.length;
+  const hasInProgress = todos.some((t) => t.status === "in_progress");
 
   return (
-    <details className="group/todo">
+    <details className="group/todo" open>
       <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
         <ListTodo size={13} className="flex-shrink-0 text-muted-foreground/60" />
         <span className="font-medium text-foreground/85">Tasks</span>
@@ -42,8 +28,7 @@ export const TodoCard = React.memo(function TodoCard({ toolCall }: { toolCall: T
           {completedCount}/{todos.length}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
-          <PanelTimer active={state === "pending"} />
-          {state === "pending" ? (
+          {hasInProgress ? (
             <Loader2 size={13} className="flex-shrink-0 animate-spin text-success" />
           ) : allDone ? (
             <CircleCheck size={14} className="flex-shrink-0 text-success" />
@@ -54,26 +39,24 @@ export const TodoCard = React.memo(function TodoCard({ toolCall }: { toolCall: T
           />
         </div>
       </summary>
-      {todos.length > 0 ? (
-        <ul className="mt-2 space-y-2 border-l border-border/30 pl-4">
-          {todos.map((todo, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm">
-              <span className="mt-0.5">
-                {TODO_STATUS_ICON[todo.status] ?? TODO_STATUS_ICON.pending}
-              </span>
-              <span
-                className={
-                  todo.status === "completed"
-                    ? "line-through text-muted-foreground"
-                    : "text-foreground"
-                }
-              >
-                {todo.content}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <ul className="mt-2 space-y-2 border-l border-border/30 pl-4">
+        {todos.map((todo, i) => (
+          <li key={todo.id ?? i} className="flex items-start gap-2 text-sm">
+            <span className="mt-0.5">
+              {TODO_STATUS_ICON[todo.status] ?? TODO_STATUS_ICON.pending}
+            </span>
+            <span
+              className={
+                todo.status === "completed"
+                  ? "line-through text-muted-foreground"
+                  : "text-foreground"
+              }
+            >
+              {todo.content}
+            </span>
+          </li>
+        ))}
+      </ul>
     </details>
   );
 });
