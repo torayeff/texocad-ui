@@ -1,15 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import { useStream } from "@langchain/langgraph-sdk/react";
+import { useEffect, useRef } from "react";
+import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
-import type {
-  AgentState,
-  DeepAgentType,
-  DeepAgentStream,
-  GeomExportEvent,
-} from "@/app/studio/_types/chat";
+import type { GeomExportEvent } from "@/app/studio/_types/chat";
 
 const LANGGRAPH_API_URL =
   process.env.NEXT_PUBLIC_LANGGRAPH_API_URL ?? "http://localhost:2024";
@@ -22,7 +17,7 @@ interface UseChatOptions {
   onCustomEvent?: (data: Record<string, unknown>) => void;
 }
 
-function isGeomExportEvent(data: unknown): data is GeomExportEvent {
+export function isGeomExportEvent(data: unknown): data is GeomExportEvent {
   return (
     typeof data === "object" &&
     data !== null &&
@@ -53,13 +48,12 @@ export function useChat(options: UseChatOptions = {}) {
     onThreadIdChangeRef.current = onThreadIdChange;
   }, [onThreadIdChange]);
 
-  const stream = useStream<DeepAgentType>({
+  const stream = useStream({
     apiUrl: LANGGRAPH_API_URL,
     assistantId: ASSISTANT_ID,
     threadId: isAuthReady ? (optionThreadId ?? undefined) : undefined,
     defaultHeaders: headers,
     fetchStateHistory: true,
-    filterSubagentMessages: true,
     onThreadId: (id) => {
       onThreadIdChangeRef.current?.(id);
     },
@@ -69,32 +63,5 @@ export function useChat(options: UseChatOptions = {}) {
     },
   });
 
-  const submit = useCallback(
-    (content: string) => {
-      const trimmed = content.trim();
-      if (!trimmed) return;
-      stream.submit(
-        { messages: [{ type: "human" as const, content: trimmed }] },
-        { streamSubgraphs: true },
-      );
-    },
-    [stream],
-  );
-
-  const stop = useCallback(() => {
-    stream.stop();
-  }, [stream]);
-
-  return {
-    stream: stream as DeepAgentStream,
-    messages: stream.messages,
-    isLoading: stream.isLoading,
-    isHydrating: stream.isThreadLoading,
-    isAuthReady,
-    error: stream.error,
-    submit,
-    stop,
-    todos: (stream.values as AgentState | undefined)?.todos ?? [],
-    isGeomExportEvent,
-  };
+  return { stream, isAuthReady };
 }

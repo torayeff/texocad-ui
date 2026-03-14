@@ -1,73 +1,41 @@
-import React, { useMemo } from "react";
-import type {
-  Message,
-  AIMessage,
-  ToolCallWithResult,
-  SubagentStreamInterface,
-  TodoItem,
-  DeepAgentStream,
-} from "@/app/studio/_types/chat";
+import React from "react";
+import type { BaseMessage, AIMessage } from "@langchain/core/messages";
 import { AIPanel, ActivitySection } from "@/app/studio/_components/chat/AIPanel";
-import { SubagentCard } from "@/app/studio/_components/chat/SubagentGroup";
-import { TodoCard } from "@/app/studio/_components/chat/TodoCard";
 import { ToolCallCard } from "@/app/studio/_components/chat/ToolCallCard";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/InlineBlocks";
 
-function getTextContent(content: Message["content"]): string {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content
+interface ChatMessageProps {
+  message: BaseMessage;
+  isStreaming?: boolean;
+}
+
+function getTextContent(msg: BaseMessage): string {
+  if (typeof msg.content === "string") return msg.content;
+  if (!Array.isArray(msg.content)) return "";
+  return msg.content
     .filter((block): block is { type: "text"; text: string } => block.type === "text")
     .map((block) => block.text)
     .join("");
 }
 
-function getReasoningContent(msg: AIMessage): string | undefined {
+function getReasoningContent(msg: BaseMessage): string | undefined {
+  if ("contentBlocks" in msg && Array.isArray(msg.contentBlocks)) {
+    const reasoning = msg.contentBlocks
+      .filter((b): b is { type: "reasoning"; reasoning: string } =>
+        b.type === "reasoning" && typeof (b as Record<string, unknown>).reasoning === "string"
+      )
+      .map((b) => b.reasoning)
+      .join("");
+    if (reasoning.trim()) return reasoning;
+  }
   const raw = msg.additional_kwargs?.reasoning_content
     ?? msg.additional_kwargs?.thinking;
   if (typeof raw === "string") return raw;
   return undefined;
 }
 
-function getActivitySummary(
-  toolCalls: ToolCallWithResult[],
-  subagents: SubagentStreamInterface[],
-  thinking: string | undefined,
-): string {
-  const parts: string[] = [];
-  if (thinking) parts.push("1 thought");
-  if (toolCalls.length > 0) {
-    parts.push(`${toolCalls.length} tool${toolCalls.length === 1 ? "" : "s"}`);
-  }
-  if (subagents.length > 0) {
-    parts.push(`${subagents.length} subagent${subagents.length === 1 ? "" : "s"}`);
-  }
-  return parts.join(" · ");
-}
-
-function getStatusLabel(
-  isStreaming: boolean,
-  toolCalls: ToolCallWithResult[],
-  subagents: SubagentStreamInterface[],
-  thinking: string | undefined,
-): string | null {
-  const pendingTool = toolCalls.find((tc) => tc.state === "pending");
-  if (pendingTool) return `Running ${pendingTool.call.name.replace(/_/g, " ")}`;
-
-  const runningSubagent = subagents.find((s) => s.status === "running");
-  if (runningSubagent) {
-    const name = runningSubagent.toolCall?.args?.subagent_type ?? "subagent";
-    return `${name} active`;
-  }
-
-  if (thinking && isStreaming) return "Thinking";
-  if (isStreaming) return "Working";
-  if (toolCalls.some((tc) => tc.state === "error")) return "Needs attention";
-  return null;
-}
-
-export function HumanMessage({ message }: { message: Message }) {
-  const text = getTextContent(message.content);
+export function HumanMessageBubble({ message }: { message: BaseMessage }) {
+  const text = getTextContent(message);
 
   return (
     <div className="flex justify-end">
@@ -80,46 +48,40 @@ export function HumanMessage({ message }: { message: Message }) {
   );
 }
 
-export function AIMessageView({
+function AIMessageView({
   message,
   isStreaming,
-  stream,
-  todos,
 }: {
   message: AIMessage;
   isStreaming: boolean;
-  stream: DeepAgentStream;
-  todos: TodoItem[];
 }) {
-  const text = getTextContent(message.content);
+  const text = getTextContent(message);
   const thinking = getReasoningContent(message);
+  const toolCalls = message.tool_calls ?? [];
 
-  const toolCalls = useMemo(
-    () => stream.getToolCalls(message),
-    [stream, message],
-  );
-
-  const subagents = useMemo(
-    () => (message.id ? stream.getSubagentsByMessage(message.id) : []),
-    [stream, message.id],
-  );
-
-  const nonTaskToolCalls = useMemo(
-    () => toolCalls.filter((tc) => tc.call.name !== "task" && tc.call.name !== "write_todos"),
-    [toolCalls],
+  const visibleToolCalls = toolCalls.filter(
+    (tc) => tc.name !== "task" && tc.name !== "write_todos",
   );
 
   const hasText = text.trim().length > 0;
-  const hasActivity = thinking || nonTaskToolCalls.length > 0 || subagents.length > 0;
-  const hasTodos = todos.length > 0;
+  const hasThinking = !!thinking;
+  const hasToolCalls = visibleToolCalls.length > 0;
+  const hasActivity = hasThinking || hasToolCalls;
 
-  const activitySummary = getActivitySummary(nonTaskToolCalls, subagents, thinking);
-  const statusLabel = getStatusLabel(isStreaming, toolCalls, subagents, thinking);
+  const activityParts: string[] = [];
+  if (hasThinking) activityParts.push("1 thought");
+  if (hasToolCalls) {
+    activityParts.push(`${visibleToolCalls.length} tool${visibleToolCalls.length === 1 ? "" : "s"}`);
+  }
+
+  let statusLabel: string | null = null;
+  if (thinking && isStreaming) statusLabel = "Thinking";
+  else if (isStreaming) statusLabel = "Working";
 
   const agentName = message.name ?? "";
   const usage = message.usage_metadata;
 
-  if (!hasText && !hasActivity && !hasTodos && !isStreaming) return null;
+  if (!hasText && !hasActivity && !isStreaming) return null;
 
   return (
     <AIPanel
@@ -133,10 +95,8 @@ export function AIMessageView({
     >
       {hasText ? <InlineTextContent content={text} /> : null}
 
-      {hasTodos ? <TodoCard todos={todos} /> : null}
-
       {hasActivity ? (
-        <ActivitySection summary={activitySummary}>
+        <ActivitySection summary={activityParts.join(" · ")}>
           {thinking ? (
             <InlineThinkingBlock
               content={thinking}
@@ -145,12 +105,11 @@ export function AIMessageView({
             />
           ) : null}
 
-          {nonTaskToolCalls.map((tc) => (
-            <ToolCallCard key={tc.id} toolCall={tc} />
-          ))}
-
-          {subagents.map((subagent) => (
-            <SubagentCard key={subagent.id} subagent={subagent} />
+          {visibleToolCalls.map((tc) => (
+            <ToolCallCard
+              key={tc.id ?? tc.name}
+              toolCall={tc}
+            />
           ))}
         </ActivitySection>
       ) : null}
@@ -161,25 +120,16 @@ export function AIMessageView({
 export const ChatMessage = React.memo(function ChatMessage({
   message,
   isStreaming = false,
-  stream,
-  todos,
-}: {
-  message: Message;
-  isStreaming?: boolean;
-  stream: DeepAgentStream;
-  todos: TodoItem[];
-}) {
-  if (message.type === "human") {
-    return <HumanMessage message={message} />;
+}: ChatMessageProps) {
+  if (message.getType() === "human") {
+    return <HumanMessageBubble message={message} />;
   }
 
-  if (message.type === "ai") {
+  if (message.getType() === "ai") {
     return (
       <AIMessageView
-        message={message}
+        message={message as AIMessage}
         isStreaming={isStreaming}
-        stream={stream}
-        todos={todos}
       />
     );
   }

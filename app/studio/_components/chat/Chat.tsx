@@ -4,10 +4,11 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ArrowDown, Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useChat } from "@/app/studio/_hooks/use-chat";
-import type { GeomExportEvent } from "@/app/studio/_types/chat";
+import { useChat, isGeomExportEvent } from "@/app/studio/_hooks/use-chat";
+import type { GeomExportEvent, TodoItem } from "@/app/studio/_types/chat";
 
 import { ChatMessage } from "@/app/studio/_components/chat/ChatMessage";
+import { TodoCard } from "@/app/studio/_components/chat/TodoCard";
 import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
 
@@ -50,18 +51,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
     [pathname, router, searchParams],
   );
 
-  const {
-    stream,
-    messages,
-    isLoading,
-    isHydrating,
-    isAuthReady,
-    error,
-    submit,
-    stop,
-    todos,
-    isGeomExportEvent,
-  } = useChat({
+  const { stream, isAuthReady } = useChat({
     threadId: urlThreadId,
     onThreadIdChange: handleThreadIdChange,
     onCustomEvent: (data) => {
@@ -71,6 +61,9 @@ export default function Chat({ onGeomExport }: ChatProps) {
     },
   });
 
+  const { messages, isLoading, error } = stream;
+  const isHydrating = stream.isThreadLoading;
+  const todos = ((stream.values as Record<string, unknown>)?.todos ?? []) as TodoItem[];
   const isBusy = isLoading || isHydrating || !isAuthReady;
   const isEmpty = messages.length === 0;
 
@@ -107,13 +100,15 @@ export default function Chat({ onGeomExport }: ChatProps) {
 
   const sendMessage = useCallback((content: string) => {
     if (isBusy) return;
-    submit(content);
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    stream.submit({ messages: [{ type: "human", content: trimmed }] });
 
     isNearBottomRef.current = true;
     requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-  }, [isBusy, submit]);
+  }, [isBusy, stream]);
 
   const handleExamplePrompt = useCallback((prompt: string) => {
     if (chatInputRef.current) {
@@ -153,22 +148,22 @@ export default function Chat({ onGeomExport }: ChatProps) {
               const isLastAi =
                 isLoading &&
                 idx === messages.length - 1 &&
-                message.type === "ai";
+                message.getType() === "ai";
 
               return (
                 <ChatMessage
                   key={message.id ?? idx}
                   message={message}
                   isStreaming={isLastAi}
-                  stream={stream}
-                  todos={todos}
                 />
               );
             })}
 
+            {todos.length > 0 && <TodoCard todos={todos} />}
+
             {isLoading &&
               messages.length > 0 &&
-              messages[messages.length - 1].type === "human" && (
+              messages[messages.length - 1].getType() === "human" && (
                 <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                   <Loader2 size={14} className="animate-spin" />
                   <span>Thinking...</span>
@@ -195,7 +190,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
         isLoading={isLoading}
         isBusy={isBusy}
         onSubmit={sendMessage}
-        stopGeneration={stop}
+        stopGeneration={() => stream.stop()}
       />
     </div>
   );
