@@ -120,6 +120,22 @@ export default function Chat({ onGeomExport }: ChatProps) {
   const errorMessage = error
     ? (error instanceof Error ? error.message : String(error))
     : null;
+  const isNotFound = errorMessage?.includes("HTTP 404");
+
+  if (isNotFound) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-background text-foreground">
+        <h1 className="text-4xl font-bold">404</h1>
+        <p className="text-muted-foreground">Thread not found</p>
+        <button
+          onClick={() => router.replace(pathname)}
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+        >
+          Start a new conversation
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col bg-background">
