@@ -3,16 +3,17 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ArrowDown, Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useStream } from "@langchain/react";
 
-import { useChat, isGeomExportEvent } from "@/app/studio/_hooks/use-chat";
-import type { GeomExportEvent, TodoItem } from "@/app/studio/_types/chat";
+import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
+import { isGeomExportEvent } from "@/app/studio/_lib/geom-export";
+import { LANGGRAPH_API_URL, ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
+import type { GeomExportEvent, CadGraphState, TodoItem } from "@/app/studio/_types/chat";
 
 import { ChatMessage } from "@/app/studio/_components/chat/ChatMessage";
 import { TodoCard } from "@/app/studio/_components/chat/TodoCard";
 import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
-
-export type { GeomExportEvent };
 
 export interface ChatProps {
   onGeomExport: (event: GeomExportEvent) => void;
@@ -34,6 +35,8 @@ export default function Chat({ onGeomExport }: ChatProps) {
     onGeomExportRef.current = onGeomExport;
   }, [onGeomExport]);
 
+  const { headers, isReady: isAuthReady } = useLanggraphAuth();
+
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -51,19 +54,26 @@ export default function Chat({ onGeomExport }: ChatProps) {
     [pathname, router, searchParams],
   );
 
-  const { stream, isAuthReady } = useChat({
-    threadId: urlThreadId,
-    onThreadIdChange: handleThreadIdChange,
-    onCustomEvent: (data) => {
+  const stream = useStream<CadGraphState>({
+    apiUrl: LANGGRAPH_API_URL,
+    assistantId: ASSISTANT_ID,
+    threadId: isAuthReady ? (urlThreadId ?? undefined) : undefined,
+    defaultHeaders: headers,
+    fetchStateHistory: true,
+    onThreadId: (id) => handleThreadIdChange(id),
+    onCustomEvent: (event) => {
+      const data = event as Record<string, unknown>;
       if (isGeomExportEvent(data)) {
         onGeomExportRef.current(data);
       }
     },
   });
 
-  const { messages, isLoading, error } = stream;
+  const { messages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
-  const todos = ((stream.values as Record<string, unknown>)?.todos ?? []) as TodoItem[];
+  const todos = "todos" in values && Array.isArray(values.todos)
+    ? (values.todos as TodoItem[])
+    : [];
   const isBusy = isLoading || isHydrating || !isAuthReady;
   const isEmpty = messages.length === 0;
 

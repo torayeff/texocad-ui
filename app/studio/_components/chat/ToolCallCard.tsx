@@ -1,7 +1,6 @@
 import React from "react";
 import type { ToolCall } from "@langchain/core/messages";
 import { CircleCheck, CircleDashed, CircleX, ChevronDown, Wrench } from "lucide-react";
-import { useAutoScroll } from "@/app/studio/_hooks/use-auto-scroll";
 import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
 
 type ToolCallState = "pending" | "completed" | "error";
@@ -25,8 +24,6 @@ export const ToolCallCard = React.memo(function ToolCallCard({
   toolCall: ToolCall;
   state?: ToolCallState;
 }) {
-  const [inputScrollRef, handleInputScroll] = useAutoScroll<HTMLPreElement>();
-
   const cls = `flex-shrink-0 ${STATUS_CLASS[state]}`;
 
   const statusIcon =
@@ -70,8 +67,6 @@ export const ToolCallCard = React.memo(function ToolCallCard({
               Input
             </p>
             <pre
-              ref={inputScrollRef}
-              onScroll={handleInputScroll}
               className="max-h-40 whitespace-pre-wrap break-all overflow-y-auto rounded-lg bg-muted/40 px-3 py-2 text-[11px] font-mono text-foreground"
             >
               {JSON.stringify(toolCall.args, null, 2)}
