@@ -1,40 +1,34 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
-
-const TOKEN_SYNC_INTERVAL_MS = 10_000;
+import { Client } from "@langchain/langgraph-sdk";
+import { LANGGRAPH_API_URL } from "@/app/studio/_lib/langgraph-config";
 
 export function useLanggraphAuth() {
   const { getToken, isSignedIn } = useAuth();
-  const [token, setToken] = useState<string>();
 
-  useEffect(() => {
-    if (!isSignedIn) return;
+  const client = useMemo(
+    () =>
+      new Client({
+        apiUrl: LANGGRAPH_API_URL,
+        onRequest: async (_url, init) => {
+          const token = isSignedIn ? await getToken({ skipCache: true }) : null;
+          if (!token) return init;
 
-    let mounted = true;
+          const headers = new Headers(init.headers);
+          headers.set("Authorization", `Bearer ${token}`);
 
-    const sync = () => {
-      getToken().then((t) => {
-        if (!mounted || !t) return;
-        setToken((prev) => (prev === t ? prev : t));
-      });
-    };
-
-    sync();
-    const id = setInterval(sync, TOKEN_SYNC_INTERVAL_MS);
-    return () => {
-      mounted = false;
-      clearInterval(id);
-    };
-  }, [getToken, isSignedIn]);
-
-  const headers = useMemo(
-    () => (token ? { Authorization: `Bearer ${token}` } : undefined),
-    [token],
+          return {
+            ...init,
+            headers,
+          };
+        },
+      }),
+    [getToken, isSignedIn],
   );
 
-  const isReady = isSignedIn === true && headers !== undefined;
+  const isReady = isSignedIn === true;
 
-  return { headers, isReady };
+  return { client, isReady };
 }

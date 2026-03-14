@@ -1,4 +1,4 @@
-import type { BaseMessage } from "@langchain/core/messages";
+import type { Message } from "@langchain/langgraph-sdk";
 
 export interface GeomExportEvent {
   type: "geom_export";
@@ -6,7 +6,6 @@ export interface GeomExportEvent {
   thread_id: string;
   url: string;
 }
-
 export interface TodoItem {
   id?: string;
   content: string;
@@ -14,6 +13,7 @@ export interface TodoItem {
 }
 
 export interface CadGraphState {
-  messages: BaseMessage[];
+  messages: Message[];
   todos?: TodoItem[];
 }
+

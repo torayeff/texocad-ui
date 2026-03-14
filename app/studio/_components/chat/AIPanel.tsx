@@ -5,6 +5,7 @@ import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
 interface UsageInfo {
   inputTokens: number;
   outputTokens: number;
+  reasoningTokens?: number;
   runtimeSeconds?: number;
 }
 
@@ -56,6 +57,7 @@ export function AIPanel({
           <div className="text-[11px] text-muted-foreground/70">
             {formatNumber(usage?.inputTokens ?? 0)} input ·{" "}
             {formatNumber(usage?.outputTokens ?? 0)} output tokens
+            {usage?.reasoningTokens ? ` · ${formatNumber(usage.reasoningTokens)} reasoning` : ""}
           </div>
         ) : null}
       </div>

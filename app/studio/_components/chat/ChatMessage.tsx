@@ -1,41 +1,19 @@
 import React from "react";
-import type { BaseMessage, AIMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, type BaseMessage } from "@langchain/core/messages";
 import { AIPanel, ActivitySection } from "@/app/studio/_components/chat/AIPanel";
-import { ToolCallCard } from "@/app/studio/_components/chat/ToolCallCard";
+import { ToolCallCard, type StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/InlineBlocks";
+import { getMessageTextContent, getReasoningContent } from "@/app/studio/_lib/message-content";
 
 interface ChatMessageProps {
   message: BaseMessage;
   isStreaming?: boolean;
-}
-
-function getTextContent(msg: BaseMessage): string {
-  if (typeof msg.content === "string") return msg.content;
-  if (!Array.isArray(msg.content)) return "";
-  return msg.content
-    .filter((block): block is { type: "text"; text: string } => block.type === "text")
-    .map((block) => block.text)
-    .join("");
-}
-
-function getReasoningContent(msg: BaseMessage): string | undefined {
-  if ("contentBlocks" in msg && Array.isArray(msg.contentBlocks)) {
-    const reasoning = msg.contentBlocks
-      .filter((b): b is { type: "reasoning"; reasoning: string } =>
-        b.type === "reasoning" && typeof (b as Record<string, unknown>).reasoning === "string"
-      )
-      .map((b) => b.reasoning)
-      .join("");
-    if (reasoning.trim()) return reasoning;
-  }
-  const raw = msg.additional_kwargs?.reasoning_content
-    ?? msg.additional_kwargs?.thinking;
-  if (typeof raw === "string") return raw;
-  return undefined;
+  toolCalls?: StreamToolCall[];
+  forcePanelShell?: boolean;
 }
 
 export function HumanMessageBubble({ message }: { message: BaseMessage }) {
-  const text = getTextContent(message);
+  const text = getMessageTextContent(message);
 
   return (
     <div className="flex justify-end">
@@ -51,27 +29,24 @@ export function HumanMessageBubble({ message }: { message: BaseMessage }) {
 function AIMessageView({
   message,
   isStreaming,
+  toolCalls,
+  forcePanelShell,
 }: {
   message: AIMessage;
   isStreaming: boolean;
+  toolCalls: StreamToolCall[];
+  forcePanelShell: boolean;
 }) {
-  const text = getTextContent(message);
+  const text = getMessageTextContent(message);
   const thinking = getReasoningContent(message);
-  const toolCalls = message.tool_calls ?? [];
-
-  const visibleToolCalls = toolCalls.filter(
-    (tc) => tc.name !== "task" && tc.name !== "write_todos",
-  );
 
   const hasText = text.trim().length > 0;
-  const hasThinking = !!thinking;
-  const hasToolCalls = visibleToolCalls.length > 0;
-  const hasActivity = hasThinking || hasToolCalls;
+  const hasToolCalls = toolCalls.length > 0;
+  const hasActivity = hasToolCalls;
 
   const activityParts: string[] = [];
-  if (hasThinking) activityParts.push("1 thought");
   if (hasToolCalls) {
-    activityParts.push(`${visibleToolCalls.length} tool${visibleToolCalls.length === 1 ? "" : "s"}`);
+    activityParts.push(`${toolCalls.length} tool${toolCalls.length === 1 ? "" : "s"}`);
   }
 
   let statusLabel: string | null = null;
@@ -81,7 +56,7 @@ function AIMessageView({
   const agentName = message.name ?? "";
   const usage = message.usage_metadata;
 
-  if (!hasText && !hasActivity && !isStreaming) return null;
+  if (!hasText && !hasActivity && !isStreaming && !forcePanelShell) return null;
 
   return (
     <AIPanel
@@ -91,23 +66,24 @@ function AIMessageView({
       usage={usage ? {
         inputTokens: usage.input_tokens,
         outputTokens: usage.output_tokens,
+        reasoningTokens: usage.output_token_details?.reasoning,
       } : undefined}
     >
       {hasText ? <InlineTextContent content={text} /> : null}
 
+      {thinking ? (
+        <InlineThinkingBlock
+          content={thinking}
+          isStreaming={isStreaming && !hasText}
+          defaultOpen={false}
+        />
+      ) : null}
+
       {hasActivity ? (
         <ActivitySection summary={activityParts.join(" · ")}>
-          {thinking ? (
-            <InlineThinkingBlock
-              content={thinking}
-              isStreaming={isStreaming && !hasText}
-              defaultOpen={false}
-            />
-          ) : null}
-
-          {visibleToolCalls.map((tc) => (
+          {toolCalls.map((tc) => (
             <ToolCallCard
-              key={tc.id ?? tc.name}
+              key={tc.id}
               toolCall={tc}
             />
           ))}
@@ -120,16 +96,20 @@ function AIMessageView({
 export const ChatMessage = React.memo(function ChatMessage({
   message,
   isStreaming = false,
+  toolCalls = [],
+  forcePanelShell = false,
 }: ChatMessageProps) {
-  if (message.getType() === "human") {
+  if (HumanMessage.isInstance(message)) {
     return <HumanMessageBubble message={message} />;
   }
 
-  if (message.getType() === "ai") {
+  if (AIMessage.isInstance(message)) {
     return (
       <AIMessageView
-        message={message as AIMessage}
+        message={message}
         isStreaming={isStreaming}
+        toolCalls={toolCalls}
+        forcePanelShell={forcePanelShell}
       />
     );
   }

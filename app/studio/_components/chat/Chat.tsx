@@ -1,26 +1,29 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { ArrowDown, Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
 import { isGeomExportEvent } from "@/app/studio/_lib/geom-export";
-import { LANGGRAPH_API_URL, ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
+import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
+import { getMessageTextContent } from "@/app/studio/_lib/message-content";
 import type { GeomExportEvent, CadGraphState, TodoItem } from "@/app/studio/_types/chat";
 
-import { ChatMessage } from "@/app/studio/_components/chat/ChatMessage";
-import { TodoCard } from "@/app/studio/_components/chat/TodoCard";
+import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
+import { TodoList } from "@/app/studio/_components/chat/TodoList";
 import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
 
 export interface ChatProps {
-  onGeomExport: (event: GeomExportEvent) => void;
+  onViewerArtifact: (event: GeomExportEvent) => void;
 }
 
-export default function Chat({ onGeomExport }: ChatProps) {
+export default function Chat({ onViewerArtifact }: ChatProps) {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [pendingHumanMessage, setPendingHumanMessage] = useState<HumanMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
@@ -30,12 +33,12 @@ export default function Chat({ onGeomExport }: ChatProps) {
   const searchParams = useSearchParams();
   const urlThreadId = searchParams.get("thread_id");
 
-  const onGeomExportRef = useRef(onGeomExport);
+  const onViewerArtifactRef = useRef(onViewerArtifact);
   useEffect(() => {
-    onGeomExportRef.current = onGeomExport;
-  }, [onGeomExport]);
+    onViewerArtifactRef.current = onViewerArtifact;
+  }, [onViewerArtifact]);
 
-  const { headers, isReady: isAuthReady } = useLanggraphAuth();
+  const { client, isReady: isAuthReady } = useLanggraphAuth();
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
@@ -54,28 +57,48 @@ export default function Chat({ onGeomExport }: ChatProps) {
     [pathname, router, searchParams],
   );
 
-  const stream = useStream<CadGraphState>({
-    apiUrl: LANGGRAPH_API_URL,
+  const handleCustomEvent = useCallback((event: unknown) => {
+    const data = event as Record<string, unknown>;
+    if (isGeomExportEvent(data)) {
+      onViewerArtifactRef.current(data);
+    }
+  }, []);
+
+  const streamOptions = useMemo(() => ({
+    client,
     assistantId: ASSISTANT_ID,
     threadId: isAuthReady ? (urlThreadId ?? undefined) : undefined,
-    defaultHeaders: headers,
     fetchStateHistory: true,
-    onThreadId: (id) => handleThreadIdChange(id),
-    onCustomEvent: (event) => {
-      const data = event as Record<string, unknown>;
-      if (isGeomExportEvent(data)) {
-        onGeomExportRef.current(data);
-      }
-    },
-  });
+    filterSubagentMessages: true,
+    onThreadId: (id: string) => handleThreadIdChange(id),
+    onCustomEvent: handleCustomEvent,
+  }), [
+    client,
+    handleCustomEvent,
+    handleThreadIdChange,
+    isAuthReady,
+    urlThreadId,
+  ]);
+
+  const stream = useStream<CadGraphState>(streamOptions);
 
   const { messages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
-  const todos = "todos" in values && Array.isArray(values.todos)
-    ? (values.todos as TodoItem[])
-    : [];
+  const todos: TodoItem[] = Array.isArray(values.todos) ? values.todos : [];
   const isBusy = isLoading || isHydrating || !isAuthReady;
-  const isEmpty = messages.length === 0;
+  const lastHumanMessage = useMemo(
+    () => [...messages].reverse().find(HumanMessage.isInstance),
+    [messages],
+  );
+  const shouldRenderPendingHumanMessage = pendingHumanMessage != null && !(
+    lastHumanMessage &&
+    getMessageTextContent(lastHumanMessage) === getMessageTextContent(pendingHumanMessage)
+  );
+  const isEmpty = messages.length === 0 && !shouldRenderPendingHumanMessage;
+  const lastMessageType = shouldRenderPendingHumanMessage
+    ? "human"
+    : messages[messages.length - 1]?.getType();
+  const shouldShowTodoList = todos.length > 0 && lastMessageType !== "human";
 
   useEffect(() => {
     if (isNearBottomRef.current) {
@@ -86,7 +109,7 @@ export default function Chat({ onGeomExport }: ChatProps) {
         }
       });
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, shouldRenderPendingHumanMessage]);
 
   const isTickingRef = useRef(false);
 
@@ -112,7 +135,17 @@ export default function Chat({ onGeomExport }: ChatProps) {
     if (isBusy) return;
     const trimmed = content.trim();
     if (!trimmed) return;
-    stream.submit({ messages: [{ type: "human", content: trimmed }] });
+    setPendingHumanMessage(new HumanMessage(trimmed));
+    stream.submit(
+      { messages: [{ type: "human", content: trimmed }] },
+      {
+        streamSubgraphs: true,
+        optimisticValues: (prev) => ({
+          ...prev,
+          todos: [],
+        }),
+      },
+    );
 
     isNearBottomRef.current = true;
     requestAnimationFrame(() => {
@@ -171,30 +204,50 @@ export default function Chat({ onGeomExport }: ChatProps) {
             )}
 
             {messages.map((message, idx) => {
+              const isAiMessage = AIMessage.isInstance(message);
               const isLastAi =
                 isLoading &&
                 idx === messages.length - 1 &&
-                message.getType() === "ai";
+                isAiMessage;
+              const toolCalls = isAiMessage &&
+                "getToolCalls" in stream &&
+                typeof stream.getToolCalls === "function"
+                ? stream.getToolCalls(message)
+                : [];
+              const subagents = isAiMessage && message.id
+                && "getSubagentsByMessage" in stream
+                && typeof stream.getSubagentsByMessage === "function"
+                ? stream.getSubagentsByMessage(message.id)
+                : [];
 
               return (
-                <ChatMessage
+                <MessageWithSubagents
                   key={message.id ?? idx}
                   message={message}
                   isStreaming={isLastAi}
+                  toolCalls={toolCalls}
+                  subagents={subagents}
+                  isParentStreamLoading={isLoading}
                 />
               );
             })}
 
-            {todos.length > 0 && <TodoCard todos={todos} />}
+            {shouldRenderPendingHumanMessage && pendingHumanMessage ? (
+              <MessageWithSubagents
+                key="pending-human-message"
+                message={pendingHumanMessage}
+              />
+            ) : null}
 
             {isLoading &&
-              messages.length > 0 &&
-              messages[messages.length - 1].getType() === "human" && (
+              lastMessageType === "human" && (
                 <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                   <Loader2 size={14} className="animate-spin" />
                   <span>Thinking...</span>
                 </div>
               )}
+
+            {shouldShowTodoList ? <TodoList todos={todos} /> : null}
 
             <div ref={messagesEndRef} />
           </div>

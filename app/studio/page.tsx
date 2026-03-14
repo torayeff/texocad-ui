@@ -26,7 +26,7 @@ export default function StudioPage() {
   const mounted = useMounted();
   const isDark = mounted && resolvedTheme === "dark";
 
-  const handleGeomExport = useCallback((event: GeomExportEvent) => {
+  const handleViewerArtifact = useCallback((event: GeomExportEvent) => {
     fetch(`/api/blob?url=${encodeURIComponent(event.url)}`)
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
@@ -128,7 +128,7 @@ export default function StudioPage() {
           />
         </div>
         <div className="min-h-0 flex-[2] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
-          <Chat onGeomExport={handleGeomExport} />
+          <Chat onViewerArtifact={handleViewerArtifact} />
         </div>
       </div>
     </main>
