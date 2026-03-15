@@ -1,15 +1,17 @@
 import React from "react";
-import { AIMessage } from "@langchain/core/messages";
+import { AIMessage, ToolMessage } from "@langchain/core/messages";
+import type { AIMessageChunk } from "@langchain/core/messages";
 import type { ClassSubagentStreamInterface } from "@langchain/react";
 import { Bot, ChevronDown, CircleCheck, CircleDot, CircleX } from "lucide-react";
+import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
 import { ToolCallCard } from "@/app/studio/_components/chat/ToolCallCard";
 import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
 import { getMessageTextContent, getReasoningContent } from "@/app/studio/_lib/message-content";
 import { AIPanel } from "@/app/studio/_components/chat/AIPanel";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/InlineBlocks";
 
-function getSubagentToolCalls(subagent: ClassSubagentStreamInterface): import("@/app/studio/_components/chat/ToolCallCard").StreamToolCall[] {
-  const allToolCalls: import("@/app/studio/_components/chat/ToolCallCard").StreamToolCall[] = [];
+function getSubagentToolCalls(subagent: ClassSubagentStreamInterface): StreamToolCall[] {
+  const allToolCalls: StreamToolCall[] = [];
 
   for (const message of subagent.messages) {
     if (AIMessage.isInstance(message) && message.tool_calls) {
@@ -30,53 +32,36 @@ function getSubagentToolCalls(subagent: ClassSubagentStreamInterface): import("@
     }
   }
 
-  // Update results based on ToolMessages
   for (const message of subagent.messages) {
-    if (message._getType() === "tool") {
-      const toolMsg = message as any;
-      const tc = allToolCalls.find((t) => t.id === toolMsg.tool_call_id);
+    if (ToolMessage.isInstance(message)) {
+      const tc = allToolCalls.find((t) => t.id === message.tool_call_id);
       if (tc) {
-        tc.result = { content: toolMsg.content };
+        tc.result = { content: message.content };
       }
     }
   }
 
-  if (allToolCalls.length > 0) {
-    for (const message of subagent.messages) {
-      if ((message as any).kwargs?.content) {
-        const content = (message as any).kwargs.content;
-        if (Array.isArray(content)) {
-          for (const block of content) {
-            if (block.type === "tool_result" && block.tool_call_id) {
-              const tc = allToolCalls.find((t) => t.id === block.tool_call_id);
-              if (tc) {
-                tc.result = { content: block.content };
-              }
+  for (const message of subagent.messages) {
+    const chunk = message as AIMessageChunk;
+    if (AIMessage.isInstance(message) && chunk.tool_call_chunks) {
+      for (const tcc of chunk.tool_call_chunks) {
+        if (tcc.name === "task" || tcc.name === "write_todos") continue;
+        const existing = allToolCalls.find((t) => t.id === tcc.id);
+        if (!existing && tcc.id) {
+          let parsedArgs = {};
+          if (tcc.args) {
+            try {
+              parsedArgs = JSON.parse(tcc.args);
+            } catch {
+              // partial JSON from streaming chunk
             }
           }
-        }
-      }
-    }
-  }
-
-  for (const message of subagent.messages) {
-    if (AIMessage.isInstance(message) && (message as any).tool_call_chunks) {
-      for (const chunk of (message as any).tool_call_chunks) {
-        if (chunk.name === "task" || chunk.name === "write_todos") continue;
-        const existing = allToolCalls.find((t) => t.id === chunk.id);
-        if (!existing && chunk.id) {
-          let parsedArgs = {};
-          if (chunk.args) {
-            try {
-              parsedArgs = typeof chunk.args === "string" ? JSON.parse(chunk.args) : chunk.args;
-            } catch (e) { }
-          }
           allToolCalls.push({
-            id: chunk.id,
+            id: tcc.id,
             state: "pending",
             call: {
-              id: chunk.id,
-              name: chunk.name!,
+              id: tcc.id,
+              name: tcc.name!,
               args: parsedArgs,
             },
           });
@@ -128,7 +113,6 @@ function getDisplayContent(subagent: ClassSubagentStreamInterface): { text: stri
       if (msgThinking.trim()) thinking = msgThinking;
     }
 
-    // Only break if we have both or if we have text and it's not streaming (though we want to get thinking if possible)
     if (text && thinking) break;
   }
 
@@ -169,9 +153,6 @@ export const SubagentCard = React.memo(function SubagentCard({
   const title = typeof subagent.toolCall.args.subagent_type === "string"
     ? subagent.toolCall.args.subagent_type
     : subagent.toolCall.name;
-  const description = typeof subagent.toolCall.args.description === "string"
-    ? subagent.toolCall.args.description
-    : "";
   const { text: displayContent, thinking, isStreaming } = getDisplayContent(subagent);
   const elapsed = getElapsedLabel(subagent.startedAt, subagent.completedAt);
   const style = STATUS_STYLES[resolvedStatus];

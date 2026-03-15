@@ -227,7 +227,6 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
                   isStreaming={isLastAi}
                   toolCalls={toolCalls}
                   subagents={subagents}
-                  isParentStreamLoading={isLoading}
                 />
               );
             })}

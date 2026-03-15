@@ -1,5 +1,4 @@
 import React from "react";
-import { Loader2 } from "lucide-react";
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { ClassSubagentStreamInterface } from "@langchain/react";
 import { ChatMessage } from "@/app/studio/_components/chat/ChatMessage";
@@ -33,13 +32,11 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
   isStreaming = false,
   toolCalls = [],
   subagents = [],
-  isParentStreamLoading = false,
 }: {
   message: BaseMessage;
   isStreaming?: boolean;
   toolCalls?: StreamToolCall[];
   subagents?: ClassSubagentStreamInterface[];
-  isParentStreamLoading?: boolean;
 }) {
   const visibleToolCalls = getVisibleToolCalls(toolCalls, subagents.length);
   const subagentEntries = subagents.map((subagent) => ({

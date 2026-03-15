@@ -1,5 +1,5 @@
 import React from "react";
-import { Bot, Loader2, CircleCheck, ChevronDown } from "lucide-react";
+import { Bot, Loader2, CircleCheck } from "lucide-react";
 import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
 
 interface UsageInfo {
@@ -66,31 +66,5 @@ export function AIPanel({
         ) : null}
       </div>
     </div>
-  );
-}
-
-export function ActivitySection({
-  children,
-  summary,
-}: {
-  children: React.ReactNode;
-  summary: string;
-}) {
-  return (
-    <details className="group/activity">
-      <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
-        <span className="font-medium text-foreground/85">Activity</span>
-        {summary ? <span className="text-[11px] text-muted-foreground/70">{summary}</span> : null}
-        <div className="ml-auto flex items-center gap-2">
-          <ChevronDown
-            size={13}
-            className="text-muted-foreground/50 transition-transform group-open/activity:rotate-180"
-          />
-        </div>
-      </summary>
-      <div className="mt-2 flex flex-col gap-2 border-l border-border/30 pl-4">
-        {children}
-      </div>
-    </details>
   );
 }

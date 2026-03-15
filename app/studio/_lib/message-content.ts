@@ -1,5 +1,33 @@
 import type { AIMessage, BaseMessage } from "@langchain/core/messages";
 
+interface TextBlock {
+  type: "text";
+  text: string;
+}
+
+interface ReasoningBlock {
+  type: "reasoning" | "thinking";
+  reasoning?: string;
+  thinking?: string;
+}
+
+type ContentBlock = Record<string, unknown>;
+
+function isTextBlock(block: ContentBlock): block is ContentBlock & TextBlock {
+  return block.type === "text" && typeof block.text === "string";
+}
+
+function isReasoningBlock(block: ContentBlock): block is ContentBlock & ReasoningBlock {
+  return block.type === "reasoning" || block.type === "thinking";
+}
+
+function getContentBlocks(message: BaseMessage): ContentBlock[] | null {
+  if ("contentBlocks" in message && Array.isArray(message.contentBlocks)) {
+    return message.contentBlocks;
+  }
+  return Array.isArray(message.content) ? message.content as ContentBlock[] : null;
+}
+
 function getLegacyTextContent(message: BaseMessage): string {
   if (typeof message.content === "string") return message.content;
   if (!Array.isArray(message.content)) return "";
@@ -11,19 +39,15 @@ function getLegacyTextContent(message: BaseMessage): string {
 }
 
 export function getMessageTextContent(message: BaseMessage): string {
-  const blocks = ("contentBlocks" in message && Array.isArray((message as any).contentBlocks))
-    ? (message as any).contentBlocks
-    : (Array.isArray(message.content) ? message.content : null);
+  const blocks = getContentBlocks(message);
 
   if (blocks) {
     const text = blocks
-      .filter((block: any): block is { type: "text"; text: string } =>
-        block.type === "text" && typeof (block as Record<string, unknown>).text === "string",
-      )
-      .map((block: any) => block.text)
+      .filter(isTextBlock)
+      .map((block) => block.text)
       .join("");
 
-    if (text.trim() || blocks.some((b: any) => b.type === "text")) {
+    if (text.trim() || blocks.some((b) => b.type === "text")) {
       return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
     }
   }
@@ -35,24 +59,22 @@ export function getMessageTextContent(message: BaseMessage): string {
 export function getReasoningContent(message: AIMessage): string {
   let reasoning = "";
 
-  const blocks = ("contentBlocks" in message && Array.isArray((message as any).contentBlocks))
-    ? (message as any).contentBlocks
-    : (Array.isArray(message.content) ? message.content : null);
+  const blocks = getContentBlocks(message);
 
   if (blocks) {
     reasoning += blocks
-      .filter((block: Record<string, unknown>) => block.type === "reasoning" || block.type === "thinking")
-      .map((block: Record<string, unknown>) => (block.reasoning || block.thinking || ""))
+      .filter(isReasoningBlock)
+      .map((block) => (block.reasoning || block.thinking || ""))
       .join("");
 
     const textBlocks = blocks
-      .filter((block: any) => block.type === "text" && typeof block.text === "string")
-      .map((block: any) => block.text)
+      .filter(isTextBlock)
+      .map((block) => block.text)
       .join("");
 
     if (textBlocks) {
       const thinkMatch = textBlocks.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
-      if (thinkMatch && thinkMatch[1]) {
+      if (thinkMatch?.[1]) {
         reasoning += "\n" + thinkMatch[1].trim();
       }
     }
@@ -62,15 +84,15 @@ export function getReasoningContent(message: AIMessage): string {
   const fallback = kwargs.reasoning_content
     ?? kwargs.thinking
     ?? kwargs.reasoning
-    ?? (message as any).response_metadata?.reasoning_content
-    ?? (message as any).response_metadata?.thinking
-    ?? (message as any).response_metadata?.reasoning;
+    ?? (message.response_metadata as Record<string, unknown>)?.reasoning_content
+    ?? (message.response_metadata as Record<string, unknown>)?.thinking
+    ?? (message.response_metadata as Record<string, unknown>)?.reasoning;
 
   if (typeof fallback === "string" && fallback.trim()) {
     reasoning += "\n" + fallback;
   }
 
-  // Handle <think> tags in raw string content (e.g., DeepSeek models)
+  // DeepSeek models emit reasoning inside <think> tags in raw string content
   if (typeof message.content === "string") {
     const thinkMatch = message.content.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
     if (thinkMatch) {

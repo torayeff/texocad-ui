@@ -1,6 +1,6 @@
 import React from "react";
 import { AIMessage, HumanMessage, type BaseMessage } from "@langchain/core/messages";
-import { AIPanel, ActivitySection } from "@/app/studio/_components/chat/AIPanel";
+import { AIPanel } from "@/app/studio/_components/chat/AIPanel";
 import { ToolCallCard, type StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/InlineBlocks";
 import { getMessageTextContent, getReasoningContent } from "@/app/studio/_lib/message-content";
