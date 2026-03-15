@@ -21,18 +21,23 @@ export default function StudioPage() {
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const stlRequestVersionRef = useRef(0);
 
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useMounted();
   const isDark = mounted && resolvedTheme === "dark";
 
   const handleViewerArtifact = useCallback((entry: GeomExportEntry) => {
+    const isStl = entry.filename.endsWith(".stl");
+    const requestVersion = isStl ? ++stlRequestVersionRef.current : stlRequestVersionRef.current;
+
     fetch(`/api/blob?url=${encodeURIComponent(entry.url)}`)
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         const sasUrl = data?.sasUrl;
         if (!sasUrl) return;
-        if (entry.filename.endsWith(".stl")) {
+        if (isStl) {
+          if (requestVersion !== stlRequestVersionRef.current) return;
           setStlUrl(sasUrl);
           setDownloadUrls((prev) => ({ ...prev, stl: sasUrl }));
         } else if (entry.filename.endsWith(".step")) {

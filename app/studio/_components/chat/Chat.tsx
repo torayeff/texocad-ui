@@ -29,6 +29,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const isNearBottomRef = useRef(true);
+  const lastHandledExportsKeyRef = useRef("");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -81,14 +82,26 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     () => Array.isArray(values.exports) ? values.exports : [],
     [values.exports],
   );
+  const exportsKey = useMemo(
+    () => exports.map(({ filename, url }) => `${filename}:${url}`).join("|"),
+    [exports],
+  );
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
   useEffect(() => {
+    lastHandledExportsKeyRef.current = "";
+  }, [urlThreadId]);
+
+  useEffect(() => {
     if (isHydrating || exports.length === 0) return;
+    if (exportsKey === lastHandledExportsKeyRef.current) return;
+
+    lastHandledExportsKeyRef.current = exportsKey;
+
     for (const entry of exports) {
       onViewerArtifactRef.current(entry);
     }
-  }, [isHydrating, exports]);
+  }, [exports, exportsKey, isHydrating]);
 
   const lastHumanMessage = useMemo(
     () => [...messages].reverse().find(HumanMessage.isInstance),

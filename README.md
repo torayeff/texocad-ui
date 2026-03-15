@@ -1,4 +1,5 @@
 # Texocad UI
 
 ## TODO:
-- [ ] One agent waits until the next one finishes (different accounts, different browsers)
+- [ ] Bug: Multiple re-renders of STL file
+- [ ] Bug: Sometimes showing the old STL file
