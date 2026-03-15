@@ -11,7 +11,7 @@ import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
 import { isGeomExportEvent } from "@/app/studio/_lib/geom-export";
 import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
 import { getMessageTextContent } from "@/app/studio/_lib/message-content";
-import type { GeomExportEvent, CadGraphState, TodoItem } from "@/app/studio/_types/chat";
+import type { GeomExportEvent, CadGraphState, GeomExportEntry, TodoItem } from "@/app/studio/_types/chat";
 
 import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
 import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
@@ -87,7 +87,27 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   const { messages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
   const todos: TodoItem[] = Array.isArray(values.todos) ? values.todos : [];
+  const exports: GeomExportEntry[] = Array.isArray(values.exports) ? values.exports : [];
   const isBusy = isLoading || isHydrating || !isAuthReady;
+
+  const hydrationRestoredRef = useRef(false);
+  useEffect(() => {
+    if (isHydrating) {
+      hydrationRestoredRef.current = false;
+      return;
+    }
+    if (hydrationRestoredRef.current || exports.length === 0) return;
+    hydrationRestoredRef.current = true;
+    for (const entry of exports) {
+      onViewerArtifactRef.current({
+        type: "geom_export",
+        filename: entry.filename,
+        thread_id: urlThreadId ?? "",
+        url: entry.url,
+      });
+    }
+  }, [isHydrating, exports, urlThreadId]);
+
   const lastHumanMessage = useMemo(
     () => [...messages].reverse().find(HumanMessage.isInstance),
     [messages],

@@ -12,8 +12,14 @@ export interface TodoItem {
   status: "pending" | "in_progress" | "completed";
 }
 
+export interface GeomExportEntry {
+  filename: string;
+  url: string;
+}
+
 export interface CadGraphState {
   messages: Message[];
   todos?: TodoItem[];
+  exports?: GeomExportEntry[];
 }
 
