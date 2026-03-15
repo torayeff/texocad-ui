@@ -11,7 +11,7 @@ export const VIEW_LABELS: Record<ViewPreset, string> = {
   right: "Right",
 };
 
-export const EPS = 1e-5;
+const EPS = 1e-5;
 
 export const VIEW_DIRECTIONS: Record<ViewPreset, [number, number, number]> = {
   iso: [1, -1, 0.8],
@@ -27,7 +27,7 @@ export const SHAFT_LENGTH = 16;
 export const SHAFT_RADIUS = 0.7;
 export const HEAD_LENGTH = 5;
 export const HEAD_RADIUS = 2;
-export const LABEL_DISTANCE = 28;
+const LABEL_DISTANCE = 28;
 
 export const DEFAULT_RADIUS = 50;
 
@@ -44,7 +44,7 @@ export const ORBIT_MOUSE_BUTTONS = {
   RIGHT: THREE.MOUSE.PAN,
 } as const;
 
-export const TRIAD_UP = new THREE.Vector3(0, 1, 0);
+const TRIAD_UP = new THREE.Vector3(0, 1, 0);
 
 export const TRIAD_AXES = ([
   { dir: [1, 0, 0] as const, color: "#ef4444", label: "X" },

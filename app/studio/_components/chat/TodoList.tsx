@@ -29,6 +29,7 @@ export const TodoList = React.memo(function TodoList({
 
   const completed = todos.filter((todo) => todo.status === "completed").length;
   const percentage = Math.round((completed / todos.length) * 100);
+  const firstInProgressIdx = todos.findIndex((todo) => todo.status === "in_progress");
 
   return (
     <section className="rounded-2xl border border-border/50 bg-card/70 p-4">
@@ -56,7 +57,7 @@ export const TodoList = React.memo(function TodoList({
           const style = TODO_STYLE[todo.status];
           const Icon = style.icon;
           const showPulse = todo.status === "in_progress"
-            && todos.findIndex((item) => item.status === "in_progress") === index;
+            && firstInProgressIdx === index;
 
           return (
             <li

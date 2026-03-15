@@ -13,7 +13,7 @@ interface ChatMessageProps {
   children?: React.ReactNode;
 }
 
-export function HumanMessageBubble({ message }: { message: BaseMessage }) {
+function HumanMessageBubble({ message }: { message: BaseMessage }) {
   const text = getMessageTextContent(message);
 
   return (
@@ -45,12 +45,6 @@ function AIMessageView({
 
   const hasText = text.trim().length > 0;
   const hasToolCalls = toolCalls.length > 0;
-  const hasActivity = hasToolCalls;
-
-  const activityParts: string[] = [];
-  if (hasToolCalls) {
-    activityParts.push(`${toolCalls.length} tool${toolCalls.length === 1 ? "" : "s"}`);
-  }
 
   let statusLabel: string | null = null;
   if (thinking && isStreaming) statusLabel = "Thinking";
@@ -59,7 +53,7 @@ function AIMessageView({
   const agentName = message.name ?? "";
   const usage = message.usage_metadata;
 
-  if (!hasText && !hasActivity && !isStreaming && !forcePanelShell) return null;
+  if (!hasText && !hasToolCalls && !isStreaming && !forcePanelShell) return null;
 
   return (
     <AIPanel
@@ -80,7 +74,7 @@ function AIMessageView({
         />
       ) : null}
 
-      {hasActivity ? (
+      {hasToolCalls ? (
         <div className="flex flex-col gap-2">
           {toolCalls.map((tc) => (
             <ToolCallCard

@@ -77,7 +77,10 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   const { messages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
   const todos: TodoItem[] = Array.isArray(values.todos) ? values.todos : [];
-  const exports: GeomExportEntry[] = Array.isArray(values.exports) ? values.exports : [];
+  const exports: GeomExportEntry[] = useMemo(
+    () => Array.isArray(values.exports) ? values.exports : [],
+    [values.exports],
+  );
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
   useEffect(() => {

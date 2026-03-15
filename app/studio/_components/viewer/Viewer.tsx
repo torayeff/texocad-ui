@@ -39,7 +39,7 @@ export default function Viewer({
     setViewCommand({ kind: "fit", id: ++cmdIdRef.current });
   }, []);
 
-  const handleDownload = (format: "stl" | "step") => {
+  const handleDownload = useCallback((format: "stl" | "step") => {
     const url = downloadUrls[format];
     if (!url) return;
     const link = document.createElement("a");
@@ -48,7 +48,7 @@ export default function Viewer({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [downloadUrls]);
 
   return (
     <div className="relative h-full w-full" style={{ background: bgColor }}>
