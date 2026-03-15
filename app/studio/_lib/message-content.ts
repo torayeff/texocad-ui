@@ -11,35 +11,72 @@ function getLegacyTextContent(message: BaseMessage): string {
 }
 
 export function getMessageTextContent(message: BaseMessage): string {
-  if ("contentBlocks" in message && Array.isArray(message.contentBlocks)) {
-    const text = message.contentBlocks
-      .filter((block): block is { type: "text"; text: string } =>
+  const blocks = ("contentBlocks" in message && Array.isArray((message as any).contentBlocks))
+    ? (message as any).contentBlocks
+    : (Array.isArray(message.content) ? message.content : null);
+
+  if (blocks) {
+    const text = blocks
+      .filter((block: any): block is { type: "text"; text: string } =>
         block.type === "text" && typeof (block as Record<string, unknown>).text === "string",
       )
-      .map((block) => block.text)
+      .map((block: any) => block.text)
       .join("");
 
-    if (text.trim()) return text;
+    if (text.trim() || blocks.some((b: any) => b.type === "text")) {
+      return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    }
   }
 
-  return getLegacyTextContent(message);
+  const legacyText = getLegacyTextContent(message);
+  return legacyText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, "").trim();
 }
 
 export function getReasoningContent(message: AIMessage): string {
-  if ("contentBlocks" in message && Array.isArray(message.contentBlocks)) {
-    const reasoning = message.contentBlocks
-      .filter((block): block is { type: "reasoning"; reasoning: string } =>
-        block.type === "reasoning" && typeof (block as Record<string, unknown>).reasoning === "string",
-      )
-      .map((block) => block.reasoning)
+  let reasoning = "";
+
+  const blocks = ("contentBlocks" in message && Array.isArray((message as any).contentBlocks))
+    ? (message as any).contentBlocks
+    : (Array.isArray(message.content) ? message.content : null);
+
+  if (blocks) {
+    reasoning += blocks
+      .filter((block: Record<string, unknown>) => block.type === "reasoning" || block.type === "thinking")
+      .map((block: Record<string, unknown>) => (block.reasoning || block.thinking || ""))
       .join("");
 
-    if (reasoning.trim()) return reasoning;
+    const textBlocks = blocks
+      .filter((block: any) => block.type === "text" && typeof block.text === "string")
+      .map((block: any) => block.text)
+      .join("");
+
+    if (textBlocks) {
+      const thinkMatch = textBlocks.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+      if (thinkMatch && thinkMatch[1]) {
+        reasoning += "\n" + thinkMatch[1].trim();
+      }
+    }
   }
 
-  const fallback = message.additional_kwargs?.reasoning_content
-    ?? message.additional_kwargs?.thinking
-    ?? message.additional_kwargs?.reasoning;
+  const kwargs = message.additional_kwargs || {};
+  const fallback = kwargs.reasoning_content
+    ?? kwargs.thinking
+    ?? kwargs.reasoning
+    ?? (message as any).response_metadata?.reasoning_content
+    ?? (message as any).response_metadata?.thinking
+    ?? (message as any).response_metadata?.reasoning;
 
-  return typeof fallback === "string" ? fallback : "";
+  if (typeof fallback === "string" && fallback.trim()) {
+    reasoning += "\n" + fallback;
+  }
+
+  // Handle <think> tags in raw string content (e.g., DeepSeek models)
+  if (typeof message.content === "string") {
+    const thinkMatch = message.content.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+    if (thinkMatch) {
+      reasoning += "\n" + thinkMatch[1].trim();
+    }
+  }
+
+  return reasoning.trim();
 }

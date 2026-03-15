@@ -10,6 +10,7 @@ interface ChatMessageProps {
   isStreaming?: boolean;
   toolCalls?: StreamToolCall[];
   forcePanelShell?: boolean;
+  children?: React.ReactNode;
 }
 
 export function HumanMessageBubble({ message }: { message: BaseMessage }) {
@@ -31,11 +32,13 @@ function AIMessageView({
   isStreaming,
   toolCalls,
   forcePanelShell,
+  children,
 }: {
   message: AIMessage;
   isStreaming: boolean;
   toolCalls: StreamToolCall[];
   forcePanelShell: boolean;
+  children?: React.ReactNode;
 }) {
   const text = getMessageTextContent(message);
   const thinking = getReasoningContent(message);
@@ -69,9 +72,7 @@ function AIMessageView({
         reasoningTokens: usage.output_token_details?.reasoning,
       } : undefined}
     >
-      {hasText ? <InlineTextContent content={text} /> : null}
-
-      {thinking ? (
+      {thinking || (isStreaming && !hasText) ? (
         <InlineThinkingBlock
           content={thinking}
           isStreaming={isStreaming && !hasText}
@@ -80,15 +81,19 @@ function AIMessageView({
       ) : null}
 
       {hasActivity ? (
-        <ActivitySection summary={activityParts.join(" · ")}>
+        <div className="flex flex-col gap-2">
           {toolCalls.map((tc) => (
             <ToolCallCard
               key={tc.id}
               toolCall={tc}
             />
           ))}
-        </ActivitySection>
+        </div>
       ) : null}
+
+      {hasText ? <InlineTextContent content={text} /> : null}
+
+      {children}
     </AIPanel>
   );
 }
@@ -98,6 +103,7 @@ export const ChatMessage = React.memo(function ChatMessage({
   isStreaming = false,
   toolCalls = [],
   forcePanelShell = false,
+  children,
 }: ChatMessageProps) {
   if (HumanMessage.isInstance(message)) {
     return <HumanMessageBubble message={message} />;
@@ -110,7 +116,9 @@ export const ChatMessage = React.memo(function ChatMessage({
         isStreaming={isStreaming}
         toolCalls={toolCalls}
         forcePanelShell={forcePanelShell}
-      />
+      >
+        {children}
+      </AIMessageView>
     );
   }
 
