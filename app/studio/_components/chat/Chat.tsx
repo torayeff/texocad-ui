@@ -5,6 +5,7 @@ import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { ArrowDown, Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
+import type { ClassSubagentStreamInterface } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
 import { isGeomExportEvent } from "@/app/studio/_lib/geom-export";
@@ -13,6 +14,7 @@ import { getMessageTextContent } from "@/app/studio/_lib/message-content";
 import type { GeomExportEvent, CadGraphState, TodoItem } from "@/app/studio/_types/chat";
 
 import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
+import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
 import { TodoList } from "@/app/studio/_components/chat/TodoList";
 import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
@@ -214,11 +216,29 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
                 typeof stream.getToolCalls === "function"
                 ? stream.getToolCalls(message)
                 : [];
-              const subagents = isAiMessage && message.id
+              const subagentsByMsg = isAiMessage && message.id
                 && "getSubagentsByMessage" in stream
                 && typeof stream.getSubagentsByMessage === "function"
                 ? stream.getSubagentsByMessage(message.id)
                 : [];
+
+              // Fallback: match subagents by tool call ID (OpenAI message ID mismatch)
+              let subagents = subagentsByMsg;
+              if (subagents.length === 0 && isAiMessage && "subagents" in stream) {
+                const allSubagents = stream.subagents as Map<string, ClassSubagentStreamInterface>;
+                if (allSubagents instanceof Map && allSubagents.size > 0) {
+                  const taskCallIds = new Set(
+                    toolCalls
+                      .filter((tc: StreamToolCall) => tc.call.name === "task")
+                      .map((tc: StreamToolCall) => tc.call.id ?? tc.id),
+                  );
+                  if (taskCallIds.size > 0) {
+                    subagents = [...allSubagents.values()].filter(
+                      (s) => taskCallIds.has(s.id),
+                    );
+                  }
+                }
+              }
 
               return (
                 <MessageWithSubagents
