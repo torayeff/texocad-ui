@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useMounted } from "@/app/hooks/use-mounted";
 import Chat from "@/app/studio/_components/chat/Chat";
-import type { GeomExportEvent } from "@/app/studio/_types/chat";
+import type { GeomExportEntry } from "@/app/studio/_types/chat";
 
 const Viewer = dynamic(() => import("@/app/studio/_components/viewer/Viewer"), { ssr: false });
 
@@ -26,16 +26,16 @@ export default function StudioPage() {
   const mounted = useMounted();
   const isDark = mounted && resolvedTheme === "dark";
 
-  const handleViewerArtifact = useCallback((event: GeomExportEvent) => {
-    fetch(`/api/blob?url=${encodeURIComponent(event.url)}`)
+  const handleViewerArtifact = useCallback((entry: GeomExportEntry) => {
+    fetch(`/api/blob?url=${encodeURIComponent(entry.url)}`)
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         const sasUrl = data?.sasUrl;
         if (!sasUrl) return;
-        if (event.filename.endsWith(".stl")) {
+        if (entry.filename.endsWith(".stl")) {
           setStlUrl(sasUrl);
           setDownloadUrls((prev) => ({ ...prev, stl: sasUrl }));
-        } else if (event.filename.endsWith(".step")) {
+        } else if (entry.filename.endsWith(".step")) {
           setDownloadUrls((prev) => ({ ...prev, step: sasUrl }));
         }
       })

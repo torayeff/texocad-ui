@@ -8,10 +8,9 @@ import { useStream } from "@langchain/react";
 import type { ClassSubagentStreamInterface } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
-import { isGeomExportEvent } from "@/app/studio/_lib/geom-export";
 import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
 import { getMessageTextContent } from "@/app/studio/_lib/message-content";
-import type { GeomExportEvent, CadGraphState, GeomExportEntry, TodoItem } from "@/app/studio/_types/chat";
+import type { CadGraphState, GeomExportEntry, TodoItem } from "@/app/studio/_types/chat";
 
 import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
 import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
@@ -20,7 +19,7 @@ import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
 
 export interface ChatProps {
-  onViewerArtifact: (event: GeomExportEvent) => void;
+  onViewerArtifact: (entry: GeomExportEntry) => void;
 }
 
 export default function Chat({ onViewerArtifact }: ChatProps) {
@@ -59,13 +58,6 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     [pathname, router, searchParams],
   );
 
-  const handleCustomEvent = useCallback((event: unknown) => {
-    const data = event as Record<string, unknown>;
-    if (isGeomExportEvent(data)) {
-      onViewerArtifactRef.current(data);
-    }
-  }, []);
-
   const streamOptions = useMemo(() => ({
     client,
     assistantId: ASSISTANT_ID,
@@ -73,10 +65,8 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     fetchStateHistory: true,
     filterSubagentMessages: true,
     onThreadId: (id: string) => handleThreadIdChange(id),
-    onCustomEvent: handleCustomEvent,
   }), [
     client,
-    handleCustomEvent,
     handleThreadIdChange,
     isAuthReady,
     urlThreadId,
@@ -90,23 +80,12 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   const exports: GeomExportEntry[] = Array.isArray(values.exports) ? values.exports : [];
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
-  const hydrationRestoredRef = useRef(false);
   useEffect(() => {
-    if (isHydrating) {
-      hydrationRestoredRef.current = false;
-      return;
-    }
-    if (hydrationRestoredRef.current || exports.length === 0) return;
-    hydrationRestoredRef.current = true;
+    if (isHydrating || exports.length === 0) return;
     for (const entry of exports) {
-      onViewerArtifactRef.current({
-        type: "geom_export",
-        filename: entry.filename,
-        thread_id: urlThreadId ?? "",
-        url: entry.url,
-      });
+      onViewerArtifactRef.current(entry);
     }
-  }, [isHydrating, exports, urlThreadId]);
+  }, [isHydrating, exports]);
 
   const lastHumanMessage = useMemo(
     () => [...messages].reverse().find(HumanMessage.isInstance),
