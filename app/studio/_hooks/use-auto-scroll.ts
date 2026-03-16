@@ -4,6 +4,7 @@ export function useAutoScroll<T extends HTMLElement>() {
   const stickRef = useRef(true);
   const observerRef = useRef<MutationObserver | null>(null);
   const isTickingRef = useRef(false);
+  const lastScrollTopRef = useRef(0);
 
   const ref = useCallback((el: T | null) => {
     if (observerRef.current) {
@@ -23,12 +24,23 @@ export function useAutoScroll<T extends HTMLElement>() {
   }, []);
 
   const onScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    const el = e.currentTarget;
+    const currentScrollTop = el.scrollTop;
+    const distanceFromBottom = el.scrollHeight - currentScrollTop - el.clientHeight;
+    const isScrollingUp = currentScrollTop < lastScrollTopRef.current;
+    lastScrollTopRef.current = currentScrollTop;
+
+    if (isScrollingUp && distanceFromBottom > 0) {
+      stickRef.current = false;
+    }
+
     if (isTickingRef.current) return;
     isTickingRef.current = true;
 
-    const el = e.currentTarget;
     requestAnimationFrame(() => {
-      stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight <= 30;
+      if (!isScrollingUp) {
+        stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight <= 30;
+      }
       isTickingRef.current = false;
     });
   }, []);

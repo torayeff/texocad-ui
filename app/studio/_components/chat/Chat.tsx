@@ -133,16 +133,31 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   }, [messages, isLoading, shouldRenderPendingHumanMessage]);
 
   const isTickingRef = useRef(false);
+  const lastScrollTopRef = useRef(0);
 
   const handleScroll = useCallback(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+
+    const currentScrollTop = el.scrollTop;
+    const distanceFromBottom = el.scrollHeight - currentScrollTop - el.clientHeight;
+    const isScrollingUp = currentScrollTop < lastScrollTopRef.current;
+    lastScrollTopRef.current = currentScrollTop;
+
+    if (isScrollingUp && distanceFromBottom > 0) {
+      isNearBottomRef.current = false;
+      setShowScrollBtn(true);
+    }
+
     if (isTickingRef.current) return;
     isTickingRef.current = true;
     requestAnimationFrame(() => {
-      const el = messagesContainerRef.current;
       if (el) {
-        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-        isNearBottomRef.current = distanceFromBottom <= 100;
-        setShowScrollBtn(distanceFromBottom > 100);
+        const currentDistanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        if (!isScrollingUp) {
+          isNearBottomRef.current = currentDistanceFromBottom <= 100;
+        }
+        setShowScrollBtn(currentDistanceFromBottom > 100);
       }
       isTickingRef.current = false;
     });
