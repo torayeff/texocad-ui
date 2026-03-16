@@ -45,6 +45,7 @@ function AIMessageView({
 
   const hasText = text.trim().length > 0;
   const hasToolCalls = toolCalls.length > 0;
+  const hasThinking = thinking.trim().length > 0;
 
   let statusLabel: string | null = null;
   if (thinking && isStreaming) statusLabel = "Thinking";
@@ -53,7 +54,7 @@ function AIMessageView({
   const agentName = message.name ?? "";
   const usage = message.usage_metadata;
 
-  if (!hasText && !hasToolCalls && !isStreaming && !forcePanelShell) return null;
+  if (!hasText && !hasToolCalls && !hasThinking && !isStreaming && !forcePanelShell) return null;
 
   return (
     <AIPanel
