@@ -21,7 +21,7 @@ import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
 
 export interface ChatProps {
-  onViewerArtifact: (entry: GeomExportEntry) => void;
+  onViewerArtifact: (entry: GeomExportEntry | null) => void;
 }
 
 export default function Chat({ onViewerArtifact }: ChatProps) {
@@ -121,43 +121,51 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     : messages[messages.length - 1]?.getType();
   const shouldShowTodoList = todos.length > 0 && lastMessageType !== "human";
 
+  const isTickingRef = useRef(false);
+  const lastScrollTopRef = useRef(0);
+
   useEffect(() => {
     if (isNearBottomRef.current) {
       requestAnimationFrame(() => {
+        if (!isNearBottomRef.current) return;
         const el = messagesContainerRef.current;
         if (el) {
           el.scrollTop = el.scrollHeight;
+          lastScrollTopRef.current = el.scrollTop;
         }
       });
     }
   }, [messages, isLoading, shouldRenderPendingHumanMessage]);
-
-  const isTickingRef = useRef(false);
-  const lastScrollTopRef = useRef(0);
 
   const handleScroll = useCallback(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
 
     const currentScrollTop = el.scrollTop;
+
+    // Ignore fractional pixel differences to avoid false positives on zoom/iOS
+    if (Math.abs(currentScrollTop - lastScrollTopRef.current) < 1) {
+      return;
+    }
+
     const distanceFromBottom = el.scrollHeight - currentScrollTop - el.clientHeight;
     const isScrollingUp = currentScrollTop < lastScrollTopRef.current;
+    const isScrollingDown = currentScrollTop > lastScrollTopRef.current;
+
     lastScrollTopRef.current = currentScrollTop;
 
-    if (isScrollingUp && distanceFromBottom > 0) {
+    if (isScrollingUp) {
       isNearBottomRef.current = false;
-      setShowScrollBtn(true);
+    } else if (isScrollingDown) {
+      isNearBottomRef.current = distanceFromBottom <= 100;
     }
 
     if (isTickingRef.current) return;
     isTickingRef.current = true;
     requestAnimationFrame(() => {
-      if (el) {
-        const currentDistanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-        if (!isScrollingUp) {
-          isNearBottomRef.current = currentDistanceFromBottom <= 100;
-        }
-        setShowScrollBtn(currentDistanceFromBottom > 100);
+      if (messagesContainerRef.current) {
+        const currentEl = messagesContainerRef.current;
+        setShowScrollBtn(currentEl.scrollHeight - currentEl.scrollTop - currentEl.clientHeight > 100);
       }
       isTickingRef.current = false;
     });
@@ -200,12 +208,14 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     setHistoryOpen(false);
     setPendingHumanMessage(null);
     handleThreadIdChange(threadId);
+    onViewerArtifactRef.current(null);
   }, [handleThreadIdChange]);
 
   const handleDeleteThread = useCallback((threadId: string) => {
     history.deleteThread(threadId);
     if (threadId === urlThreadId) {
       handleThreadIdChange(null);
+      onViewerArtifactRef.current(null);
     }
   }, [history, urlThreadId, handleThreadIdChange]);
 
@@ -213,6 +223,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     setHistoryOpen(false);
     setPendingHumanMessage(null);
     handleThreadIdChange(null);
+    onViewerArtifactRef.current(null);
   }, [handleThreadIdChange]);
 
   const toggleHistory = useCallback(() => {

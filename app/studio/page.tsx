@@ -27,7 +27,14 @@ export default function StudioPage() {
   const mounted = useMounted();
   const isDark = mounted && resolvedTheme === "dark";
 
-  const handleViewerArtifact = useCallback((entry: GeomExportEntry) => {
+  const handleViewerArtifact = useCallback((entry: GeomExportEntry | null) => {
+    if (!entry) {
+      setStlUrl(null);
+      setDownloadUrls({});
+      stlRequestVersionRef.current++;
+      return;
+    }
+
     const isStl = entry.filename.endsWith(".stl");
     const requestVersion = isStl ? ++stlRequestVersionRef.current : stlRequestVersionRef.current;
 

@@ -3,7 +3,6 @@ import { useRef, useCallback } from "react";
 export function useAutoScroll<T extends HTMLElement>() {
   const stickRef = useRef(true);
   const observerRef = useRef<MutationObserver | null>(null);
-  const isTickingRef = useRef(false);
   const lastScrollTopRef = useRef(0);
 
   const ref = useCallback((el: T | null) => {
@@ -16,6 +15,7 @@ export function useAutoScroll<T extends HTMLElement>() {
       const observer = new MutationObserver(() => {
         if (stickRef.current) {
           el.scrollTop = el.scrollHeight;
+          lastScrollTopRef.current = el.scrollTop;
         }
       });
       observer.observe(el, { childList: true, subtree: true, characterData: true });
@@ -26,23 +26,22 @@ export function useAutoScroll<T extends HTMLElement>() {
   const onScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
     const el = e.currentTarget;
     const currentScrollTop = el.scrollTop;
-    const distanceFromBottom = el.scrollHeight - currentScrollTop - el.clientHeight;
-    const isScrollingUp = currentScrollTop < lastScrollTopRef.current;
-    lastScrollTopRef.current = currentScrollTop;
 
-    if (isScrollingUp && distanceFromBottom > 0) {
-      stickRef.current = false;
+    if (Math.abs(currentScrollTop - lastScrollTopRef.current) < 1) {
+      return;
     }
 
-    if (isTickingRef.current) return;
-    isTickingRef.current = true;
+    const distanceFromBottom = el.scrollHeight - currentScrollTop - el.clientHeight;
+    const isScrollingUp = currentScrollTop < lastScrollTopRef.current;
+    const isScrollingDown = currentScrollTop > lastScrollTopRef.current;
 
-    requestAnimationFrame(() => {
-      if (!isScrollingUp) {
-        stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight <= 30;
-      }
-      isTickingRef.current = false;
-    });
+    lastScrollTopRef.current = currentScrollTop;
+
+    if (isScrollingUp) {
+      stickRef.current = false;
+    } else if (isScrollingDown) {
+      stickRef.current = distanceFromBottom <= 30;
+    }
   }, []);
 
   return [ref, onScroll] as const;
