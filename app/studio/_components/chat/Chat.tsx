@@ -2,12 +2,13 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { ArrowDown, Loader2 } from "lucide-react";
+import { ArrowDown, History, Loader2, MessageSquarePlus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
 import type { ClassSubagentStreamInterface } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
+import { useThreadHistory } from "@/app/studio/_hooks/use-thread-history";
 import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
 import { getMessageTextContent } from "@/app/studio/_lib/message-content";
 import type { CadGraphState, GeomExportEntry, TodoItem } from "@/app/studio/_types/chat";
@@ -15,6 +16,7 @@ import type { CadGraphState, GeomExportEntry, TodoItem } from "@/app/studio/_typ
 import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
 import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
 import { TodoList } from "@/app/studio/_components/chat/TodoList";
+import ThreadHistoryPanel from "@/app/studio/_components/chat/ThreadHistoryPanel";
 import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
 
@@ -41,6 +43,8 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   }, [onViewerArtifact]);
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const history = useThreadHistory(client, isAuthReady);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
@@ -177,6 +181,32 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     }
   }, []);
 
+  const handleSelectThread = useCallback((threadId: string) => {
+    setHistoryOpen(false);
+    setPendingHumanMessage(null);
+    handleThreadIdChange(threadId);
+  }, [handleThreadIdChange]);
+
+  const handleDeleteThread = useCallback((threadId: string) => {
+    history.deleteThread(threadId);
+    if (threadId === urlThreadId) {
+      handleThreadIdChange(null);
+    }
+  }, [history, urlThreadId, handleThreadIdChange]);
+
+  const handleNewChat = useCallback(() => {
+    setHistoryOpen(false);
+    setPendingHumanMessage(null);
+    handleThreadIdChange(null);
+  }, [handleThreadIdChange]);
+
+  const toggleHistory = useCallback(() => {
+    setHistoryOpen((v) => {
+      if (!v) history.refresh();
+      return !v;
+    });
+  }, [history]);
+
   const errorMessage = error
     ? (error instanceof Error ? error.message : String(error))
     : null;
@@ -205,96 +235,136 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
         </div>
       ) : null}
 
-      <div className="relative flex-1 overflow-hidden">
-        <div
-          ref={messagesContainerRef}
-          onScroll={handleScroll}
-          className="h-full overflow-y-auto scroll-on-hover px-4 py-6"
+      <div className="flex shrink-0 items-center justify-end gap-1 px-4 py-2">
+        <button
+          onClick={handleNewChat}
+          title="New chat"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
-            {isEmpty && (
-              <EmptyChatState
-                isHydrating={isHydrating}
-                isBusy={isBusy}
-                onExamplePrompt={handleExamplePrompt}
-              />
-            )}
+          <MessageSquarePlus size={16} />
+        </button>
+        <button
+          onClick={toggleHistory}
+          title={historyOpen ? "Close history" : "History"}
+          className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${historyOpen
+            ? "bg-muted text-foreground"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+        >
+          <History size={16} />
+        </button>
+      </div>
 
-            {messages.map((message, idx) => {
-              const isAiMessage = AIMessage.isInstance(message);
-              const isLastAi =
-                isLoading &&
-                idx === messages.length - 1 &&
-                isAiMessage;
-              const toolCalls = isAiMessage &&
-                "getToolCalls" in stream &&
-                typeof stream.getToolCalls === "function"
-                ? stream.getToolCalls(message)
-                : [];
-              const subagentsByMsg = isAiMessage && message.id
-                && "getSubagentsByMessage" in stream
-                && typeof stream.getSubagentsByMessage === "function"
-                ? stream.getSubagentsByMessage(message.id)
-                : [];
+      <div className="relative flex-1 overflow-hidden">
+        {historyOpen ? (
+          <ThreadHistoryPanel
+            threads={history.threads}
+            isLoading={history.isLoading}
+            hasMore={history.hasMore}
+            activeThreadId={urlThreadId}
+            onSelectThread={handleSelectThread}
+            onDeleteThread={handleDeleteThread}
+            onLoadMore={history.loadMore}
+          />
+        ) : (
+          <>
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="h-full overflow-y-auto scroll-on-hover px-4 pt-2 pb-6"
+            >
+              <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
+                {isEmpty && !isHydrating && (
+                  <EmptyChatState
+                    isHydrating={isHydrating}
+                    isBusy={isBusy}
+                    onExamplePrompt={handleExamplePrompt}
+                  />
+                )}
 
-              // Fallback: match subagents by tool call ID (OpenAI message ID mismatch)
-              let subagents = subagentsByMsg;
-              if (subagents.length === 0 && isAiMessage && "subagents" in stream) {
-                const allSubagents = stream.subagents as Map<string, ClassSubagentStreamInterface>;
-                if (allSubagents instanceof Map && allSubagents.size > 0) {
-                  const taskCallIds = new Set(
-                    toolCalls
-                      .filter((tc: StreamToolCall) => tc.call.name === "task")
-                      .map((tc: StreamToolCall) => tc.call.id ?? tc.id),
-                  );
-                  if (taskCallIds.size > 0) {
-                    subagents = [...allSubagents.values()].filter(
-                      (s) => taskCallIds.has(s.id),
-                    );
+                {isHydrating && messages.length === 0 && (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 size={24} className="animate-spin text-muted-foreground" />
+                  </div>
+                )}
+
+                {messages.map((message, idx) => {
+                  const isAiMessage = AIMessage.isInstance(message);
+                  const isLastAi =
+                    isLoading &&
+                    idx === messages.length - 1 &&
+                    isAiMessage;
+                  const toolCalls = isAiMessage &&
+                    "getToolCalls" in stream &&
+                    typeof stream.getToolCalls === "function"
+                    ? stream.getToolCalls(message)
+                    : [];
+                  const subagentsByMsg = isAiMessage && message.id
+                    && "getSubagentsByMessage" in stream
+                    && typeof stream.getSubagentsByMessage === "function"
+                    ? stream.getSubagentsByMessage(message.id)
+                    : [];
+
+                  // Fallback: match subagents by tool call ID (OpenAI message ID mismatch)
+                  let subagents = subagentsByMsg;
+                  if (subagents.length === 0 && isAiMessage && "subagents" in stream) {
+                    const allSubagents = stream.subagents as Map<string, ClassSubagentStreamInterface>;
+                    if (allSubagents instanceof Map && allSubagents.size > 0) {
+                      const taskCallIds = new Set(
+                        toolCalls
+                          .filter((tc: StreamToolCall) => tc.call.name === "task")
+                          .map((tc: StreamToolCall) => tc.call.id ?? tc.id),
+                      );
+                      if (taskCallIds.size > 0) {
+                        subagents = [...allSubagents.values()].filter(
+                          (s) => taskCallIds.has(s.id),
+                        );
+                      }
+                    }
                   }
-                }
-              }
 
-              return (
-                <MessageWithSubagents
-                  key={message.id ?? idx}
-                  message={message}
-                  isStreaming={isLastAi}
-                  toolCalls={toolCalls}
-                  subagents={subagents}
-                />
-              );
-            })}
+                  return (
+                    <MessageWithSubagents
+                      key={message.id ?? idx}
+                      message={message}
+                      isStreaming={isLastAi}
+                      toolCalls={toolCalls}
+                      subagents={subagents}
+                    />
+                  );
+                })}
 
-            {shouldRenderPendingHumanMessage && pendingHumanMessage ? (
-              <MessageWithSubagents
-                key="pending-human-message"
-                message={pendingHumanMessage}
-              />
-            ) : null}
+                {shouldRenderPendingHumanMessage && pendingHumanMessage ? (
+                  <MessageWithSubagents
+                    key="pending-human-message"
+                    message={pendingHumanMessage}
+                  />
+                ) : null}
 
-            {isLoading &&
-              lastMessageType === "human" && (
-                <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>Thinking...</span>
-                </div>
-              )}
+                {isLoading &&
+                  lastMessageType === "human" && (
+                    <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Thinking...</span>
+                    </div>
+                  )}
 
-            {shouldShowTodoList ? <TodoList todos={todos} /> : null}
+                {shouldShowTodoList ? <TodoList todos={todos} /> : null}
 
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
 
-        {showScrollBtn && (
-          <button
-            onClick={scrollToBottom}
-            aria-label="Scroll to bottom"
-            className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90 transition-opacity"
-          >
-            <ArrowDown size={16} />
-          </button>
+            {showScrollBtn && (
+              <button
+                onClick={scrollToBottom}
+                aria-label="Scroll to bottom"
+                className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90 transition-opacity"
+              >
+                <ArrowDown size={16} />
+              </button>
+            )}
+          </>
         )}
       </div>
 
