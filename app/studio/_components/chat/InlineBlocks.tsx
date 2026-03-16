@@ -41,7 +41,7 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
       >
         <div className="prose-chat text-muted-foreground">
           {content ? (
-            <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>{content}</ReactMarkdown>
+            <pre className="whitespace-pre-wrap break-words font-sans text-[inherit] m-0">{content}</pre>
           ) : (
             <p className="text-muted-foreground/50 italic">Processing...</p>
           )}
@@ -53,14 +53,20 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
 
 export const InlineTextContent = React.memo(function InlineTextContent({
   content,
+  isStreaming = false,
 }: {
   content: string;
+  isStreaming?: boolean;
 }) {
   if (!content.trim()) return null;
 
   return (
     <div className="prose-chat">
-      <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>{content}</ReactMarkdown>
+      {isStreaming ? (
+        <pre className="whitespace-pre-wrap break-words font-sans text-[inherit] m-0">{content}</pre>
+      ) : (
+        <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>{content}</ReactMarkdown>
+      )}
     </div>
   );
 });

@@ -19,11 +19,14 @@ export function PanelTimer({
 
     startRef.current = Date.now();
 
-    const interval = setInterval(() => {
-      setSeconds(Math.floor((Date.now() - startRef.current) / 1000));
-    }, 1000);
+    const update = () => setSeconds(Math.floor((Date.now() - startRef.current) / 1000));
+    const rafId = requestAnimationFrame(update);
+    const interval = setInterval(update, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearInterval(interval);
+    };
   }, [active]);
 
   if (fixedSeconds !== undefined) {

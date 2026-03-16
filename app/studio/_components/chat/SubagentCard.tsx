@@ -88,16 +88,13 @@ function getElapsedLabel(
   return `${minutes}m ${remainingSeconds}s`;
 }
 
-function getDisplayContent(subagent: ClassSubagentStreamInterface): { text: string; thinking: string; isStreaming: boolean } {
+function getDisplayContent(subagent: ClassSubagentStreamInterface): { text: string; thinking: string } {
   let text = "";
   let thinking = "";
-  let isStreaming = false;
 
   if (subagent.result?.trim()) {
     text = subagent.result;
   }
-
-  isStreaming = subagent.status === "running";
 
   for (let index = subagent.messages.length - 1; index >= 0; index -= 1) {
     const message = subagent.messages[index];
@@ -116,7 +113,7 @@ function getDisplayContent(subagent: ClassSubagentStreamInterface): { text: stri
     if (text && thinking) break;
   }
 
-  return { text, thinking, isStreaming };
+  return { text, thinking };
 }
 
 const STATUS_STYLES = {
@@ -153,7 +150,8 @@ export const SubagentCard = React.memo(function SubagentCard({
   const title = typeof subagent.toolCall.args.subagent_type === "string"
     ? subagent.toolCall.args.subagent_type
     : subagent.toolCall.name;
-  const { text: displayContent, thinking, isStreaming } = getDisplayContent(subagent);
+  const { text: displayContent, thinking } = getDisplayContent(subagent);
+  const isStreaming = resolvedStatus === "running";
   const elapsed = getElapsedLabel(subagent.startedAt, subagent.completedAt);
   const style = STATUS_STYLES[resolvedStatus];
   const StatusIcon = style.icon;
@@ -274,7 +272,7 @@ export const SubagentCard = React.memo(function SubagentCard({
                     </div>
                   </summary>
                   <div className="mt-2 border-l border-border/30 pl-4">
-                    <InlineTextContent content={displayContent} />
+                    <InlineTextContent content={displayContent} isStreaming={isStreaming} />
                   </div>
                 </details>
               ) : null}

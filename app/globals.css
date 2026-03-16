@@ -95,6 +95,7 @@ summary {
   line-height: 1.55;
   font-size: 0.875rem;
   color: var(--foreground);
+  overflow-wrap: break-word;
 }
 
 .prose-chat p {
