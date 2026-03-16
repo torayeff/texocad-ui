@@ -1,4 +1,6 @@
 import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { AIMessage, HumanMessage, type BaseMessage } from "@langchain/core/messages";
 import { AIPanel } from "@/app/studio/_components/chat/AIPanel";
 import { ToolCallCard, type StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
@@ -13,15 +15,33 @@ interface ChatMessageProps {
   children?: React.ReactNode;
 }
 
+const REMARK_PLUGINS = [remarkGfm];
+
 function HumanMessageBubble({ message }: { message: BaseMessage }) {
   const text = getMessageTextContent(message);
 
   return (
     <div className="flex justify-end">
       <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
-        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
-          {text}
-        </p>
+        <div className="prose-chat text-foreground">
+          <ReactMarkdown
+            remarkPlugins={REMARK_PLUGINS}
+            components={{
+              a: ({ children }) => (
+                <span className="font-medium underline decoration-muted-foreground/30 underline-offset-2">
+                  {children}
+                </span>
+              ),
+              p: ({ children }) => (
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed m-0">
+                  {children}
+                </p>
+              ),
+            }}
+          >
+            {text}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );

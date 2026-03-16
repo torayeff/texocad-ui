@@ -63,7 +63,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
 
   const sendMessage = useCallback(() => {
     if (!hasContent || isBusy) return;
-    const urls = attachments.map((a) => a.url);
+    const urls = attachments.map((a) => `[${a.filename}](${a.url})`);
     const parts = [...urls, input.trim()].filter(Boolean);
     onSubmit(parts.join("\n"));
     setInput("");
