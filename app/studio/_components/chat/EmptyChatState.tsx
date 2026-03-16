@@ -12,14 +12,24 @@ const EXAMPLE_PROMPTS = [
       "Design an L-shaped mounting bracket from 4 mm sheet metal with 80 mm and 60 mm legs, a 30 mm flange height, two 6 mm mounting holes on the base, and a 20 mm cable slot on the upright face.",
   },
   {
-    label: "Headphone stand",
+    label: "Phone stand",
     prompt:
-      "Design a desktop headphone stand with a circular base 120 mm in diameter, a vertical stem 220 mm tall, and a curved top cradle 45 mm wide for over-ear headphones. Add soft 8 mm edge fillets and a cable hook on the back.",
+      "Design a desk phone stand for a smartphone with a 75 mm wide base, a back support tilted at 70 degrees, and a 12 mm front lip to hold the device. Add a cable slot at the bottom for charging access and soften the outside edges with 3 mm fillets.",
   },
   {
-    label: "Keyboard case",
+    label: "Pen holder",
     prompt:
-      "Create a compact mechanical keyboard case for a 65% layout with a 320 mm by 110 mm footprint, 18 mm front height, a 6 degree typing angle, USB-C cutout on the rear, and internal mounting posts for a tray-mount PCB.",
+      "Create a round desk pen holder with a 90 mm outer diameter, a 70 mm inner diameter, and a 110 mm height. Add a 4 mm thick base and a shallow finger cutout on one side to make it easier to grab pens.",
+  },
+  {
+    label: "Soap dish",
+    prompt:
+      "Model a rectangular soap dish that is 120 mm long, 85 mm wide, and 18 mm tall with rounded corners. Add shallow drainage channels across the top surface and four small feet underneath to lift it off the counter.",
+  },
+  {
+    label: "Storage tray",
+    prompt:
+      "Create a small desktop storage tray with an overall size of 180 mm by 120 mm and a height of 25 mm. Divide the inside into three compartments for keys, coins, and small accessories, and round the top edges with 2 mm fillets.",
   },
 ];
 
