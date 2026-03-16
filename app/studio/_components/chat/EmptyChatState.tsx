@@ -1,11 +1,26 @@
-import React from "react";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 const EXAMPLE_PROMPTS = [
-  "A hollow cylinder with a threaded cap",
-  "A mounting bracket with 4 screw holes",
-  "A standard gear with 20 involute teeth",
-  "A phone stand with an adjustable angle",
+  {
+    label: "Spur gear",
+    prompt:
+      "Create a spur gear with 24 teeth, a 2 mm module, a 12 mm center bore, and an 8 mm thickness. Add a 2 mm keyway and 0.5 mm chamfers on both faces.",
+  },
+  {
+    label: "Mounting bracket",
+    prompt:
+      "Design an L-shaped mounting bracket from 4 mm sheet metal with 80 mm and 60 mm legs, a 30 mm flange height, two 6 mm mounting holes on the base, and a 20 mm cable slot on the upright face.",
+  },
+  {
+    label: "Headphone stand",
+    prompt:
+      "Design a desktop headphone stand with a circular base 120 mm in diameter, a vertical stem 220 mm tall, and a curved top cradle 45 mm wide for over-ear headphones. Add soft 8 mm edge fillets and a cable hook on the back.",
+  },
+  {
+    label: "Keyboard case",
+    prompt:
+      "Create a compact mechanical keyboard case for a 65% layout with a 320 mm by 110 mm footprint, 18 mm front height, a 6 degree typing angle, USB-C cutout on the rear, and internal mounting posts for a tray-mount PCB.",
+  },
 ];
 
 export default function EmptyChatState({
@@ -19,7 +34,7 @@ export default function EmptyChatState({
 }) {
   if (isHydrating) {
     return (
-      <div className="flex min-h-full items-center justify-center gap-2 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-sm text-muted-foreground">
+      <div className="flex min-h-[400px] items-center justify-center gap-2 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-sm text-muted-foreground">
         <Loader2 size={16} className="animate-spin" />
         <span>Loading conversation...</span>
       </div>
@@ -31,24 +46,25 @@ export default function EmptyChatState({
   }
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-center text-muted-foreground">
-      <MessageSquare size={34} className="opacity-30" />
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-foreground/90">
-          Enter a prompt to generate a 3D model
+    <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-12 text-center text-muted-foreground">
+      <Sparkles size={32} className="opacity-30" />
+      <div className="space-y-2 max-w-[400px]">
+        <p className="text-base font-medium text-foreground/90">
+          What do you want to build?
         </p>
-        <p className="text-xs text-muted-foreground">
-          Start simple, then refine with follow-up prompts.
+        <p className="text-sm text-muted-foreground">
+          Describe model, or upload reference images, sketches, and technical specifications.
         </p>
       </div>
-      <div className="flex max-w-lg flex-wrap justify-center gap-2">
-        {EXAMPLE_PROMPTS.map((prompt) => (
+
+      <div className="mt-2 flex max-w-3xl flex-wrap justify-center gap-2">
+        {EXAMPLE_PROMPTS.map((example) => (
           <button
-            key={prompt}
-            onClick={() => onExamplePrompt(prompt)}
-            className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-accent hover:bg-accent/5 hover:text-accent transition-colors"
+            key={example.label}
+            onClick={() => onExamplePrompt(example.prompt)}
+            className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent hover:bg-accent/5 hover:text-accent"
           >
-            {prompt}
+            {example.label}
           </button>
         ))}
       </div>

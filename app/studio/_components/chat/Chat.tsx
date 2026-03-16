@@ -273,7 +273,9 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
               onScroll={handleScroll}
               className="h-full overflow-y-auto scroll-on-hover px-4 pt-2 pb-6"
             >
-              <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
+              <div
+                className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-center" : ""}`}
+              >
                 {isEmpty && !isHydrating && (
                   <EmptyChatState
                     isHydrating={isHydrating}
