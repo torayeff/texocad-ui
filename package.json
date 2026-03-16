@@ -24,7 +24,8 @@
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "three": "^0.183.2"
+    "three": "^0.183.2",
+    "ulidx": "^2.4.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -1,5 +1,7 @@
 import React, { useCallback } from "react";
-import { Plus, Square, ArrowUp } from "lucide-react";
+import { Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
+import { useFileUpload } from "@/app/studio/_hooks/use-file-upload";
+import type { UploadedFile } from "@/app/studio/_hooks/use-file-upload";
 
 export interface ChatInputHandle {
   setPrompt: (text: string) => void;
@@ -20,7 +22,19 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   stopGeneration,
 }: ChatInputProps, ref) {
   const [input, setInput] = React.useState("");
+  const [attachments, setAttachments] = React.useState<UploadedFile[]>([]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const onFileUploaded = useCallback((file: UploadedFile) => {
+    setAttachments((prev) => [...prev, file]);
+  }, []);
+
+  const removeAttachment = useCallback((url: string) => {
+    setAttachments((prev) => prev.filter((a) => a.url !== url));
+  }, []);
+
+  const { fileInputRef, isUploading, triggerFileSelect, handleFileChange, acceptedTypes } =
+    useFileUpload(onFileUploaded);
 
   React.useImperativeHandle(ref, () => ({
     setPrompt: (text: string) => {
@@ -45,15 +59,19 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
     []
   );
 
+  const hasContent = input.trim() || attachments.length > 0;
+
   const sendMessage = useCallback(() => {
-    const trimmed = input.trim();
-    if (!trimmed || isBusy) return;
-    onSubmit(trimmed);
+    if (!hasContent || isBusy) return;
+    const urls = attachments.map((a) => a.url);
+    const parts = [...urls, input.trim()].filter(Boolean);
+    onSubmit(parts.join("\n"));
     setInput("");
+    setAttachments([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [input, isBusy, onSubmit]);
+  }, [input, attachments, hasContent, isBusy, onSubmit]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -67,50 +85,81 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
 
   return (
     <div className="sticky bottom-0 z-10 p-4 bg-background">
-      <div className="relative flex items-end gap-2 rounded-3xl border border-border bg-muted/20 px-2 py-2 focus-within:border-border/80 focus-within:bg-background focus-within:ring-1 focus-within:ring-border/40 transition-colors">
-        <button
-          type="button"
-          disabled
-          aria-label="Attachments coming soon"
-          title="Attachments coming soon"
-          className="mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground opacity-50"
-        >
-          <Plus size={18} />
-        </button>
-
-        <textarea
-          ref={textareaRef}
-          value={input}
-          disabled={isBusy}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Describe a part..."
-          rows={1}
-          className="flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none max-h-[200px]"
-          style={{ minHeight: "24px" }}
+      <div className="relative rounded-3xl border border-border bg-muted/20 px-2 py-2 focus-within:border-border/80 focus-within:bg-background focus-within:ring-1 focus-within:ring-border/40 transition-colors">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={acceptedTypes}
+          onChange={handleFileChange}
+          className="hidden"
         />
 
-        {isLoading ? (
-          <button
-            onClick={stopGeneration}
-            aria-label="Stop generation"
-            className="mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:opacity-90"
-          >
-            <Square size={14} fill="currentColor" />
-          </button>
-        ) : (
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || isBusy}
-            aria-label="Send message"
-            className={`mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors ${input.trim()
-              ? "bg-foreground text-background hover:opacity-90"
-              : "bg-muted text-muted-foreground"
-              } disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            <ArrowUp size={16} />
-          </button>
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-1 pb-1.5">
+            {attachments.map((a) => (
+              <span
+                key={a.url}
+                className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+              >
+                <Paperclip size={12} className="text-muted-foreground" />
+                <span className="max-w-[180px] truncate">{a.filename}</span>
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(a.url)}
+                  className="ml-0.5 rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
         )}
+
+        <div className="flex items-end gap-2">
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={triggerFileSelect}
+            aria-label="Attach file"
+            className="mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+          </button>
+
+          <textarea
+            ref={textareaRef}
+            value={input}
+            disabled={isBusy}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Describe a part..."
+            rows={1}
+            className="flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none max-h-[200px]"
+            style={{ minHeight: "24px" }}
+          />
+
+          {isLoading ? (
+            <button
+              onClick={stopGeneration}
+              aria-label="Stop generation"
+              className="mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:opacity-90"
+            >
+              <Square size={14} fill="currentColor" />
+            </button>
+          ) : (
+            <button
+              onClick={sendMessage}
+              disabled={!hasContent || isBusy}
+              aria-label="Send message"
+              className={`mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors ${hasContent
+                ? "bg-foreground text-background hover:opacity-90"
+                : "bg-muted/80 text-muted-foreground/80"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              <ArrowUp size={16} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
