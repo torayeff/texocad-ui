@@ -52,7 +52,6 @@ export default function Viewer({
 
   return (
     <div className="relative h-full w-full" style={{ background: bgColor }}>
-      {/* View preset bar */}
       <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm p-1 shadow-sm">
         {(Object.keys(VIEW_LABELS) as ViewPreset[]).map((v) => (
           <button
@@ -68,7 +67,6 @@ export default function Viewer({
         ))}
       </div>
 
-      {/* Download buttons */}
       <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
         <button
           onClick={() => handleDownload("stl")}
@@ -88,7 +86,6 @@ export default function Viewer({
         </button>
       </div>
 
-      {/* Left toolbar */}
       <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-0.5 rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm p-1 shadow-sm">
         <button
           onClick={fitView}
@@ -160,7 +157,6 @@ export default function Viewer({
         </div>
       )}
 
-      {/* Mouse control hint */}
       <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 text-[10px] text-muted-foreground/40 select-none">
         <span>Drag to orbit</span>
         <span className="opacity-50">·</span>

@@ -1,7 +1,7 @@
 import React from "react";
-import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { ClassSubagentStreamInterface } from "@langchain/react";
-import { ChatMessage } from "@/app/studio/_components/chat/ChatMessage";
+import { ChatMessage, type ChatMessageType } from "@/app/studio/_components/chat/ChatMessage";
+import type { MessageUsage } from "@/app/studio/_lib/message-rows";
 import { SubagentCard } from "@/app/studio/_components/chat/SubagentCard";
 import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
 
@@ -27,38 +27,74 @@ function getSubagentStatus(
   return subagent.status;
 }
 
-export const MessageWithSubagents = React.memo(function MessageWithSubagents({
-  message,
-  isStreaming = false,
-  toolCalls = [],
-  subagents = [],
-}: {
-  message: BaseMessage;
+function areUsageEqual(prev?: MessageUsage, next?: MessageUsage): boolean {
+  return prev?.inputTokens === next?.inputTokens
+    && prev?.outputTokens === next?.outputTokens
+    && prev?.reasoningTokens === next?.reasoningTokens
+    && prev?.runtimeSeconds === next?.runtimeSeconds;
+}
+
+interface MessageWithSubagentsProps {
+  messageType: ChatMessageType;
+  textContent: string;
+  thinkingContent?: string;
+  agentName?: string;
+  usage?: MessageUsage;
   isStreaming?: boolean;
+  startedAtMs?: number;
   toolCalls?: StreamToolCall[];
   subagents?: ClassSubagentStreamInterface[];
-}) {
-  const visibleToolCalls = getVisibleToolCalls(toolCalls, subagents.length);
-  const subagentEntries = subagents.map((subagent) => ({
-    subagent,
-    status: getSubagentStatus(subagent, toolCalls),
-  }));
+  toolCallsSignature?: string;
+  subagentsSignature?: string;
+  renderMarkdown?: boolean;
+}
+
+export const MessageWithSubagents = React.memo(function MessageWithSubagents({
+  messageType,
+  textContent,
+  thinkingContent = "",
+  agentName,
+  usage,
+  isStreaming = false,
+  startedAtMs,
+  toolCalls = [],
+  subagents = [],
+  renderMarkdown = false,
+}: MessageWithSubagentsProps) {
+  const visibleToolCalls = React.useMemo(
+    () => getVisibleToolCalls(toolCalls, subagents.length),
+    [toolCalls, subagents.length],
+  );
+  const subagentEntries = React.useMemo(
+    () => subagents.map((subagent) => ({
+      subagent,
+      status: getSubagentStatus(subagent, toolCalls),
+    })),
+    [subagents, toolCalls],
+  );
 
   return (
     <div className="flex flex-col gap-3">
       <ChatMessage
-        message={message}
+        messageType={messageType}
+        textContent={textContent}
+        thinkingContent={thinkingContent}
+        agentName={agentName}
+        usage={usage}
         isStreaming={isStreaming}
+        startedAtMs={startedAtMs}
         toolCalls={visibleToolCalls}
-        forcePanelShell={AIMessage.isInstance(message) && subagents.length > 0}
+        forcePanelShell={messageType === "ai" && subagents.length > 0}
+        renderMarkdown={renderMarkdown}
       >
-        {AIMessage.isInstance(message) && subagents.length > 0 ? (
+        {messageType === "ai" && subagents.length > 0 ? (
           <div className="flex flex-col gap-2">
             {subagentEntries.map(({ subagent, status }) => (
               <SubagentCard
                 key={subagent.id}
                 subagent={subagent}
                 status={status}
+                parentIsStreaming={isStreaming}
               />
             ))}
           </div>
@@ -66,4 +102,15 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
       </ChatMessage>
     </div>
   );
-});
+}, (prevProps, nextProps) =>
+  prevProps.messageType === nextProps.messageType
+  && prevProps.textContent === nextProps.textContent
+  && prevProps.thinkingContent === nextProps.thinkingContent
+  && prevProps.agentName === nextProps.agentName
+  && areUsageEqual(prevProps.usage, nextProps.usage)
+  && prevProps.isStreaming === nextProps.isStreaming
+  && prevProps.startedAtMs === nextProps.startedAtMs
+  && prevProps.renderMarkdown === nextProps.renderMarkdown
+  && prevProps.toolCallsSignature === nextProps.toolCallsSignature
+  && prevProps.subagentsSignature === nextProps.subagentsSignature,
+);

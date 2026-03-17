@@ -1,25 +1,30 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { AIMessage, HumanMessage, type BaseMessage } from "@langchain/core/messages";
 import { AIPanel } from "@/app/studio/_components/chat/AIPanel";
 import { ToolCallCard, type StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/InlineBlocks";
-import { getMessageTextContent, getReasoningContent } from "@/app/studio/_lib/message-content";
+import type { MessageUsage } from "@/app/studio/_lib/message-rows";
+
+export type ChatMessageType = "human" | "ai";
 
 interface ChatMessageProps {
-  message: BaseMessage;
+  messageType: ChatMessageType;
+  textContent: string;
+  thinkingContent?: string;
+  agentName?: string;
+  usage?: MessageUsage;
   isStreaming?: boolean;
+  startedAtMs?: number;
   toolCalls?: StreamToolCall[];
   forcePanelShell?: boolean;
+  renderMarkdown?: boolean;
   children?: React.ReactNode;
 }
 
 const REMARK_PLUGINS = [remarkGfm];
 
-function HumanMessageBubble({ message }: { message: BaseMessage }) {
-  const text = getMessageTextContent(message);
-
+function HumanMessageBubble({ content }: { content: string }) {
   return (
     <div className="flex justify-end">
       <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
@@ -39,7 +44,7 @@ function HumanMessageBubble({ message }: { message: BaseMessage }) {
               ),
             }}
           >
-            {text}
+            {content}
           </ReactMarkdown>
         </div>
       </div>
@@ -48,31 +53,35 @@ function HumanMessageBubble({ message }: { message: BaseMessage }) {
 }
 
 function AIMessageView({
-  message,
+  agentName = "",
+  textContent,
+  thinkingContent = "",
+  usage,
   isStreaming,
+  startedAtMs,
   toolCalls,
   forcePanelShell,
+  renderMarkdown,
   children,
 }: {
-  message: AIMessage;
+  agentName?: string;
+  textContent: string;
+  thinkingContent?: string;
+  usage?: MessageUsage;
   isStreaming: boolean;
+  startedAtMs?: number;
   toolCalls: StreamToolCall[];
   forcePanelShell: boolean;
+  renderMarkdown: boolean;
   children?: React.ReactNode;
 }) {
-  const text = getMessageTextContent(message);
-  const thinking = getReasoningContent(message);
-
-  const hasText = text.trim().length > 0;
+  const hasText = textContent.trim().length > 0;
   const hasToolCalls = toolCalls.length > 0;
-  const hasThinking = thinking.trim().length > 0;
+  const hasThinking = thinkingContent.trim().length > 0;
 
   let statusLabel: string | null = null;
-  if (thinking && isStreaming) statusLabel = "Thinking";
+  if (hasThinking && isStreaming) statusLabel = "Thinking";
   else if (isStreaming) statusLabel = "Working";
-
-  const agentName = message.name ?? "";
-  const usage = message.usage_metadata;
 
   if (!hasText && !hasToolCalls && !hasThinking && !isStreaming && !forcePanelShell) return null;
 
@@ -81,19 +90,14 @@ function AIMessageView({
       agentName={agentName}
       statusLabel={statusLabel}
       isStreaming={isStreaming}
-      usage={usage ? {
-        inputTokens: usage.input_tokens,
-        outputTokens: usage.output_tokens,
-        reasoningTokens: usage.output_token_details?.reasoning,
-        runtimeSeconds: (usage as Record<string, unknown>).runtimeSeconds as number | undefined,
-      } : undefined}
+      timerStartedAtMs={startedAtMs}
+      usage={usage}
     >
-      {thinking || (isStreaming && !hasText) ? (
+      {hasThinking || (isStreaming && !hasText) ? (
         <InlineThinkingBlock
-          content={thinking}
-          isStreaming={isStreaming && !hasText}
+          content={thinkingContent}
+          isStreaming={isStreaming}
           defaultOpen={false}
-          fixedSeconds={!isStreaming && !hasText ? (usage as Record<string, unknown>)?.runtimeSeconds as number | undefined : undefined}
         />
       ) : null}
 
@@ -103,12 +107,19 @@ function AIMessageView({
             <ToolCallCard
               key={tc.id}
               toolCall={tc}
+              isStreaming={isStreaming}
             />
           ))}
         </div>
       ) : null}
 
-      {hasText ? <InlineTextContent content={text} isStreaming={isStreaming} /> : null}
+      {hasText ? (
+        <InlineTextContent
+          content={textContent}
+          isStreaming={isStreaming}
+          renderMarkdown={renderMarkdown}
+        />
+      ) : null}
 
       {children}
     </AIPanel>
@@ -116,28 +127,35 @@ function AIMessageView({
 }
 
 export const ChatMessage = React.memo(function ChatMessage({
-  message,
+  messageType,
+  textContent,
+  thinkingContent = "",
+  agentName,
+  usage,
   isStreaming = false,
+  startedAtMs,
   toolCalls = [],
   forcePanelShell = false,
+  renderMarkdown = false,
   children,
 }: ChatMessageProps) {
-  if (HumanMessage.isInstance(message)) {
-    return <HumanMessageBubble message={message} />;
+  if (messageType === "human") {
+    return <HumanMessageBubble content={textContent} />;
   }
 
-  if (AIMessage.isInstance(message)) {
-    return (
-      <AIMessageView
-        message={message}
-        isStreaming={isStreaming}
-        toolCalls={toolCalls}
-        forcePanelShell={forcePanelShell}
-      >
-        {children}
-      </AIMessageView>
-    );
-  }
-
-  return null;
+  return (
+    <AIMessageView
+      agentName={agentName}
+      textContent={textContent}
+      thinkingContent={thinkingContent}
+      usage={usage}
+      isStreaming={isStreaming}
+      startedAtMs={startedAtMs}
+      toolCalls={toolCalls}
+      forcePanelShell={forcePanelShell}
+      renderMarkdown={renderMarkdown}
+    >
+      {children}
+    </AIMessageView>
+  );
 });

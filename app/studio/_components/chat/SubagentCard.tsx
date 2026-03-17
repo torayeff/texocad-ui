@@ -5,21 +5,21 @@ import type { ClassSubagentStreamInterface } from "@langchain/react";
 import { Bot, ChevronDown, CircleCheck, CircleDot, CircleX } from "lucide-react";
 import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
 import { ToolCallCard } from "@/app/studio/_components/chat/ToolCallCard";
-import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
 import { getMessageTextContent, getReasoningContent } from "@/app/studio/_lib/message-content";
 import { AIPanel } from "@/app/studio/_components/chat/AIPanel";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/InlineBlocks";
 
 function getSubagentToolCalls(subagent: ClassSubagentStreamInterface): StreamToolCall[] {
   const allToolCalls: StreamToolCall[] = [];
+  const knownIds = new Set<string>();
 
   for (const message of subagent.messages) {
     if (AIMessage.isInstance(message) && message.tool_calls) {
       for (const tc of message.tool_calls) {
-        if (tc.name === "task" || tc.name === "write_todos") continue;
-
+        if (!tc.id || tc.name === "task" || tc.name === "write_todos") continue;
+        knownIds.add(tc.id);
         allToolCalls.push({
-          id: tc.id!,
+          id: tc.id,
           state: "completed",
           call: {
             id: tc.id,
@@ -30,9 +30,7 @@ function getSubagentToolCalls(subagent: ClassSubagentStreamInterface): StreamToo
         });
       }
     }
-  }
 
-  for (const message of subagent.messages) {
     if (ToolMessage.isInstance(message)) {
       const tc = allToolCalls.find((t) => t.id === message.tool_call_id);
       if (tc) {
@@ -40,53 +38,31 @@ function getSubagentToolCalls(subagent: ClassSubagentStreamInterface): StreamToo
         tc.state = "completed";
       }
     }
-  }
 
-  for (const message of subagent.messages) {
     const chunk = message as AIMessageChunk;
     if (AIMessage.isInstance(message) && chunk.tool_call_chunks) {
       for (const tcc of chunk.tool_call_chunks) {
-        if (tcc.name === "task" || tcc.name === "write_todos") continue;
-        const existing = allToolCalls.find((t) => t.id === tcc.id);
-        if (!existing && tcc.id) {
-          let parsedArgs = {};
-          if (tcc.args) {
-            try {
-              parsedArgs = JSON.parse(tcc.args);
-            } catch {
-              // partial JSON from streaming chunk
-            }
-          }
-          allToolCalls.push({
-            id: tcc.id,
-            state: "pending",
-            call: {
-              id: tcc.id,
-              name: tcc.name!,
-              args: parsedArgs,
-            },
-          });
+        if (!tcc.id || tcc.name === "task" || tcc.name === "write_todos") continue;
+        if (knownIds.has(tcc.id)) continue;
+        knownIds.add(tcc.id);
+        let parsedArgs = {};
+        if (tcc.args) {
+          try { parsedArgs = JSON.parse(tcc.args); } catch { /* partial JSON */ }
         }
+        allToolCalls.push({
+          id: tcc.id,
+          state: "pending",
+          call: {
+            id: tcc.id,
+            name: tcc.name!,
+            args: parsedArgs,
+          },
+        });
       }
     }
   }
 
   return allToolCalls;
-}
-
-function getElapsedLabel(
-  startedAt: Date | null | undefined,
-  completedAt: Date | null | undefined,
-): string | null {
-  if (!startedAt) return null;
-
-  const end = completedAt ?? new Date();
-  const seconds = Math.max(0, Math.round((end.getTime() - startedAt.getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s`;
-
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}m ${remainingSeconds}s`;
 }
 
 function getDisplayContent(subagent: ClassSubagentStreamInterface): { text: string; thinking: string } {
@@ -143,43 +119,22 @@ const STATUS_STYLES = {
 export const SubagentCard = React.memo(function SubagentCard({
   subagent,
   status,
+  parentIsStreaming,
 }: {
   subagent: ClassSubagentStreamInterface;
   status?: "pending" | "running" | "complete" | "error";
+  parentIsStreaming?: boolean;
 }) {
   const resolvedStatus = status ?? subagent.status;
   const title = typeof subagent.toolCall.args.subagent_type === "string"
     ? subagent.toolCall.args.subagent_type
     : subagent.toolCall.name;
-  const { text: displayContent, thinking } = getDisplayContent(subagent);
-  const isStreaming = resolvedStatus === "running";
-  const elapsed = getElapsedLabel(subagent.startedAt, subagent.completedAt);
+  const isStreaming = resolvedStatus === "running" && !!parentIsStreaming;
   const style = STATUS_STYLES[resolvedStatus];
   const StatusIcon = style.icon;
   const [isOpen, setIsOpen] = React.useState(
     resolvedStatus === "error",
   );
-  const visibleToolCalls = getSubagentToolCalls(subagent);
-
-  const fixedSeconds = React.useMemo(() => {
-    if (!subagent.startedAt) return undefined;
-    const end = subagent.completedAt ?? new Date();
-    return Math.max(0, Math.round((end.getTime() - subagent.startedAt.getTime()) / 1000));
-  }, [subagent.startedAt, subagent.completedAt]);
-
-  const usage = React.useMemo(() => {
-    return subagent.messages.reduce(
-      (acc, m) => {
-        if (AIMessage.isInstance(m) && m.usage_metadata) {
-          acc.inputTokens += m.usage_metadata.input_tokens || 0;
-          acc.outputTokens += m.usage_metadata.output_tokens || 0;
-          acc.reasoningTokens += m.usage_metadata.output_token_details?.reasoning || 0;
-        }
-        return acc;
-      },
-      { inputTokens: 0, outputTokens: 0, reasoningTokens: 0, runtimeSeconds: fixedSeconds }
-    );
-  }, [subagent.messages, fixedSeconds]);
 
   React.useEffect(() => {
     if (resolvedStatus === "error") {
@@ -191,6 +146,34 @@ export const SubagentCard = React.memo(function SubagentCard({
       setIsOpen(false);
     }
   }, [resolvedStatus]);
+
+  const shouldRenderDetails = isOpen || isStreaming || resolvedStatus === "error";
+  const hasInputArgs = Object.keys(subagent.toolCall.args).length > 0;
+
+  const cachedDetails = React.useMemo(() => {
+    const { text: displayContent, thinking } = getDisplayContent(subagent);
+    const visibleToolCalls = getSubagentToolCalls(subagent);
+    const usage = subagent.messages.reduce(
+      (acc, m) => {
+        if (AIMessage.isInstance(m) && m.usage_metadata) {
+          acc.inputTokens += m.usage_metadata.input_tokens || 0;
+          acc.outputTokens += m.usage_metadata.output_tokens || 0;
+          acc.reasoningTokens += m.usage_metadata.output_token_details?.reasoning || 0;
+        }
+        return acc;
+      },
+      { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 },
+    );
+    return { displayContent, thinking, visibleToolCalls, usage };
+  }, [subagent]);
+
+  const detailState = shouldRenderDetails ? cachedDetails : null;
+  const hasDetailPanel = !!detailState && (
+    detailState.thinking
+    || (isStreaming && !detailState.displayContent)
+    || detailState.displayContent
+    || detailState.visibleToolCalls.length > 0
+  );
 
   return (
     <details
@@ -209,11 +192,6 @@ export const SubagentCard = React.memo(function SubagentCard({
           </span>
         ) : null}
         <div className="ml-auto flex items-center gap-1.5">
-          {resolvedStatus === "running" ? (
-            <PanelTimer active={true} />
-          ) : elapsed ? (
-            <span className="font-mono text-[10px]">{elapsed}</span>
-          ) : null}
           <StatusIcon size={14} className={style.iconClass} />
           <ChevronDown
             size={13}
@@ -222,72 +200,74 @@ export const SubagentCard = React.memo(function SubagentCard({
         </div>
       </summary>
 
-      <div className="mt-2 space-y-3 border-l border-border/30 pl-4">
-        {subagent.toolCall.args && Object.keys(subagent.toolCall.args).length > 0 ? (
-          <details className="group/input">
-            <summary className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70 cursor-pointer">
-              <span>Input</span>
-              <div className="ml-auto flex items-center gap-1.5">
-                <ChevronDown
-                  size={13}
-                  className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/input:rotate-180"
-                />
-              </div>
-            </summary>
-            <pre className="mt-1 max-h-40 whitespace-pre-wrap break-all overflow-y-auto rounded-lg bg-muted/40 px-3 py-2 text-[11px] font-mono text-foreground">
-              {JSON.stringify(subagent.toolCall.args, null, 2)}
-            </pre>
-          </details>
-        ) : null}
-
-        {thinking || (isStreaming && !displayContent) || displayContent || visibleToolCalls.length > 0 ? (
-          <div className="space-y-1.5">
-            <AIPanel
-              hideHeader
-              statusLabel={resolvedStatus === "running" ? "Working" : null}
-              isStreaming={resolvedStatus === "running"}
-              usage={usage}
-            >
-              {thinking || (isStreaming && !displayContent) ? (
-                <InlineThinkingBlock
-                  content={thinking}
-                  isStreaming={isStreaming && !displayContent}
-                  defaultOpen={false}
-                  fixedSeconds={!isStreaming ? usage.runtimeSeconds : undefined}
-                />
-              ) : null}
-
-              {visibleToolCalls.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {visibleToolCalls.map((toolCall) => (
-                    <ToolCallCard
-                      key={toolCall.id}
-                      toolCall={toolCall}
-                    />
-                  ))}
+      {shouldRenderDetails ? (
+        <div className="mt-2 space-y-3 border-l border-border/30 pl-4">
+          {hasInputArgs ? (
+            <details className="group/input">
+              <summary className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70 cursor-pointer">
+                <span>Input</span>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <ChevronDown
+                    size={13}
+                    className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/input:rotate-180"
+                  />
                 </div>
-              ) : null}
+              </summary>
+              <pre className="mt-1 max-h-40 whitespace-pre-wrap break-all overflow-y-auto rounded-lg bg-muted/40 px-3 py-2 text-[11px] font-mono text-foreground">
+                {JSON.stringify(subagent.toolCall.args, null, 2)}
+              </pre>
+            </details>
+          ) : null}
 
-              {displayContent ? (
-                <details className="group/final-text">
-                  <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground cursor-pointer">
-                    <span>Final response</span>
-                    <div className="ml-auto flex items-center gap-1.5">
-                      <ChevronDown
-                        size={13}
-                        className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/final-text:rotate-180"
+          {hasDetailPanel ? (
+            <div className="space-y-1.5">
+              <AIPanel
+                hideHeader
+                statusLabel={resolvedStatus === "running" ? "Working" : null}
+                isStreaming={resolvedStatus === "running"}
+                usage={detailState?.usage}
+              >
+                {detailState?.thinking || (isStreaming && !detailState?.displayContent) ? (
+                  <InlineThinkingBlock
+                    content={detailState?.thinking ?? ""}
+                    isStreaming={isStreaming}
+                    defaultOpen={false}
+                  />
+                ) : null}
+
+                {detailState?.visibleToolCalls.length ? (
+                  <div className="flex flex-col gap-2">
+                    {detailState.visibleToolCalls.map((toolCall) => (
+                      <ToolCallCard
+                        key={toolCall.id}
+                        toolCall={toolCall}
+                        isStreaming={isStreaming}
                       />
-                    </div>
-                  </summary>
-                  <div className="mt-2 border-l border-border/30 pl-4">
-                    <InlineTextContent content={displayContent} isStreaming={isStreaming} />
+                    ))}
                   </div>
-                </details>
-              ) : null}
-            </AIPanel>
-          </div>
-        ) : null}
-      </div>
+                ) : null}
+
+                {detailState?.displayContent ? (
+                  <details className="group/final-text">
+                    <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground cursor-pointer">
+                      <span>Final response</span>
+                      <div className="ml-auto flex items-center gap-1.5">
+                        <ChevronDown
+                          size={13}
+                          className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/final-text:rotate-180"
+                        />
+                      </div>
+                    </summary>
+                    <div className="mt-2 border-l border-border/30 pl-4">
+                      <InlineTextContent content={detailState.displayContent} isStreaming={isStreaming} />
+                    </div>
+                  </details>
+                ) : null}
+              </AIPanel>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </details>
   );
 });

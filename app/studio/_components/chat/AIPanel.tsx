@@ -1,13 +1,7 @@
 import React from "react";
 import { Bot, Loader2, CircleCheck } from "lucide-react";
 import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
-
-interface UsageInfo {
-  inputTokens: number;
-  outputTokens: number;
-  reasoningTokens?: number;
-  runtimeSeconds?: number;
-}
+import type { MessageUsage } from "@/app/studio/_lib/message-rows";
 
 function formatNumber(value: number): string {
   return value.toLocaleString("en-US");
@@ -18,6 +12,7 @@ export function AIPanel({
   hideHeader,
   statusLabel,
   isStreaming,
+  timerStartedAtMs,
   usage,
   children,
 }: {
@@ -25,7 +20,8 @@ export function AIPanel({
   hideHeader?: boolean;
   statusLabel: string | null;
   isStreaming: boolean;
-  usage?: UsageInfo;
+  timerStartedAtMs?: number;
+  usage?: MessageUsage;
   children: React.ReactNode;
 }) {
   return (
@@ -45,6 +41,7 @@ export function AIPanel({
           <div className="ml-auto flex items-center gap-2 text-muted-foreground/70">
             <PanelTimer
               active={isStreaming}
+              startedAtMs={timerStartedAtMs}
               fixedSeconds={!isStreaming ? usage?.runtimeSeconds : undefined}
             />
             {isStreaming ? (

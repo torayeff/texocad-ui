@@ -51,7 +51,7 @@ export default function StudioPage() {
           setDownloadUrls((prev) => ({ ...prev, step: sasUrl }));
         }
       })
-      .catch(() => { });
+      .catch((err) => console.error("Failed to fetch SAS URL:", err));
   }, []);
 
   const startResize = useCallback(() => {

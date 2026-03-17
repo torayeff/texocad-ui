@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Brain, CircleCheck, ChevronDown } from "lucide-react";
 import { useAutoScroll } from "@/app/studio/_hooks/use-auto-scroll";
-import { PanelTimer } from "@/app/studio/_components/chat/PanelTimer";
 
 const REMARK_PLUGINS = [remarkGfm];
 
@@ -11,14 +10,12 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
   content,
   isStreaming = false,
   defaultOpen = false,
-  fixedSeconds,
 }: {
   content: string;
   isStreaming?: boolean;
   defaultOpen?: boolean;
-  fixedSeconds?: number;
 }) {
-  const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>();
+  const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>(isStreaming);
 
   if (!content && !isStreaming) return null;
 
@@ -28,7 +25,6 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
         <Brain size={13} className="flex-shrink-0 text-muted-foreground/60" />
         <span>{isStreaming ? "Thinking..." : "Thought process"}</span>
         <div className="ml-auto flex items-center gap-1.5">
-          <PanelTimer active={isStreaming} fixedSeconds={fixedSeconds} />
           {!isStreaming && <CircleCheck size={14} className="flex-shrink-0 text-success" />}
           <ChevronDown
             size={13}
@@ -56,15 +52,17 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
 export const InlineTextContent = React.memo(function InlineTextContent({
   content,
   isStreaming = false,
+  renderMarkdown = false,
 }: {
   content: string;
   isStreaming?: boolean;
+  renderMarkdown?: boolean;
 }) {
   if (!content.trim()) return null;
 
   return (
     <div className="prose-chat">
-      {isStreaming ? (
+      {isStreaming || !renderMarkdown ? (
         <pre className="whitespace-pre-wrap break-words font-sans text-[inherit] m-0">{content}</pre>
       ) : (
         <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>{content}</ReactMarkdown>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function formatDuration(seconds: number): string {
   return Number.isInteger(seconds) ? `${seconds}s` : `${seconds.toFixed(1)}s`;
@@ -7,19 +7,29 @@ function formatDuration(seconds: number): string {
 export function PanelTimer({
   active,
   fixedSeconds,
+  startedAtMs,
 }: {
   active: boolean;
   fixedSeconds?: number;
+  startedAtMs?: number;
 }) {
   const [seconds, setSeconds] = useState(0);
-  const startRef = useRef(0);
+  // Capture startedAtMs on first activation so re-renders with a new
+  // undefined value don't reset the timer mid-stream.
+  const lockedStartRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active) {
+      lockedStartRef.current = undefined;
+      return;
+    }
 
-    startRef.current = Date.now();
+    if (lockedStartRef.current === undefined) {
+      lockedStartRef.current = startedAtMs ?? Date.now();
+    }
 
-    const update = () => setSeconds(Math.floor((Date.now() - startRef.current) / 1000));
+    const base = lockedStartRef.current;
+    const update = () => setSeconds(Math.max(0, Math.floor((Date.now() - base) / 1000)));
     const rafId = requestAnimationFrame(update);
     const interval = setInterval(update, 1000);
 
@@ -27,7 +37,7 @@ export function PanelTimer({
       cancelAnimationFrame(rafId);
       clearInterval(interval);
     };
-  }, [active]);
+  }, [active, startedAtMs]);
 
   if (fixedSeconds !== undefined) {
     return (
@@ -37,11 +47,12 @@ export function PanelTimer({
     );
   }
 
-  if (!active && seconds === 0) return null;
+  const displaySeconds = active ? seconds : 0;
+  if (!displaySeconds) return null;
 
   return (
     <span className="text-[10px] font-medium tabular-nums text-muted-foreground/60">
-      {formatDuration(seconds)}
+      {formatDuration(displaySeconds)}
     </span>
   );
 }
