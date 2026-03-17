@@ -85,6 +85,7 @@ function AIMessageView({
         inputTokens: usage.input_tokens,
         outputTokens: usage.output_tokens,
         reasoningTokens: usage.output_token_details?.reasoning,
+        runtimeSeconds: (usage as Record<string, unknown>).runtimeSeconds as number | undefined,
       } : undefined}
     >
       {thinking || (isStreaming && !hasText) ? (
@@ -92,6 +93,7 @@ function AIMessageView({
           content={thinking}
           isStreaming={isStreaming && !hasText}
           defaultOpen={false}
+          fixedSeconds={!isStreaming && !hasText ? (usage as Record<string, unknown>)?.runtimeSeconds as number | undefined : undefined}
         />
       ) : null}
 

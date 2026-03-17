@@ -353,7 +353,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
 
                   return (
                     <MessageWithSubagents
-                      key={message.id ?? idx}
+                      key={idx}
                       message={message}
                       isStreaming={isLastAi}
                       toolCalls={toolCalls}

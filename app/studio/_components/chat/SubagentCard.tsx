@@ -37,6 +37,7 @@ function getSubagentToolCalls(subagent: ClassSubagentStreamInterface): StreamToo
       const tc = allToolCalls.find((t) => t.id === message.tool_call_id);
       if (tc) {
         tc.result = { content: message.content };
+        tc.state = "completed";
       }
     }
   }
@@ -160,6 +161,12 @@ export const SubagentCard = React.memo(function SubagentCard({
   );
   const visibleToolCalls = getSubagentToolCalls(subagent);
 
+  const fixedSeconds = React.useMemo(() => {
+    if (!subagent.startedAt) return undefined;
+    const end = subagent.completedAt ?? new Date();
+    return Math.max(0, Math.round((end.getTime() - subagent.startedAt.getTime()) / 1000));
+  }, [subagent.startedAt, subagent.completedAt]);
+
   const usage = React.useMemo(() => {
     return subagent.messages.reduce(
       (acc, m) => {
@@ -170,9 +177,9 @@ export const SubagentCard = React.memo(function SubagentCard({
         }
         return acc;
       },
-      { inputTokens: 0, outputTokens: 0, reasoningTokens: 0, runtimeSeconds: undefined as number | undefined }
+      { inputTokens: 0, outputTokens: 0, reasoningTokens: 0, runtimeSeconds: fixedSeconds }
     );
-  }, [subagent.messages]);
+  }, [subagent.messages, fixedSeconds]);
 
   React.useEffect(() => {
     if (resolvedStatus === "error") {
@@ -246,6 +253,7 @@ export const SubagentCard = React.memo(function SubagentCard({
                   content={thinking}
                   isStreaming={isStreaming && !displayContent}
                   defaultOpen={false}
+                  fixedSeconds={!isStreaming ? usage.runtimeSeconds : undefined}
                 />
               ) : null}
 

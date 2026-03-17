@@ -11,10 +11,12 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
   content,
   isStreaming = false,
   defaultOpen = false,
+  fixedSeconds,
 }: {
   content: string;
   isStreaming?: boolean;
   defaultOpen?: boolean;
+  fixedSeconds?: number;
 }) {
   const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>();
 
@@ -26,7 +28,7 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
         <Brain size={13} className="flex-shrink-0 text-muted-foreground/60" />
         <span>{isStreaming ? "Thinking..." : "Thought process"}</span>
         <div className="ml-auto flex items-center gap-1.5">
-          <PanelTimer active={isStreaming} />
+          <PanelTimer active={isStreaming} fixedSeconds={fixedSeconds} />
           {!isStreaming && <CircleCheck size={14} className="flex-shrink-0 text-success" />}
           <ChevronDown
             size={13}
