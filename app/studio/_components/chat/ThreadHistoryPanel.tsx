@@ -50,89 +50,101 @@ export default function ThreadHistoryPanel({
   }, [activeThreadId, onSelectThread]);
 
   return (
-    <div className="h-full overflow-y-auto scroll-on-hover pt-2">
-      {threads.length === 0 && !isLoading && (
-        <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-          No previous conversations
+    <div className="h-full overflow-y-auto scroll-on-hover px-4 pb-6 pt-3">
+      <div className="mx-auto flex w-full max-w-3xl flex-col">
+        <div className="px-3 pb-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Build history
+          </p>
         </div>
-      )}
 
-      {threads.map((thread) => (
-        <div
-          key={thread.threadId}
-          role="button"
-          tabIndex={0}
-          onClick={() => handleSelect(thread.threadId)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              handleSelect(thread.threadId);
-            }
-          }}
-          onBlur={() => {
-            if (confirmingId === thread.threadId) setConfirmingId(null);
-          }}
-          className={`group flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-muted/60 ${thread.threadId === activeThreadId
-              ? "bg-muted/80 text-foreground font-medium"
-              : "text-foreground/80 hover:text-foreground"
-            }`}
-        >
-          <div className="min-w-0 flex-1">
-            <div className="truncate">{thread.title}</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {formatRelativeTime(thread.updatedAt)}
-            </div>
+        {threads.length === 0 && !isLoading ? (
+          <div className="flex min-h-[240px] items-center justify-center px-3 py-10 text-sm text-muted-foreground">
+            No builds yet
           </div>
-
-          {confirmingId === thread.threadId ? (
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteThread(thread.threadId);
-                  setConfirmingId(null);
+        ) : (
+          <div className="space-y-1">
+            {threads.map((thread) => (
+              <div
+                key={thread.threadId}
+                role="button"
+                tabIndex={0}
+                onClick={() => handleSelect(thread.threadId)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleSelect(thread.threadId);
+                  }
                 }}
-                className="rounded px-2 py-1 text-[10px] font-medium text-red-600 bg-red-100 hover:bg-red-200 dark:text-red-400 dark:bg-red-950/50 dark:hover:bg-red-900/50 transition-colors"
-              >
-                Delete
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirmingId(null);
+                onBlur={() => {
+                  if (confirmingId === thread.threadId) setConfirmingId(null);
                 }}
-                className="rounded px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                className={`group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors focus-visible:bg-muted/60 focus-visible:outline-none ${thread.threadId === activeThreadId
+                  ? "bg-muted/70 text-foreground"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  }`}
               >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={(e) => handleDelete(e, thread.threadId)}
-              aria-label="Delete thread"
-              className="shrink-0 rounded p-1.5 transition-colors text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 focus:opacity-100"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
-      ))}
+                <div className="min-w-0 flex-1">
+                  <div className={`truncate font-medium ${thread.threadId === activeThreadId ? "text-foreground" : ""}`}>
+                    {thread.title}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {formatRelativeTime(thread.updatedAt)}
+                  </div>
+                </div>
 
-      {isLoading && (
-        <div className="flex items-center justify-center gap-1.5 px-3 py-4 text-xs text-muted-foreground">
-          <Loader2 size={12} className="animate-spin" />
-          Loading...
-        </div>
-      )}
+                {confirmingId === thread.threadId ? (
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteThread(thread.threadId);
+                        setConfirmingId(null);
+                      }}
+                      className="rounded-md bg-error/10 px-2.5 py-1 text-[10px] font-medium text-error transition-colors hover:bg-error/15"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmingId(null);
+                      }}
+                      className="rounded-md px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={(e) => handleDelete(e, thread.threadId)}
+                    aria-label="Delete thread"
+                    className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-[opacity,color,background-color] group-hover:opacity-100 hover:bg-error/10 hover:text-error focus:opacity-100"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
-      {hasMore && !isLoading && (
-        <button
-          onClick={onLoadMore}
-          className="w-full px-3 py-2 text-center text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          Load more
-        </button>
-      )}
+        {isLoading && (
+          <div className="flex items-center justify-center gap-1.5 px-3 py-4 text-xs text-muted-foreground">
+            <Loader2 size={12} className="animate-spin" />
+            Loading...
+          </div>
+        )}
+
+        {hasMore && !isLoading && (
+          <button
+            onClick={onLoadMore}
+            className="mt-4 rounded-xl px-3 py-2.5 text-center text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Load more
+          </button>
+        )}
+      </div>
     </div>
   );
 }

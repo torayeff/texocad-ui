@@ -1,4 +1,4 @@
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const EXAMPLE_PROMPTS = [
   {
@@ -44,9 +44,11 @@ export default function EmptyChatState({
 }) {
   if (isHydrating) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center gap-2 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-10 text-sm text-muted-foreground">
-        <Loader2 size={16} className="animate-spin" />
-        <span>Loading conversation...</span>
+      <div className="mx-auto flex min-h-[400px] w-full max-w-2xl items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
+        <div className="flex items-center justify-center gap-2 px-6 py-8 text-sm text-muted-foreground">
+          <Loader2 size={16} className="animate-spin" />
+          <span>Loading conversation...</span>
+        </div>
       </div>
     );
   }
@@ -56,27 +58,34 @@ export default function EmptyChatState({
   }
 
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 rounded-3xl border border-dashed border-border/60 bg-muted/10 px-6 py-12 text-center text-muted-foreground">
-      <Sparkles size={32} className="opacity-30" />
-      <div className="space-y-2 max-w-[400px]">
-        <p className="text-base font-medium text-foreground/90">
-          What do you want to build?
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Describe model, or upload reference images, sketches, and technical specifications.
-        </p>
-      </div>
+    <div className="mx-auto flex min-h-[400px] w-full max-w-2xl items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
+      <div className="flex w-full flex-col items-center px-3 py-6 text-center sm:px-5 sm:py-8">
+        <div className="mt-4 max-w-xl space-y-3">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            What do you want to build?
+          </h2>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Describe the part in plain language or start with a prompt. You can
+            also add reference images, sketches, and technical specs.
+          </p>
+        </div>
 
-      <div className="mt-2 flex max-w-3xl flex-wrap justify-center gap-2">
-        {EXAMPLE_PROMPTS.map((example) => (
-          <button
-            key={example.label}
-            onClick={() => onExamplePrompt(example.prompt)}
-            className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent hover:bg-accent/5 hover:text-accent"
-          >
-            {example.label}
-          </button>
-        ))}
+        <div className="mt-8">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Quick starts
+          </p>
+          <div className="mt-3 flex max-w-xl flex-wrap justify-center gap-2">
+            {EXAMPLE_PROMPTS.map((example) => (
+              <button
+                key={example.label}
+                onClick={() => onExamplePrompt(example.prompt)}
+                className="rounded-full border border-border/40 bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition-[background-color,border-color,color,transform] hover:-translate-y-0.5 hover:border-border/70 hover:bg-muted/70 hover:text-foreground"
+              >
+                {example.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

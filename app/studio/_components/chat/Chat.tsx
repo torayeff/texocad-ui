@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { HumanMessage } from "@langchain/core/messages";
-import { ArrowDown, History, Loader2, MessageSquarePlus } from "lucide-react";
+import { ArrowDown, CirclePlus, History, Loader2 } from "lucide-react";
 
 import { useThreadHistory } from "@/app/studio/_hooks/use-thread-history";
 import { useChatStream } from "@/app/studio/_hooks/use-chat-stream";
@@ -242,20 +242,23 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
         </div>
       ) : null}
 
-      <div className="flex shrink-0 items-center justify-end gap-1 px-4 py-2">
+      <div className="flex shrink-0 items-center justify-end gap-0 px-4 py-3">
         <button
           onClick={handleNewChat}
           title="New chat"
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="New chat"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
         >
-          <MessageSquarePlus size={16} />
+          <CirclePlus size={18} />
         </button>
         <button
           onClick={toggleHistory}
           title={historyOpen ? "Close history" : "History"}
-          className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${historyOpen
+          aria-label={historyOpen ? "Close history" : "Open history"}
+          aria-pressed={historyOpen}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${historyOpen
             ? "bg-muted text-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            : "text-muted-foreground hover:text-foreground"
             }`}
         >
           <History size={16} />
