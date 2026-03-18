@@ -16,3 +16,8 @@ export interface CadGraphState {
   todos?: TodoItem[];
   exports?: GeomExportEntry[];
 }
+
+export interface CustomExportEvent {
+  type: "exports";
+  exports: GeomExportEntry[];
+}

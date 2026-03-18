@@ -38,7 +38,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     pathname,
     router,
     handleThreadIdChange,
-  } = useChatStream();
+  } = useChatStream(onViewerArtifact);
 
   const timer = useAssistantTimer();
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -50,7 +50,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const isNearBottomRef = useRef(true);
-  const lastHandledExportsKeyRef = useRef("");
+  const hydratedRef = useRef(false);
   const isTickingRef = useRef(false);
   const lastScrollTopRef = useRef(0);
 
@@ -94,19 +94,12 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   const shouldShowTodoList = todos.length > 0 && lastMessageType !== "human";
 
   useEffect(() => {
-    lastHandledExportsKeyRef.current = "";
-  }, [urlThreadId]);
-
-  useEffect(() => {
-    if (isHydrating || exports.length === 0) return;
-    const key = exports.map(({ filename, url }) => `${filename}:${url}`).join("|");
-    if (key === lastHandledExportsKeyRef.current) return;
-
-    lastHandledExportsKeyRef.current = key;
+    if (isHydrating || hydratedRef.current || exports.length === 0) return;
+    hydratedRef.current = true;
     for (const entry of exports) {
       onViewerArtifactRef.current(entry);
     }
-  }, [exports, isHydrating]);
+  }, [isHydrating, exports]);
 
   useEffect(() => {
     if (isNearBottomRef.current) {

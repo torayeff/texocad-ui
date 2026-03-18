@@ -1,21 +1,31 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useRef, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
 import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
 import type { StreamAccessors } from "@/app/studio/_hooks/use-message-rows";
-import type { CadGraphState, GeomExportEntry, TodoItem } from "@/app/studio/_types/chat";
+import type {
+  CadGraphState,
+  CustomExportEvent,
+  GeomExportEntry,
+  TodoItem,
+} from "@/app/studio/_types/chat";
 
 const EMPTY_TODOS: TodoItem[] = [];
 
-export function useChatStream() {
+export function useChatStream(onExportEvent?: (entry: GeomExportEntry) => void) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlThreadId = searchParams.get("thread_id");
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
+
+  const onExportEventRef = useRef(onExportEvent);
+  useEffect(() => {
+    onExportEventRef.current = onExportEvent;
+  }, [onExportEvent]);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
@@ -41,6 +51,14 @@ export function useChatStream() {
     fetchStateHistory: true,
     filterSubagentMessages: true,
     onThreadId: (id: string) => handleThreadIdChange(id),
+    onCustomEvent: (data: unknown) => {
+      const event = data as CustomExportEvent;
+      if (event.type === "exports" && Array.isArray(event.exports)) {
+        for (const entry of event.exports) {
+          onExportEventRef.current?.(entry);
+        }
+      }
+    },
   }), [
     client,
     handleThreadIdChange,
