@@ -100,13 +100,13 @@ export default function Home() {
   };
 
   return (
-    <main className="relative isolate min-h-screen overflow-y-auto bg-background text-foreground">
+    <main className="relative isolate min-h-dvh overflow-y-auto bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 opacity-[0.26]" style={backgroundGridStyle} />
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-muted/50 to-transparent" />
       </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-6 sm:px-8 lg:px-10">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-6 py-6 sm:px-8 lg:px-10">
         <header className="flex h-14 items-center justify-between gap-4">
           <Link
             href="/"

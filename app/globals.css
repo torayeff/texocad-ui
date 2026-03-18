@@ -46,7 +46,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* Consistent affordance for clickable UI controls */
