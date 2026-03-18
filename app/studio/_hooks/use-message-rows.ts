@@ -38,8 +38,16 @@ export function useMessageRows({
   timer: ReturnType<typeof useAssistantTimer>;
 }): { messageRows: MessageRow[]; activeAssistantRowKey: string | null } {
   const prevActiveRowKeyRef = useRef<string | null>(null);
+  const prevIsLoadingRef = useRef(false);
   const accessorsRef = useRef(streamAccessors);
   accessorsRef.current = streamAccessors;
+
+  useEffect(() => {
+    if (isLoading && !prevIsLoadingRef.current) {
+      timer.reset();
+    }
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading, timer]);
 
   const messageRows = useMemo(() => {
     const accessors = accessorsRef.current;
@@ -69,7 +77,7 @@ export function useMessageRows({
       const message = messages[index];
 
       if (HumanMessage.isInstance(message)) {
-        const rowKey = getMessageRowKey(rows.length, conversationScope);
+        const rowKey = getMessageRowKey(rows.length, conversationScope, message.id);
         rows.push({
           rowKey,
           messageType: "human",
@@ -90,7 +98,7 @@ export function useMessageRows({
         continue;
       }
 
-      const rowKey = getMessageRowKey(rows.length, conversationScope);
+      const rowKey = getMessageRowKey(rows.length, conversationScope, message.id);
       const isActive = index === activeAssistantIndex;
 
       if (isActive) {

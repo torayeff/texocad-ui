@@ -33,7 +33,12 @@ function serialize(value: unknown): string {
   return JSON.stringify(value) ?? "";
 }
 
-export function getMessageRowKey(index: number, conversationScope: string): string {
+export function getMessageRowKey(
+  index: number,
+  conversationScope: string,
+  messageId?: string | null,
+): string {
+  if (messageId) return `${conversationScope}:${messageId}`;
   return `${conversationScope}:message-${index}`;
 }
 

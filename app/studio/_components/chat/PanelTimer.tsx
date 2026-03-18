@@ -14,8 +14,6 @@ export function PanelTimer({
   startedAtMs?: number;
 }) {
   const [seconds, setSeconds] = useState(0);
-  // Capture startedAtMs on first activation so re-renders with a new
-  // undefined value don't reset the timer mid-stream.
   const lockedStartRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -30,6 +28,7 @@ export function PanelTimer({
 
     const base = lockedStartRef.current;
     const update = () => setSeconds(Math.max(0, Math.floor((Date.now() - base) / 1000)));
+
     const rafId = requestAnimationFrame(update);
     const interval = setInterval(update, 1000);
 
@@ -47,12 +46,11 @@ export function PanelTimer({
     );
   }
 
-  const displaySeconds = active ? seconds : 0;
-  if (!displaySeconds) return null;
+  if (!seconds) return null;
 
   return (
     <span className="text-[10px] font-medium tabular-nums text-muted-foreground/60">
-      {formatDuration(displaySeconds)}
+      {formatDuration(seconds)}
     </span>
   );
 }
