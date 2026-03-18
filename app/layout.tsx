@@ -5,11 +5,11 @@ import ThemeProvider from "@/app/components/ThemeProvider";
 import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
 
-const SITE_NAME = "TexoCAD";
+const SITE_NAME = "TEXOCAD";
 const SITE_URL = "https://texocad.com";
-const SITE_TITLE = "TexoCAD | Text-to-CAD for Production-Ready Parts";
+const SITE_TITLE = "TEXOCAD | Text-to-CAD for Production-Ready Parts";
 const SITE_DESCRIPTION =
-  "TexoCAD is text-to-CAD for product teams. Turn plain-English requirements, sketches, and engineering drawings into manufacturable CAD, refine designs with AI agents, and export STEP or STL files.";
+  "TEXOCAD is text-to-CAD for product teams. Turn plain-English requirements, sketches, and engineering drawings into manufacturable CAD, refine designs with AI agents, and export STEP or STL files.";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

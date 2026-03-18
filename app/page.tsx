@@ -107,15 +107,15 @@ export default function Home() {
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-6 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between gap-4">
+        <header className="flex h-14 items-center justify-between gap-4">
           <Link
             href="/"
             aria-label="Go to home page"
-            className="rounded-2xl border border-border bg-card p-2 shadow-sm shadow-black/5 transition-colors hover:bg-muted"
+            className="inline-flex transition-opacity hover:opacity-80"
           >
             <Image
               src={isDark ? "/logo-white.png" : "/logo-black.png"}
-              alt="TexoCAD"
+              alt="TEXOCAD"
               width={28}
               height={28}
               priority

@@ -247,7 +247,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
           onClick={handleNewChat}
           title="New chat"
           aria-label="New chat"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
         >
           <CirclePlus size={18} />
         </button>
@@ -256,9 +256,9 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
           title={historyOpen ? "Close history" : "History"}
           aria-label={historyOpen ? "Close history" : "Open history"}
           aria-pressed={historyOpen}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${historyOpen
-            ? "bg-muted text-foreground"
-            : "text-muted-foreground hover:text-foreground"
+          className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${historyOpen
+            ? "bg-muted/70 text-muted-foreground"
+            : "text-muted-foreground/70 hover:bg-muted/70 hover:text-muted-foreground"
             }`}
         >
           <History size={16} />

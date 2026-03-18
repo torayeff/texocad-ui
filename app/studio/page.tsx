@@ -5,6 +5,7 @@ import { Moon, Sun } from "lucide-react";
 import { useState, useCallback, useEffect, useRef, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useMounted } from "@/app/hooks/use-mounted";
 import Chat from "@/app/studio/_components/chat/Chat";
@@ -94,13 +95,19 @@ export default function StudioPage() {
     <main className="flex h-screen flex-col bg-background">
       <header className="flex h-14 items-center justify-between border-b border-border px-4">
         <div className="flex items-center gap-2.5">
-          <Image
-            src={isDark ? "/logo-white.png" : "/logo-black.png"}
-            alt="TexoCAD"
-            width={28}
-            height={28}
-          />
-          <span className="text-sm font-medium text-foreground">TexoCAD</span>
+          <Link
+            href="/"
+            aria-label="Go to home page"
+            className="inline-flex transition-opacity hover:opacity-80"
+          >
+            <Image
+              src={isDark ? "/logo-white.png" : "/logo-black.png"}
+              alt="TEXOCAD"
+              width={28}
+              height={28}
+            />
+          </Link>
+          <span className="text-sm font-medium text-foreground">TEXOCAD</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -110,7 +117,7 @@ export default function StudioPage() {
             aria-label={
               isDark ? "Switch to light mode" : "Switch to dark mode"
             }
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex rounded-full p-2 text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
           >
             <ThemeIcon size={16} />
           </button>
