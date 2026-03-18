@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle2, Moon, Sun } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { useState, useSyncExternalStore, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type CSSProperties, type FormEvent } from "react";
 
 type WaitlistStatus = "idle" | "submitting" | "success";
 
@@ -25,6 +25,13 @@ interface WaitlistClerk {
 }
 
 const noopSubscribe = () => () => { };
+
+const backgroundGridStyle: CSSProperties = {
+  backgroundImage:
+    "linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)",
+  backgroundSize: "64px 64px",
+  maskImage: "radial-gradient(circle at center, black 34%, transparent 86%)",
+};
 
 function getErrorMessage(error: unknown): string {
   if (typeof error !== "object" || error === null) {
@@ -93,8 +100,9 @@ export default function Home() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-y-auto bg-background text-foreground">
+    <main className="relative isolate min-h-screen overflow-y-auto bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 opacity-[0.26]" style={backgroundGridStyle} />
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-muted/50 to-transparent" />
       </div>
 
