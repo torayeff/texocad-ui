@@ -7,9 +7,9 @@ import "./globals.css";
 
 const SITE_NAME = "TexoCAD";
 const SITE_URL = "https://texocad.com";
-const SITE_TITLE = "TexoCAD - Text to CAD";
+const SITE_TITLE = "TexoCAD | Text-to-CAD for Production-Ready Parts";
 const SITE_DESCRIPTION =
-  "Turn natural language prompts into 3D CAD models with TexoCAD. Describe a part in plain English, generate geometry, and export STL or STEP files.";
+  "TexoCAD is text-to-CAD for product teams. Turn plain-English requirements, sketches, and engineering drawings into manufacturable CAD, refine designs with AI agents, and export STEP or STL files.";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,9 +31,13 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   keywords: [
     "text to CAD",
+    "text-to-CAD",
+    "agentic CAD",
     "AI CAD",
     "3D CAD",
+    "engineering drawings to CAD",
     "CAD model generation",
+    "manufacturability checks",
     "STL export",
     "STEP export",
   ],
