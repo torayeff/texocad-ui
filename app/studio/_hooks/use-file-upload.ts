@@ -67,22 +67,12 @@ async function uploadToAzure(file: File): Promise<UploadedFile> {
 export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
 
-  const triggerFileSelect = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      e.target.value = "";
-
-      if (!isAcceptedFile(file)) {
-        return;
-      }
-
+  const processFile = useCallback(
+    async (file: File) => {
+      if (!isAcceptedFile(file)) return;
       setIsUploading(true);
       try {
         const uploaded = await uploadToAzure(file);
@@ -96,11 +86,61 @@ export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
     [onUploaded],
   );
 
+  const triggerFileSelect = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = "";
+      processFile(file);
+    },
+    [processFile],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (dragCounterRef.current === 1) setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current = 0;
+      setIsDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file) processFile(file);
+    },
+    [processFile],
+  );
+
   return {
     fileInputRef,
     isUploading,
+    isDragging,
     triggerFileSelect,
     handleFileChange,
+    handleDragOver,
+    handleDragEnter,
+    handleDragLeave,
+    handleDrop,
     acceptedTypes: ACCEPTED_TYPES,
   } as const;
 }

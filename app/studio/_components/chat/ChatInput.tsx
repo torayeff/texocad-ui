@@ -33,8 +33,18 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
     setAttachments((prev) => prev.filter((a) => a.url !== url));
   }, []);
 
-  const { fileInputRef, isUploading, triggerFileSelect, handleFileChange, acceptedTypes } =
-    useFileUpload(onFileUploaded);
+  const {
+    fileInputRef,
+    isUploading,
+    isDragging,
+    triggerFileSelect,
+    handleFileChange,
+    handleDragOver,
+    handleDragEnter,
+    handleDragLeave,
+    handleDrop,
+    acceptedTypes,
+  } = useFileUpload(onFileUploaded);
 
   React.useImperativeHandle(ref, () => ({
     setPrompt: (text: string) => {
@@ -63,9 +73,14 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
 
   const sendMessage = useCallback(() => {
     if (!hasContent || isBusy) return;
-    const urls = attachments.map((a) => `[${a.filename}](${a.url})`);
-    const parts = [...urls, input.trim()].filter(Boolean);
-    onSubmit(parts.join("\n"));
+    const text = input.trim();
+    const parts: string[] = [];
+    if (text) parts.push(text);
+    if (attachments.length > 0) {
+      const links = attachments.map((a) => `[${a.filename}](${a.url})`).join("\n");
+      parts.push(`Attachments:\n${links}`);
+    }
+    onSubmit(parts.join("\n\n"));
     setInput("");
     setAttachments([]);
     if (textareaRef.current) {
@@ -85,7 +100,16 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
 
   return (
     <div className="sticky bottom-0 z-10 p-4 bg-background">
-      <div className="relative rounded-3xl border border-border bg-muted/20 px-2 py-2 focus-within:border-border/80 focus-within:bg-background focus-within:ring-1 focus-within:ring-border/40 transition-colors">
+      <div
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`relative rounded-3xl border bg-muted/20 px-2 py-2 transition-colors focus-within:border-border/80 focus-within:bg-background focus-within:ring-1 focus-within:ring-border/40 ${isDragging
+          ? "border-dashed border-primary/60 bg-primary/5"
+          : "border-border"
+          }`}
+      >
         <input
           ref={fileInputRef}
           type="file"
