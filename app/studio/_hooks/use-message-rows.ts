@@ -71,7 +71,6 @@ export function useMessageRows({
     }
 
     const rows: MessageRow[] = [];
-    let latestAssistantTextRowKey: string | null = null;
 
     for (let index = 0; index < messages.length; index += 1) {
       const message = messages[index];
@@ -135,10 +134,6 @@ export function useMessageRows({
         }
       }
 
-      if (textContent.trim()) {
-        latestAssistantTextRowKey = rowKey;
-      }
-
       rows.push({
         rowKey,
         messageType: "ai",
@@ -152,16 +147,8 @@ export function useMessageRows({
         toolCallsSignature: toolCalls === EMPTY_TOOL_CALLS ? "" : getToolCallsSignature(toolCalls),
         subagents,
         subagentsSignature: subagents === EMPTY_SUBAGENTS ? "" : getSubagentsSignature(subagents),
-        renderMarkdown: false,
+        renderMarkdown: true,
       });
-    }
-
-    if (latestAssistantTextRowKey) {
-      for (const row of rows) {
-        if (row.messageType === "ai" && row.rowKey === latestAssistantTextRowKey) {
-          row.renderMarkdown = true;
-        }
-      }
     }
 
     return rows;
