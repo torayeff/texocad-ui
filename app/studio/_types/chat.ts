@@ -11,7 +11,7 @@ export interface TodoItem {
   status: "pending" | "in_progress" | "completed";
 }
 
-export interface CadGraphState {
+export interface TexocadGraphState {
   messages: Message[];
   todos?: TodoItem[];
   exports?: GeomExportEntry[];

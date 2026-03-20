@@ -6,7 +6,7 @@ import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
 import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
 import type { StreamAccessors } from "@/app/studio/_hooks/use-message-rows";
 import type {
-  CadGraphState,
+  TexocadGraphState,
   CustomExportEvent,
   GeomExportEntry,
   TodoItem,
@@ -66,7 +66,7 @@ export function useChatStream(onExportEvent?: (entry: GeomExportEntry) => void) 
     urlThreadId,
   ]);
 
-  const stream = useStream<CadGraphState>(streamOptions);
+  const stream = useStream<TexocadGraphState>(streamOptions);
 
   const { messages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
