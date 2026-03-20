@@ -3,7 +3,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
-import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
+import { engines } from "@/app/studio/_lib/langgraph-config";
+import type { EngineKey } from "@/app/studio/_lib/langgraph-config";
 import type { StreamAccessors } from "@/app/studio/_hooks/use-message-rows";
 import type {
   TexocadGraphState,
@@ -14,7 +15,7 @@ import type {
 
 const EMPTY_TODOS: TodoItem[] = [];
 
-export function useChatStream(onExportEvent?: (entry: GeomExportEntry) => void) {
+export function useChatStream(engineKey: EngineKey, onExportEvent?: (entry: GeomExportEntry) => void) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,7 +47,7 @@ export function useChatStream(onExportEvent?: (entry: GeomExportEntry) => void) 
 
   const streamOptions = useMemo(() => ({
     client,
-    assistantId: ASSISTANT_ID,
+    assistantId: engines[engineKey].assistantId,
     threadId: isAuthReady ? (urlThreadId ?? undefined) : undefined,
     fetchStateHistory: true,
     filterSubagentMessages: true,
@@ -61,6 +62,7 @@ export function useChatStream(onExportEvent?: (entry: GeomExportEntry) => void) 
     },
   }), [
     client,
+    engineKey,
     handleThreadIdChange,
     isAuthReady,
     urlThreadId,

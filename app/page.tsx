@@ -24,6 +24,15 @@ interface WaitlistClerk {
   openSignIn(): void;
 }
 
+const FEATURES = [
+  "Natural-language CAD",
+  "Sketch and drawing input",
+  "Multi-engine workflows",
+  "Parametric BREP models",
+  "Manufacturability checks",
+  "Multi-format exports",
+] as const;
+
 const noopSubscribe = () => () => { };
 
 const backgroundGridStyle: CSSProperties = {
@@ -150,25 +159,18 @@ export default function Home() {
                 early, and export STEP and STL files.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3 text-sm text-muted-foreground">
-                <div className="rounded-full border border-border bg-card px-4 py-2">
-                  Natural language part design
-                </div>
-                <div className="rounded-full border border-border bg-card px-4 py-2">
-                  Sketch and drawing input
-                </div>
-                <div className="rounded-full border border-border bg-card px-4 py-2">
-                  Agentic AI refinement
-                </div>
-                <div className="rounded-full border border-border bg-card px-4 py-2">
-                  Printability checks
-                </div>
-                <div className="rounded-full border border-border bg-card px-4 py-2">
-                  Manufacturability checks
-                </div>
-                <div className="rounded-full border border-border bg-card px-4 py-2">
-                  STEP and STL export
-                </div>
+              <div className="mt-8 grid max-w-2xl gap-2 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-3">
+                {FEATURES.map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-center gap-2 rounded-2xl border border-border/60 bg-card/80 px-3 py-2 shadow-sm shadow-black/5 backdrop-blur-sm"
+                  >
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span className="text-[13px] font-medium text-foreground/85">
+                      {feature}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
 

@@ -9,6 +9,8 @@ import { useChatStream } from "@/app/studio/_hooks/use-chat-stream";
 import { useAssistantTimer } from "@/app/studio/_hooks/use-assistant-timer";
 import { useMessageRows } from "@/app/studio/_hooks/use-message-rows";
 import { getMessageTextContent } from "@/app/studio/_lib/message-content";
+import { engines, DEFAULT_ENGINE } from "@/app/studio/_lib/langgraph-config";
+import type { EngineKey } from "@/app/studio/_lib/langgraph-config";
 import type { GeomExportEntry } from "@/app/studio/_types/chat";
 
 import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
@@ -22,6 +24,8 @@ export interface ChatProps {
 }
 
 export default function Chat({ onViewerArtifact }: ChatProps) {
+  const [selectedEngine, setSelectedEngine] = useState<EngineKey>(DEFAULT_ENGINE);
+
   const {
     client,
     stream,
@@ -38,7 +42,9 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     pathname,
     router,
     handleThreadIdChange,
-  } = useChatStream(onViewerArtifact);
+  } = useChatStream(selectedEngine, onViewerArtifact);
+
+  const engineLocked = !!urlThreadId || messages.length > 0;
 
   const timer = useAssistantTimer();
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -201,6 +207,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   const handleNewChat = useCallback(() => {
     setHistoryOpen(false);
     setPendingHumanMessage(null);
+    setSelectedEngine(DEFAULT_ENGINE);
     timer.reset();
     setDraftConversationKey((key) => key + 1);
     handleThreadIdChange(null);
@@ -242,27 +249,36 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
         </div>
       ) : null}
 
-      <div className="flex shrink-0 items-center justify-end gap-0 px-4 py-3">
-        <button
-          onClick={handleNewChat}
-          title="New chat"
-          aria-label="New chat"
-          className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
-        >
-          <CirclePlus size={18} />
-        </button>
-        <button
-          onClick={toggleHistory}
-          title={historyOpen ? "Close history" : "History"}
-          aria-label={historyOpen ? "Close history" : "Open history"}
-          aria-pressed={historyOpen}
-          className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${historyOpen
-            ? "bg-muted/70 text-muted-foreground"
-            : "text-muted-foreground/70 hover:bg-muted/70 hover:text-muted-foreground"
-            }`}
-        >
-          <History size={16} />
-        </button>
+      <div className="flex shrink-0 items-center justify-between gap-0 px-4 py-3">
+        {engineLocked ? (
+          <span className="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+            {engines[selectedEngine].label}
+          </span>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center gap-0">
+          <button
+            onClick={handleNewChat}
+            title="New chat"
+            aria-label="New chat"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
+          >
+            <CirclePlus size={18} />
+          </button>
+          <button
+            onClick={toggleHistory}
+            title={historyOpen ? "Close history" : "History"}
+            aria-label={historyOpen ? "Close history" : "Open history"}
+            aria-pressed={historyOpen}
+            className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${historyOpen
+              ? "bg-muted/70 text-muted-foreground"
+              : "text-muted-foreground/70 hover:bg-muted/70 hover:text-muted-foreground"
+              }`}
+          >
+            <History size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="relative flex-1 min-h-0 overflow-hidden">
@@ -284,12 +300,14 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
               className="h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pt-2 pb-6"
             >
               <div
-                className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-center" : ""}`}
+                className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-start" : ""}`}
               >
                 {isEmpty && !isHydrating && (
                   <EmptyChatState
                     isHydrating={isHydrating}
                     isBusy={isBusy}
+                    selectedEngine={selectedEngine}
+                    onSelectEngine={setSelectedEngine}
                     onExamplePrompt={handleExamplePrompt}
                   />
                 )}
