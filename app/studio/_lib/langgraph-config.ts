@@ -13,7 +13,7 @@ interface EngineEntry {
 
 export const engines = {
   build123d: {
-    assistantId: "build123_agent",
+    assistantId: "build123d_agent",
     label: "Build123d",
     category: "BREP CAD",
     description:
