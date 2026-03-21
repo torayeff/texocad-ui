@@ -1,21 +1,29 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { Canvas } from "@react-three/fiber";
-import { Maximize2, Grid3x3, Box, RotateCw, Download } from "lucide-react";
+import { Maximize2, Grid3x3, Box, RotateCw, Download, ChevronDown } from "lucide-react";
 
 import { useMounted } from "@/app/hooks/use-mounted";
 import { Scene } from "@/app/studio/_components/viewer/Scene";
 import { VIEW_LABELS, INITIAL_CAMERA_POS } from "@/app/studio/_lib/viewer-constants";
 import type { ViewPreset, ViewCommand } from "@/app/studio/_types/viewer";
 
+type DownloadFormat = "stl" | "step" | "py";
+
+const DOWNLOAD_FORMATS: { key: DownloadFormat; label: string; file: string }[] = [
+  { key: "stl", label: "STL", file: "model.stl" },
+  { key: "step", label: "STEP", file: "model.step" },
+  { key: "py", label: "PYTHON", file: "model.py" },
+];
+
 export default function Viewer({
   stlUrl,
   downloadUrls,
 }: {
   stlUrl: string | null;
-  downloadUrls: { stl?: string; step?: string };
+  downloadUrls: { stl?: string; step?: string; py?: string };
 }) {
   const { resolvedTheme } = useTheme();
   const mounted = useMounted();
@@ -25,7 +33,9 @@ export default function Viewer({
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const cmdIdRef = useRef(0);
+  const downloadRef = useRef<HTMLDivElement>(null);
 
   const isDark = mounted && resolvedTheme === "dark";
   const bgColor = isDark ? "#09090b" : "#f4f4f5";
@@ -39,12 +49,26 @@ export default function Viewer({
     setViewCommand({ kind: "fit", id: ++cmdIdRef.current });
   }, []);
 
-  const handleDownload = useCallback((format: "stl" | "step") => {
+  useEffect(() => {
+    if (!downloadOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!downloadRef.current?.contains(e.target as Node)) {
+        setDownloadOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown, { passive: true });
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [downloadOpen]);
+
+  const hasAnyDownload = DOWNLOAD_FORMATS.some((f) => downloadUrls[f.key]);
+
+  const handleDownload = useCallback((format: DownloadFormat) => {
     const url = downloadUrls[format];
     if (!url) return;
+    const filename = DOWNLOAD_FORMATS.find((f) => f.key === format)?.file ?? format;
     const link = document.createElement("a");
     link.href = url;
-    link.download = format === "stl" ? "model.stl" : "model.step";
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -67,23 +91,34 @@ export default function Viewer({
         ))}
       </div>
 
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+      <div ref={downloadRef} className="absolute top-2 right-2 z-10">
         <button
-          onClick={() => handleDownload("stl")}
-          disabled={!downloadUrls.stl}
+          onClick={() => setDownloadOpen((o) => !o)}
+          disabled={!hasAnyDownload}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card/80 backdrop-blur-sm border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           <Download size={13} />
-          STL
+          Download
+          <ChevronDown size={11} className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`} />
         </button>
-        <button
-          onClick={() => handleDownload("step")}
-          disabled={!downloadUrls.step}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card/80 backdrop-blur-sm border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-        >
-          <Download size={13} />
-          STEP
-        </button>
+        {downloadOpen && (
+          <div className="absolute right-0 mt-1 min-w-[120px] rounded-md border border-border/50 bg-card/95 backdrop-blur-sm shadow-md overflow-hidden">
+            {DOWNLOAD_FORMATS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => {
+                  handleDownload(f.key);
+                  setDownloadOpen(false);
+                }}
+                disabled={!downloadUrls[f.key]}
+                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Download size={12} />
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-0.5 rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm p-1 shadow-sm">

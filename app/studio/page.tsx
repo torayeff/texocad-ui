@@ -18,6 +18,7 @@ export default function StudioPage() {
   const [downloadUrls, setDownloadUrls] = useState<{
     stl?: string;
     step?: string;
+    py?: string;
   }>({});
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
@@ -50,6 +51,8 @@ export default function StudioPage() {
           setDownloadUrls((prev) => ({ ...prev, stl: sasUrl }));
         } else if (entry.filename.endsWith(".step")) {
           setDownloadUrls((prev) => ({ ...prev, step: sasUrl }));
+        } else if (entry.filename.endsWith(".py")) {
+          setDownloadUrls((prev) => ({ ...prev, py: sasUrl }));
         }
       })
       .catch((err) => console.error("Failed to fetch SAS URL:", err));
