@@ -25,6 +25,7 @@ export function Scene({
   autoRotate,
   isDark,
   onLoadError,
+  onLoadingChange,
 }: {
   url: string | null;
   viewCommand: ViewCommand | null;
@@ -33,6 +34,7 @@ export function Scene({
   autoRotate: boolean;
   isDark: boolean;
   onLoadError: (message: string | null) => void;
+  onLoadingChange: (loading: boolean) => void;
 }) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [radius, setRadius] = useState(DEFAULT_RADIUS);
@@ -89,10 +91,12 @@ export function Scene({
   useEffect(() => {
     if (!url) {
       onLoadError(null);
+      onLoadingChange(false);
       return;
     }
 
     onLoadError(null);
+    onLoadingChange(true);
     const loader = new STLLoader();
     let cancelled = false;
 
@@ -131,6 +135,7 @@ export function Scene({
         }
         updateCameraBounds(r);
         onLoadError(null);
+        onLoadingChange(false);
 
         setGeometry((prev) => {
           prev?.dispose();
@@ -145,6 +150,7 @@ export function Scene({
             return null;
           });
           onLoadError("Failed to load model. Try generating it again.");
+          onLoadingChange(false);
           console.error("Failed to load STL:", err);
         }
       }
@@ -152,12 +158,13 @@ export function Scene({
 
     return () => {
       cancelled = true;
+      onLoadingChange(false);
       setGeometry((prev) => {
         prev?.dispose();
         return null;
       });
     };
-  }, [url, getThree, fitDistance, onLoadError, updateCameraBounds]);
+  }, [url, getThree, fitDistance, onLoadError, onLoadingChange, updateCameraBounds]);
 
   useEffect(() => {
     if (!viewCommand) return;

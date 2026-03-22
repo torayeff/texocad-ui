@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { Canvas } from "@react-three/fiber";
-import { Maximize2, Grid3x3, Box, RotateCw, Download, ChevronDown } from "lucide-react";
+import { Maximize2, Grid3x3, Box, RotateCw, Download, ChevronDown, Loader2 } from "lucide-react";
 
 import { useMounted } from "@/app/hooks/use-mounted";
 import { Scene } from "@/app/studio/_components/viewer/Scene";
@@ -33,6 +33,7 @@ export default function Viewer({
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [stlLoading, setStlLoading] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const cmdIdRef = useRef(0);
   const downloadRef = useRef<HTMLDivElement>(null);
@@ -177,8 +178,18 @@ export default function Viewer({
           autoRotate={autoRotate}
           isDark={isDark}
           onLoadError={setLoadError}
+          onLoadingChange={setStlLoading}
         />
       </Canvas>
+
+      {stlLoading && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-10">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 size={24} className="animate-spin text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">Loading model…</p>
+          </div>
+        </div>
+      )}
 
       {loadError ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
