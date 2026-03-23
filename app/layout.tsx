@@ -1,15 +1,15 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import ThemeProvider from "@/app/components/ThemeProvider";
-import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
 
-const SITE_NAME = "TEXOCAD";
+const SITE_NAME = "TexoCAD";
 const SITE_URL = "https://texocad.com";
-const SITE_TITLE = "TEXOCAD | Text-to-CAD for Production-Ready Parts";
+const SITE_TITLE = "TexoCAD";
 const SITE_DESCRIPTION =
-  "TEXOCAD is text-to-CAD for product teams. Turn plain-English requirements, sketches, and engineering drawings into manufacturable CAD, refine designs with AI agents, and export STEP or STL files.";
+  "Generate, refine, and export manufacturing-ready CAD models from text and sketches.";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +31,6 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   keywords: [
     "text to CAD",
-    "text-to-CAD",
     "agentic CAD",
     "AI CAD",
     "3D CAD",
