@@ -7,9 +7,9 @@ import "./globals.css";
 
 const SITE_NAME = "TexoCAD";
 const SITE_URL = "https://texocad.com";
-const SITE_TITLE = "TexoCAD";
+const SITE_TITLE = "TexoCAD - Agentic text-to-CAD";
 const SITE_DESCRIPTION =
-  "Generate, refine, and export manufacturing-ready CAD models from text and sketches.";
+  "Agentic text-to-CAD for people building physical products. Turn ideas, requirements, and sketches into editable, manufacturing-ready CAD.";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

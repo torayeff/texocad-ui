@@ -23,32 +23,32 @@ import { useSyncExternalStore } from "react";
 const FEATURES = [
   {
     title: "Natural language",
-    description: "Describe your part with words. No complex menus or feature trees.",
+    description: "Describe the part you want in plain English.",
     icon: MessageSquare,
   },
   {
     title: "Visual inputs",
-    description: "Upload sketches or engineering drawings to guide the generation.",
+    description: "Guide the model with sketches or drawings.",
     icon: ImageIcon,
   },
   {
     title: "Parametric output",
-    description: "Get clean, editable BREP models, not just surface meshes.",
+    description: "Get editable BREP CAD, not static geometry.",
     icon: Box,
   },
   {
     title: "Manufacturing ready",
-    description: "Automated checks ensure your designs can actually be made.",
+    description: "Catch manufacturing issues before production.",
     icon: ShieldCheck,
   },
   {
     title: "Universal export",
-    description: "Download in STEP or STL formats for your downstream workflows.",
+    description: "Export STEP or STL for downstream workflows.",
     icon: FileDown,
   },
   {
     title: "Iterative design",
-    description: "Refine models step-by-step just by telling the agent what to change.",
+    description: "Refine the design with natural-language edits.",
     icon: RefreshCcw,
   },
 ];
@@ -127,11 +127,11 @@ export default function Home() {
               Agentic text-to-CAD is here
             </div>
 
-            <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl leading-[1.05]">
-              From idea to CAD.
+            <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl leading-[1.05]">
+              Unlock physical product building
             </h1>
-            <p className="mt-3 max-w-[38rem] text-balance text-base text-muted-foreground sm:text-lg leading-relaxed">
-              Generate, refine, and export manufacturing-ready CAD models directly from natural language requirements and engineering sketches.
+            <p className="mt-3 max-w-[44rem] text-base text-muted-foreground sm:text-lg leading-7 sm:leading-8">
+              For people building physical products, TexoCAD turns ideas, requirements, and sketches into editable, manufacturing-ready CAD with natural language.
             </p>
 
             <div className="mt-5 flex flex-col items-center gap-4 sm:flex-row">
