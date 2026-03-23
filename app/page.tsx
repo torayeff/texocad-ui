@@ -23,7 +23,7 @@ import { useSyncExternalStore } from "react";
 const FEATURES = [
   {
     title: "Natural language",
-    description: "Describe the part you want in plain English.",
+    description: "Describe the part you want in natural language.",
     icon: MessageSquare,
   },
   {
