@@ -79,7 +79,7 @@ export default function Home() {
               <div className="mb-8">
                 <div className="inline-flex items-center gap-2 rounded border border-border bg-muted/50 px-3 py-1 text-xs font-mono text-muted-foreground mb-6">
                   <Terminal size={12} />
-                  <span>Agentic text-to-CAD</span>
+                  <span>Agentic Text-to-CAD</span>
                 </div>
 
                 <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl leading-[1.05] mb-4">
