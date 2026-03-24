@@ -1,14 +1,10 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
-import { Moon, Sun } from "lucide-react";
-import { useState, useCallback, useEffect, useRef, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
-import Link from "next/link";
-import { useTheme } from "next-themes";
-import { useMounted } from "@/app/hooks/use-mounted";
 import Chat from "@/app/studio/_components/chat/Chat";
+import { Header } from "@/app/components/Header";
 import type { GeomExportEntry } from "@/app/studio/_types/chat";
 
 const Viewer = dynamic(() => import("@/app/studio/_components/viewer/Viewer"), { ssr: false });
@@ -25,11 +21,7 @@ export default function StudioPage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const stlRequestVersionRef = useRef(0);
 
-  const { resolvedTheme, setTheme } = useTheme();
-  const mounted = useMounted();
-  const isDark = mounted && resolvedTheme === "dark";
-
-  const handleViewerArtifact = useCallback((entry: GeomExportEntry | null) => {
+  const handleViewerArtifact = (entry: GeomExportEntry | null) => {
     if (!entry) {
       setStlUrl(null);
       setDownloadUrls({});
@@ -56,11 +48,11 @@ export default function StudioPage() {
         }
       })
       .catch((err) => console.error("Failed to fetch SAS URL:", err));
-  }, []);
+  };
 
-  const startResize = useCallback(() => {
+  const startResize = () => {
     setIsResizing(true);
-  }, []);
+  };
 
   useEffect(() => {
     if (!isResizing) return;
@@ -84,11 +76,6 @@ export default function StudioPage() {
     };
   }, [isResizing]);
 
-  const toggleTheme = useCallback(() => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  }, [resolvedTheme, setTheme]);
-
-  const ThemeIcon = isDark ? Moon : Sun;
   const viewerKey = stlUrl ?? "empty";
   const viewerPaneStyle = {
     "--viewer-width": `${splitPct}%`,
@@ -96,36 +83,7 @@ export default function StudioPage() {
 
   return (
     <main className="flex h-screen flex-col bg-background">
-      <header className="flex h-14 items-center justify-between border-b border-border px-4">
-        <div className="flex items-center gap-2.5">
-          <Link
-            href="/"
-            aria-label="Go to home page"
-            className="inline-flex transition-opacity hover:opacity-80"
-          >
-            <Image
-              src={isDark ? "/logo-white.png" : "/logo-black.png"}
-              alt="TEXOCAD"
-              width={28}
-              height={28}
-            />
-          </Link>
-          <span className="text-sm font-medium text-foreground">TEXOCAD</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <UserButton />
-          <button
-            onClick={toggleTheme}
-            aria-label={
-              isDark ? "Switch to light mode" : "Switch to dark mode"
-            }
-            className="inline-flex rounded-full p-2 text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
-          >
-            <ThemeIcon size={16} />
-          </button>
-        </div>
-      </header>
+      <Header />
 
       <div ref={contentRef} className="relative flex min-h-0 flex-1 flex-col md:flex-row">
         <div

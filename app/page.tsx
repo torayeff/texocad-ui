@@ -1,24 +1,19 @@
 "use client";
 
+import { useAuth, useClerk } from "@clerk/nextjs";
 import {
-  UserButton,
-  useAuth,
-  useClerk
-} from "@clerk/nextjs";
-import {
-  Moon,
-  Sun,
   MessageSquare,
   Image as ImageIcon,
   Box,
   Zap,
   FileDown,
-  RefreshCcw
+  RefreshCcw,
+  Terminal,
+  LifeBuoy
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { useTheme } from "next-themes";
-import { useSyncExternalStore } from "react";
+
+import { Header } from "@/app/components/Header";
 
 const FEATURES = [
   {
@@ -53,128 +48,121 @@ const FEATURES = [
   },
 ];
 
-const noopSubscribe = () => () => { };
-
 export default function Home() {
   const { isSignedIn } = useAuth();
   const clerk = useClerk();
-  const { resolvedTheme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
-
-  const isDark = mounted && resolvedTheme === "dark";
-  const ThemeIcon = isDark ? Sun : Moon;
-
-  const handleThemeToggle = () => {
-    setTheme(isDark ? "light" : "dark");
-  };
 
   const handleSignIn = () => {
     clerk.openSignIn();
   };
 
   return (
-    <main className="relative min-h-dvh flex flex-col text-foreground selection:bg-foreground/10 overflow-x-hidden">
-      <div className="fixed inset-0 z-[-1] h-full w-full bg-background overflow-hidden flex items-center justify-center">
-        <div
-          className="absolute inset-0 h-[200%] w-[200%] -translate-x-1/4 -translate-y-1/4 opacity-[0.03] dark:opacity-[0.04]"
-          style={{
-            backgroundImage: "linear-gradient(to right, var(--foreground) 1px, transparent 1px), linear-gradient(to bottom, var(--foreground) 1px, transparent 1px)",
-            backgroundSize: "80px 80px",
-            backgroundPosition: "center center",
-            maskImage: "radial-gradient(ellipse 50% 50% at 50% 50%, black 10%, transparent 80%)",
-            WebkitMaskImage: "radial-gradient(ellipse 50% 50% at 50% 50%, black 10%, transparent 80%)"
-          }}
-        />
+    <main className="min-h-dvh md:h-dvh flex flex-col text-foreground bg-background">
+      <Header />
 
-        <div
-          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[40%] w-[800px] h-[500px] rounded-full blur-[100px] bg-foreground/5 dark:bg-foreground/[0.07]"
-        />
-      </div>
+      {/* Workspace */}
+      <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden">
+        {/* Agent Canvas */}
+        <section className="flex-1 flex flex-col relative min-h-[500px] md:min-h-0">
+          {/* Subtle background pattern (mimicking grid) */}
+          <div
+            className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none"
+            style={{
+              backgroundImage: "linear-gradient(to right, var(--foreground) 1px, transparent 1px), linear-gradient(to bottom, var(--foreground) 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+              backgroundPosition: "center center",
+            }}
+          />
 
-      <div className="relative mx-auto flex flex-1 w-full max-w-5xl flex-col px-6 sm:px-8">
-        <header className="flex h-16 shrink-0 items-center justify-between">
-          <Link
-            href="/"
-            aria-label="TexoCAD"
-            className="transition-opacity hover:opacity-80"
-          >
-            <Image
-              src={isDark ? "/logo-white.png" : "/logo-black.png"}
-              alt="TexoCAD"
-              width={24}
-              height={24}
-              priority
-            />
-          </Link>
+          <div className="flex-1 flex flex-col p-6 sm:p-10 lg:p-16 z-10 md:overflow-y-auto">
+            <div className="w-full max-w-3xl mx-auto flex flex-col justify-center flex-1 py-12 md:py-0 min-h-full">
+              <div className="mb-8">
+                <div className="inline-flex items-center gap-2 rounded border border-border bg-muted/50 px-3 py-1 text-xs font-mono text-muted-foreground mb-6">
+                  <Terminal size={12} />
+                  <span>Agentic text-to-CAD</span>
+                </div>
 
-          <div className="flex items-center gap-4">
-            {isSignedIn ? <UserButton /> : null}
-            <button
-              type="button"
-              onClick={handleThemeToggle}
-              disabled={!mounted}
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-            >
-              <ThemeIcon size={18} strokeWidth={2} />
-            </button>
-          </div>
-        </header>
+                <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl leading-[1.05] mb-4">
+                  Unlock physical product building
+                </h1>
+                <p className="max-w-2xl text-base text-muted-foreground sm:text-lg leading-relaxed">
+                  For builders of physical products, TexoCAD turns ideas, requirements, and sketches into editable CAD with natural language, enabling rapid prototyping and fast iteration.
+                </p>
+              </div>
 
-        <div className="flex flex-1 flex-col pt-8 pb-20 sm:pt-12 sm:pb-32 lg:pt-8 lg:pb-24 justify-center">
-          <section className="flex flex-col items-center text-center">
-            <div className="inline-flex items-center rounded-full border border-border bg-muted px-4 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase mb-4 shadow-sm">
-              Agentic text-to-CAD is here
-            </div>
-
-            <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl leading-[1.05]">
-              Unlock physical product building
-            </h1>
-            <p className="mt-3 max-w-[44rem] text-base text-muted-foreground sm:text-lg leading-7 sm:leading-8">
-              For builders of physical products, TexoCAD turns ideas, requirements, and sketches into editable CAD with natural language, enabling rapid prototyping and fast iteration.
-            </p>
-
-            <div className="mt-5 flex flex-col items-center gap-4 sm:flex-row">
-              {isSignedIn ? (
-                <Link
-                  href="/studio"
-                  className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-8 text-sm font-medium text-background transition-opacity hover:opacity-90"
-                >
-                  Open Studio
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSignIn}
-                  className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-8 text-sm font-medium text-background transition-opacity hover:opacity-90"
-                >
-                  Start Building
-                </button>
-              )}
-            </div>
-          </section>
-
-          <section className="mt-10 sm:mt-12 z-10 w-full">
-            <div className="grid gap-x-8 gap-y-6 sm:gap-y-8 lg:gap-y-6 mx-auto max-w-5xl sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((feature) => {
-                const Icon = feature.icon;
-                return (
-                  <div key={feature.title} className="group flex flex-col items-center text-center cursor-pointer rounded-2xl p-4 transition-colors duration-300 hover:bg-muted dark:hover:bg-muted/50">
-                    <div className="mb-2.5 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-muted/80 text-foreground ring-1 ring-border/50 transition-all duration-300 group-hover:scale-110 group-hover:bg-foreground group-hover:text-background group-hover:ring-foreground group-hover:shadow-md">
-                      <Icon size={16} strokeWidth={1.5} className="transition-transform duration-300" />
+              {/* Prompt CTA */}
+              <div className="w-full">
+                {isSignedIn ? (
+                  <Link
+                    href="/studio"
+                    className="group w-full border border-border bg-background shadow-sm hover:border-foreground/30 transition-all rounded-xl p-4 flex items-center justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
+                      <span className="text-foreground animate-pulse font-mono">{'>'}</span>
+                      <span className="text-base">Resume session...</span>
                     </div>
-                    <h3 className="text-sm font-medium tracking-tight text-foreground transition-colors duration-300">
+                    <div className="flex items-center gap-2">
+                      <span className="hidden sm:inline-block text-[11px] font-mono border border-border rounded px-2 py-0.5 text-muted-foreground">↵</span>
+                    </div>
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSignIn}
+                    className="group w-full border border-border bg-background shadow-sm hover:border-foreground/30 transition-all rounded-xl p-4 flex items-center justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
+                      <span className="text-foreground animate-pulse font-mono">{'>'}</span>
+                      <span className="text-base">Describe the part you want...</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="hidden sm:inline-block text-[11px] font-mono border border-border rounded px-2 py-0.5 text-muted-foreground">↵ Enter</span>
+                    </div>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Sidebar Palette */}
+        <aside className="md:w-72 border-t md:border-t-0 md:border-l border-border md:overflow-y-auto bg-muted/20 flex flex-col shrink-0">
+          <div className="p-3 border-b border-border/50 text-xs font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-2 shrink-0">
+            <Box size={14} />
+            Properties
+          </div>
+          <div className="p-3 flex flex-col gap-2 flex-1">
+            {FEATURES.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={feature.title}
+                  className="group flex flex-col gap-1.5 cursor-pointer rounded-lg p-3 transition-colors hover:bg-muted/60 border border-transparent hover:border-border/50"
+                >
+                  <div className="flex items-center gap-2.5 text-foreground">
+                    <Icon size={16} strokeWidth={1.5} className="text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <h3 className="text-sm font-medium tracking-tight">
                       {feature.title}
                     </h3>
-                    <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground px-2 transition-colors duration-300 group-hover:text-foreground/80">
-                      {feature.description}
-                    </p>
                   </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
+                  <p className="text-[13px] leading-relaxed text-muted-foreground pl-6">
+                    {feature.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-4 border-t border-border/50 mt-auto flex justify-center">
+            <a
+              href="mailto:support@texocad.ai"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LifeBuoy size={16} />
+              <span>Support</span>
+            </a>
+          </div>
+        </aside>
       </div>
     </main>
   );
