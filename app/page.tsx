@@ -99,7 +99,7 @@ export default function Home() {
                   >
                     <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
                       <span className="text-foreground animate-pulse font-mono">{'>'}</span>
-                      <span className="text-base">Resume session...</span>
+                      <span className="text-base">Describe the product you want...</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="hidden sm:inline-block text-[11px] font-mono border border-border rounded px-2 py-0.5 text-muted-foreground">↵</span>
@@ -113,7 +113,7 @@ export default function Home() {
                   >
                     <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
                       <span className="text-foreground animate-pulse font-mono">{'>'}</span>
-                      <span className="text-base">Describe the part you want...</span>
+                      <span className="text-base">Describe the product you want...</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="hidden sm:inline-block text-[11px] font-mono border border-border rounded px-2 py-0.5 text-muted-foreground">↵ Enter</span>

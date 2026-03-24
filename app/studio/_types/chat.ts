@@ -5,6 +5,12 @@ export interface GeomExportEntry {
   url: string;
 }
 
+export interface PartEntry {
+  name: string;
+  script_path: string;
+  exports: GeomExportEntry[];
+}
+
 export interface TodoItem {
   id?: string;
   content: string;
@@ -14,10 +20,10 @@ export interface TodoItem {
 export interface TexocadGraphState {
   messages: Message[];
   todos?: TodoItem[];
-  exports?: GeomExportEntry[];
+  product?: PartEntry[];
 }
 
-export interface CustomExportEvent {
-  type: "exports";
-  exports: GeomExportEntry[];
+export interface CustomProductEvent {
+  type: "product";
+  parts: PartEntry[];
 }

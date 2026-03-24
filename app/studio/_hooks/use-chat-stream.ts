@@ -8,14 +8,15 @@ import type { EngineKey } from "@/app/studio/_lib/langgraph-config";
 import type { StreamAccessors } from "@/app/studio/_hooks/use-message-rows";
 import type {
   TexocadGraphState,
-  CustomExportEvent,
-  GeomExportEntry,
+  CustomProductEvent,
+  PartEntry,
   TodoItem,
 } from "@/app/studio/_types/chat";
 
 const EMPTY_TODOS: TodoItem[] = [];
+const EMPTY_PRODUCT: PartEntry[] = [];
 
-export function useChatStream(engineKey: EngineKey, onExportEvent?: (entry: GeomExportEntry) => void) {
+export function useChatStream(engineKey: EngineKey, onProductEvent?: (parts: PartEntry[]) => void) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,10 +24,10 @@ export function useChatStream(engineKey: EngineKey, onExportEvent?: (entry: Geom
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
-  const onExportEventRef = useRef(onExportEvent);
+  const onProductEventRef = useRef(onProductEvent);
   useEffect(() => {
-    onExportEventRef.current = onExportEvent;
-  }, [onExportEvent]);
+    onProductEventRef.current = onProductEvent;
+  }, [onProductEvent]);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
@@ -53,11 +54,9 @@ export function useChatStream(engineKey: EngineKey, onExportEvent?: (entry: Geom
     filterSubagentMessages: true,
     onThreadId: (id: string) => handleThreadIdChange(id),
     onCustomEvent: (data: unknown) => {
-      const event = data as CustomExportEvent;
-      if (event.type === "exports" && Array.isArray(event.exports)) {
-        for (const entry of event.exports) {
-          onExportEventRef.current?.(entry);
-        }
+      const event = data as CustomProductEvent;
+      if (event.type === "product" && Array.isArray(event.parts)) {
+        onProductEventRef.current?.(event.parts);
       }
     },
   }), [
@@ -73,9 +72,9 @@ export function useChatStream(engineKey: EngineKey, onExportEvent?: (entry: Geom
   const { messages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
   const todos: TodoItem[] = Array.isArray(values.todos) ? values.todos : EMPTY_TODOS;
-  const exports: GeomExportEntry[] = useMemo(
-    () => Array.isArray(values.exports) ? values.exports : [],
-    [values.exports],
+  const product: PartEntry[] = useMemo(
+    () => Array.isArray(values.product) ? values.product : EMPTY_PRODUCT,
+    [values.product],
   );
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
@@ -103,7 +102,7 @@ export function useChatStream(engineKey: EngineKey, onExportEvent?: (entry: Geom
     isBusy,
     error,
     todos,
-    exports,
+    product,
     urlThreadId,
     pathname,
     router,

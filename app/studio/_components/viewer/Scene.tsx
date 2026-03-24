@@ -7,7 +7,7 @@ import { STLLoader, OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 
 import { CadAxisTriad } from "@/app/studio/_components/viewer/Triad";
-import type { ViewCommand } from "@/app/studio/_types/viewer";
+import type { ViewCommand, ViewerPart } from "@/app/studio/_types/viewer";
 import {
   DEFAULT_RADIUS,
   VIEW_DIRECTIONS,
@@ -17,8 +17,15 @@ import {
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
 
+interface LoadedGeometry {
+  name: string;
+  geometry: THREE.BufferGeometry;
+  color: string;
+}
+
 export function Scene({
-  url,
+  parts,
+  visibilityMap,
   viewCommand,
   showGrid,
   wireframe,
@@ -27,7 +34,8 @@ export function Scene({
   onLoadError,
   onLoadingChange,
 }: {
-  url: string | null;
+  parts: ViewerPart[];
+  visibilityMap: Record<string, boolean>;
   viewCommand: ViewCommand | null;
   showGrid: boolean;
   wireframe: boolean;
@@ -36,7 +44,7 @@ export function Scene({
   onLoadError: (message: string | null) => void;
   onLoadingChange: (loading: boolean) => void;
 }) {
-  const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [geometries, setGeometries] = useState<LoadedGeometry[]>([]);
   const [radius, setRadius] = useState(DEFAULT_RADIUS);
   const getThree = useThree((s) => s.get);
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -88,8 +96,49 @@ export function Scene({
     updateCameraBounds(r);
   }, [getThree, fitDistance, updateCameraBounds]);
 
+  const fitToGeometries = useCallback(
+    (loaded: LoadedGeometry[]) => {
+      if (loaded.length === 0) {
+        radiusRef.current = DEFAULT_RADIUS;
+        centerRef.current.set(0, 0, 0);
+        setRadius(DEFAULT_RADIUS);
+        return;
+      }
+
+      const combinedBox = new THREE.Box3();
+      for (const { geometry } of loaded) {
+        geometry.computeBoundingBox();
+        if (geometry.boundingBox) combinedBox.union(geometry.boundingBox);
+      }
+
+      const center = new THREE.Vector3();
+      combinedBox.getCenter(center);
+      const size = new THREE.Vector3();
+      combinedBox.getSize(size);
+      const r = Math.max(size.length() * 0.5, 1);
+
+      radiusRef.current = r;
+      centerRef.current.copy(center);
+      setRadius(r);
+
+      const dist = fitDistance(r);
+      const camera = getThree().camera;
+      const isoDir = new THREE.Vector3(...VIEW_DIRECTIONS.iso).normalize();
+      camera.position.copy(center).addScaledVector(isoDir, dist);
+      camera.lookAt(center);
+
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(center);
+        controlsRef.current.update();
+      }
+      updateCameraBounds(r);
+    },
+    [getThree, fitDistance, updateCameraBounds],
+  );
+
   useEffect(() => {
-    if (!url) {
+    const stlParts = parts.filter((p) => p.stlUrl);
+    if (stlParts.length === 0) {
       onLoadError(null);
       onLoadingChange(false);
       return;
@@ -100,71 +149,66 @@ export function Scene({
     const loader = new STLLoader();
     let cancelled = false;
 
-    loader.load(
-      url,
-      (geo) => {
-        if (cancelled) {
-          geo.dispose();
-          return;
-        }
-        geo.computeVertexNormals();
-        geo.computeBoundingBox();
-        const box = geo.boundingBox;
-        if (box) {
-          const centerX = (box.min.x + box.max.x) * 0.5;
-          const centerY = (box.min.y + box.max.y) * 0.5;
-          geo.translate(-centerX, -centerY, -box.min.z);
-        }
-        geo.computeBoundingSphere();
-
-        const sphere = geo.boundingSphere!;
-        const r = sphere.radius || 50;
-        radiusRef.current = r;
-        centerRef.current.copy(sphere.center);
-        setRadius(r);
-        const dist = fitDistance(r);
-        const center = centerRef.current;
-        const camera = getThree().camera;
-        const isoDir = new THREE.Vector3(...VIEW_DIRECTIONS.iso).normalize();
-        camera.position.copy(center).addScaledVector(isoDir, dist);
-        camera.lookAt(center);
-
-        if (controlsRef.current) {
-          controlsRef.current.target.copy(center);
-          controlsRef.current.update();
-        }
-        updateCameraBounds(r);
-        onLoadError(null);
-        onLoadingChange(false);
-
-        setGeometry((prev) => {
-          prev?.dispose();
-          return geo;
-        });
-      },
-      undefined,
-      (err) => {
-        if (!cancelled) {
-          setGeometry((prev) => {
-            prev?.dispose();
-            return null;
-          });
-          onLoadError("Failed to load model. Try generating it again.");
-          onLoadingChange(false);
-          console.error("Failed to load STL:", err);
-        }
-      }
+    const promises = stlParts.map(
+      (part) =>
+        new Promise<LoadedGeometry | null>((resolve) => {
+          loader.load(
+            part.stlUrl!,
+            (geo) => {
+              if (cancelled) {
+                geo.dispose();
+                resolve(null);
+                return;
+              }
+              geo.computeVertexNormals();
+              resolve({ name: part.name, geometry: geo, color: part.color });
+            },
+            undefined,
+            (err) => {
+              console.error(`Failed to load STL for part "${part.name}":`, err);
+              resolve(null);
+            },
+          );
+        }),
     );
+
+    Promise.all(promises).then((results) => {
+      if (cancelled) {
+        for (const r of results) r?.geometry.dispose();
+        return;
+      }
+
+      const loaded = results.filter((r): r is LoadedGeometry => r !== null);
+      if (loaded.length === 0) {
+        onLoadError("Failed to load models. Try generating again.");
+        onLoadingChange(false);
+        setGeometries((prev) => {
+          for (const g of prev) g.geometry.dispose();
+          return [];
+        });
+        return;
+      }
+
+      onLoadError(null);
+      onLoadingChange(false);
+
+      setGeometries((prev) => {
+        for (const g of prev) g.geometry.dispose();
+        return loaded;
+      });
+
+      fitToGeometries(loaded);
+    });
 
     return () => {
       cancelled = true;
       onLoadingChange(false);
-      setGeometry((prev) => {
-        prev?.dispose();
-        return null;
+      setGeometries((prev) => {
+        for (const g of prev) g.geometry.dispose();
+        return [];
       });
     };
-  }, [url, getThree, fitDistance, onLoadError, onLoadingChange, updateCameraBounds]);
+  }, [parts, onLoadError, onLoadingChange, fitToGeometries]);
 
   useEffect(() => {
     if (!viewCommand) return;
@@ -220,17 +264,21 @@ export function Scene({
           fadeStrength={1.5}
         />
       )}
-      {geometry && (
-        <mesh geometry={geometry}>
+      {geometries.map((entry) => (
+        <mesh
+          key={entry.name}
+          geometry={entry.geometry}
+          visible={visibilityMap[entry.name] !== false}
+        >
           <meshStandardMaterial
-            color="#94a3b8"
+            color={entry.color}
             metalness={0.25}
             roughness={0.5}
             side={THREE.DoubleSide}
             wireframe={wireframe}
           />
         </mesh>
-      )}
+      ))}
       <GizmoHelper alignment="bottom-left" margin={[58, 58]} renderPriority={1}>
         <CadAxisTriad />
       </GizmoHelper>

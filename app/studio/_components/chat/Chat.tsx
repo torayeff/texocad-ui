@@ -11,7 +11,7 @@ import { useMessageRows } from "@/app/studio/_hooks/use-message-rows";
 import { getMessageTextContent } from "@/app/studio/_lib/message-content";
 import { engines, DEFAULT_ENGINE } from "@/app/studio/_lib/langgraph-config";
 import type { EngineKey } from "@/app/studio/_lib/langgraph-config";
-import type { GeomExportEntry } from "@/app/studio/_types/chat";
+import type { PartEntry } from "@/app/studio/_types/chat";
 
 import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
 import { TodoList } from "@/app/studio/_components/chat/TodoList";
@@ -20,10 +20,11 @@ import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
 
 export interface ChatProps {
-  onViewerArtifact: (entry: GeomExportEntry | null) => void;
+  onProductEvent: (parts: PartEntry[]) => void;
+  onClearViewer: () => void;
 }
 
-export default function Chat({ onViewerArtifact }: ChatProps) {
+export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
   const [selectedEngine, setSelectedEngine] = useState<EngineKey>(DEFAULT_ENGINE);
 
   const {
@@ -37,12 +38,12 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     isBusy,
     error,
     todos,
-    exports,
+    product,
     urlThreadId,
     pathname,
     router,
     handleThreadIdChange,
-  } = useChatStream(selectedEngine, onViewerArtifact);
+  } = useChatStream(selectedEngine, onProductEvent);
 
   const engineLocked = !!urlThreadId || messages.length > 0;
 
@@ -56,14 +57,18 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const isNearBottomRef = useRef(true);
-  const hydratedRef = useRef(false);
   const isTickingRef = useRef(false);
   const lastScrollTopRef = useRef(0);
 
-  const onViewerArtifactRef = useRef(onViewerArtifact);
+  const onProductEventRef = useRef(onProductEvent);
   useEffect(() => {
-    onViewerArtifactRef.current = onViewerArtifact;
-  }, [onViewerArtifact]);
+    onProductEventRef.current = onProductEvent;
+  }, [onProductEvent]);
+
+  const onClearViewerRef = useRef(onClearViewer);
+  useEffect(() => {
+    onClearViewerRef.current = onClearViewer;
+  }, [onClearViewer]);
 
   const history = useThreadHistory(client, isAuthReady);
 
@@ -99,13 +104,15 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     : messageRows[messageRows.length - 1]?.messageType;
   const shouldShowTodoList = todos.length > 0 && lastMessageType !== "human";
 
+  const prevProductKeyRef = useRef("[]");
+
   useEffect(() => {
-    if (isHydrating || hydratedRef.current || exports.length === 0) return;
-    hydratedRef.current = true;
-    for (const entry of exports) {
-      onViewerArtifactRef.current(entry);
-    }
-  }, [isHydrating, exports]);
+    if (isHydrating) return;
+    const key = JSON.stringify(product);
+    if (key === prevProductKeyRef.current) return;
+    prevProductKeyRef.current = key;
+    onProductEventRef.current(product);
+  }, [isHydrating, product]);
 
   useEffect(() => {
     if (isNearBottomRef.current) {
@@ -191,7 +198,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     setPendingHumanMessage(null);
     timer.reset();
     handleThreadIdChange(threadId);
-    onViewerArtifactRef.current(null);
+    onClearViewerRef.current();
   }, [timer, handleThreadIdChange]);
 
   const handleDeleteThread = useCallback((threadId: string) => {
@@ -200,7 +207,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
       timer.reset();
       setDraftConversationKey((key) => key + 1);
       handleThreadIdChange(null);
-      onViewerArtifactRef.current(null);
+      onClearViewerRef.current();
     }
   }, [timer, history, urlThreadId, handleThreadIdChange]);
 
@@ -211,7 +218,7 @@ export default function Chat({ onViewerArtifact }: ChatProps) {
     timer.reset();
     setDraftConversationKey((key) => key + 1);
     handleThreadIdChange(null);
-    onViewerArtifactRef.current(null);
+    onClearViewerRef.current();
   }, [timer, handleThreadIdChange]);
 
   const toggleHistory = useCallback(() => {

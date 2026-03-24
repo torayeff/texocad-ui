@@ -1,58 +1,81 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Chat from "@/app/studio/_components/chat/Chat";
 import { Header } from "@/app/components/Header";
-import type { GeomExportEntry } from "@/app/studio/_types/chat";
+import { PART_COLORS } from "@/app/studio/_lib/viewer-constants";
+import type { PartEntry } from "@/app/studio/_types/chat";
+import type { ViewerPart } from "@/app/studio/_types/viewer";
 
 const Viewer = dynamic(() => import("@/app/studio/_components/viewer/Viewer"), { ssr: false });
 
+function resolveSasUrl(blobUrl: string): Promise<string | null> {
+  return fetch(`/api/blob?url=${encodeURIComponent(blobUrl)}`)
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => data?.sasUrl ?? null)
+    .catch(() => null);
+}
+
+function buildViewerParts(
+  parts: PartEntry[],
+  resolvedUrls: Map<string, string>,
+): ViewerPart[] {
+  return parts.map((part, idx) => {
+    const downloadUrls: ViewerPart["downloadUrls"] = {};
+    let stlUrl: string | null = null;
+
+    for (const exp of part.exports ?? []) {
+      const sas = resolvedUrls.get(exp.url);
+      if (!sas) continue;
+      if (exp.filename.endsWith(".stl")) {
+        stlUrl = sas;
+        downloadUrls.stl = sas;
+      } else if (exp.filename.endsWith(".step")) {
+        downloadUrls.step = sas;
+      } else if (exp.filename.endsWith(".py")) {
+        downloadUrls.py = sas;
+      }
+    }
+
+    return {
+      name: part.name,
+      stlUrl,
+      downloadUrls,
+      color: PART_COLORS[idx % PART_COLORS.length],
+    };
+  });
+}
+
 export default function StudioPage() {
-  const [stlUrl, setStlUrl] = useState<string | null>(null);
-  const [downloadUrls, setDownloadUrls] = useState<{
-    stl?: string;
-    step?: string;
-    py?: string;
-  }>({});
+  const [viewerParts, setViewerParts] = useState<ViewerPart[]>([]);
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const stlRequestVersionRef = useRef(0);
+  const requestVersionRef = useRef(0);
 
-  const handleViewerArtifact = (entry: GeomExportEntry | null) => {
-    if (!entry) {
-      setStlUrl(null);
-      setDownloadUrls({});
-      stlRequestVersionRef.current++;
-      return;
-    }
+  const handleProductEvent = useCallback((parts: PartEntry[]) => {
+    const allExports = parts.flatMap((p) => p.exports ?? []);
+    const uniqueUrls = [...new Set(allExports.map((e) => e.url))];
+    const snapshotVersion = requestVersionRef.current;
 
-    const isStl = entry.filename.endsWith(".stl");
-    const requestVersion = isStl ? ++stlRequestVersionRef.current : stlRequestVersionRef.current;
+    Promise.all(
+      uniqueUrls.map((url) => resolveSasUrl(url).then((sas) => [url, sas] as const)),
+    ).then((results) => {
+      if (snapshotVersion !== requestVersionRef.current) return;
+      const resolved = new Map<string, string>();
+      for (const [url, sas] of results) {
+        if (sas) resolved.set(url, sas);
+      }
+      setViewerParts(buildViewerParts(parts, resolved));
+    });
+  }, []);
 
-    fetch(`/api/blob?url=${encodeURIComponent(entry.url)}`)
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        const sasUrl = data?.sasUrl;
-        if (!sasUrl) return;
-        if (isStl) {
-          if (requestVersion !== stlRequestVersionRef.current) return;
-          setStlUrl(sasUrl);
-          setDownloadUrls((prev) => ({ ...prev, stl: sasUrl }));
-        } else if (entry.filename.endsWith(".step")) {
-          setDownloadUrls((prev) => ({ ...prev, step: sasUrl }));
-        } else if (entry.filename.endsWith(".py")) {
-          setDownloadUrls((prev) => ({ ...prev, py: sasUrl }));
-        }
-      })
-      .catch((err) => console.error("Failed to fetch SAS URL:", err));
-  };
-
-  const startResize = () => {
-    setIsResizing(true);
-  };
+  const handleClearViewer = useCallback(() => {
+    requestVersionRef.current++;
+    setViewerParts([]);
+  }, []);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -76,7 +99,6 @@ export default function StudioPage() {
     };
   }, [isResizing]);
 
-  const viewerKey = stlUrl ?? "empty";
   const viewerPaneStyle = {
     "--viewer-width": `${splitPct}%`,
   } as CSSProperties;
@@ -90,7 +112,7 @@ export default function StudioPage() {
           className="min-h-0 flex-[3] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
           style={viewerPaneStyle}
         >
-          <Viewer key={viewerKey} stlUrl={stlUrl} downloadUrls={downloadUrls} />
+          <Viewer parts={viewerParts} />
         </div>
 
         <div
@@ -102,13 +124,13 @@ export default function StudioPage() {
             role="separator"
             aria-orientation="vertical"
             aria-label="Resize panels"
-            onMouseDown={startResize}
+            onMouseDown={() => setIsResizing(true)}
             className={`absolute inset-y-0 -left-1 z-10 w-2 !cursor-col-resize bg-transparent transition-colors ${isResizing ? "bg-accent/20" : "hover:bg-muted/80"
               }`}
           />
         </div>
         <div className="min-h-0 flex-[2] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
-          <Chat onViewerArtifact={handleViewerArtifact} />
+          <Chat onProductEvent={handleProductEvent} onClearViewer={handleClearViewer} />
         </div>
       </div>
     </main>

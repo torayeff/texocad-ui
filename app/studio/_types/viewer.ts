@@ -12,3 +12,10 @@ export interface ViewCommand {
   view?: ViewPreset;
   id: number;
 }
+
+export interface ViewerPart {
+  name: string;
+  stlUrl: string | null;
+  downloadUrls: { stl?: string; step?: string; py?: string };
+  color: string;
+}

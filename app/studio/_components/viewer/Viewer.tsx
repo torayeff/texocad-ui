@@ -7,24 +7,19 @@ import { Maximize2, Grid3x3, Box, RotateCw, Download, ChevronDown, Loader2 } fro
 
 import { useMounted } from "@/app/hooks/use-mounted";
 import { Scene } from "@/app/studio/_components/viewer/Scene";
+import { AssemblyTree } from "@/app/studio/_components/viewer/AssemblyTree";
 import { VIEW_LABELS, INITIAL_CAMERA_POS } from "@/app/studio/_lib/viewer-constants";
-import type { ViewPreset, ViewCommand } from "@/app/studio/_types/viewer";
+import type { ViewPreset, ViewCommand, ViewerPart } from "@/app/studio/_types/viewer";
 
 type DownloadFormat = "stl" | "step" | "py";
 
-const DOWNLOAD_FORMATS: { key: DownloadFormat; label: string; file: string }[] = [
-  { key: "stl", label: "STL", file: "model.stl" },
-  { key: "step", label: "STEP", file: "model.step" },
-  { key: "py", label: "PYTHON", file: "model.py" },
-];
+const DOWNLOAD_LABELS: Record<DownloadFormat, string> = {
+  stl: "STL",
+  step: "STEP",
+  py: "PYTHON",
+};
 
-export default function Viewer({
-  stlUrl,
-  downloadUrls,
-}: {
-  stlUrl: string | null;
-  downloadUrls: { stl?: string; step?: string; py?: string };
-}) {
+export default function Viewer({ parts }: { parts: ViewerPart[] }) {
   const { resolvedTheme } = useTheme();
   const mounted = useMounted();
   const [viewCommand, setViewCommand] = useState<ViewCommand | null>(null);
@@ -35,11 +30,14 @@ export default function Viewer({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [stlLoading, setStlLoading] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
   const cmdIdRef = useRef(0);
   const downloadRef = useRef<HTMLDivElement>(null);
 
   const isDark = mounted && resolvedTheme === "dark";
   const bgColor = isDark ? "#09090b" : "#f4f4f5";
+
+  const hasAnyStl = parts.some((p) => p.stlUrl);
 
   const setView = useCallback((view: ViewPreset) => {
     setActiveView(view);
@@ -48,6 +46,10 @@ export default function Viewer({
 
   const fitView = useCallback(() => {
     setViewCommand({ kind: "fit", id: ++cmdIdRef.current });
+  }, []);
+
+  const togglePartVisibility = useCallback((name: string) => {
+    setVisibilityMap((prev) => ({ ...prev, [name]: prev[name] === false }));
   }, []);
 
   useEffect(() => {
@@ -61,19 +63,17 @@ export default function Viewer({
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [downloadOpen]);
 
-  const hasAnyDownload = DOWNLOAD_FORMATS.some((f) => downloadUrls[f.key]);
+  const allDownloads = buildDownloadEntries(parts);
+  const hasAnyDownload = allDownloads.length > 0;
 
-  const handleDownload = useCallback((format: DownloadFormat) => {
-    const url = downloadUrls[format];
-    if (!url) return;
-    const filename = DOWNLOAD_FORMATS.find((f) => f.key === format)?.file ?? format;
+  const handleDownload = useCallback((url: string, filename: string) => {
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [downloadUrls]);
+  }, []);
 
   return (
     <div className="relative h-full w-full" style={{ background: bgColor }}>
@@ -103,24 +103,29 @@ export default function Viewer({
           <ChevronDown size={11} className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`} />
         </button>
         {downloadOpen && (
-          <div className="absolute right-0 mt-1 min-w-[120px] rounded-md border border-border/50 bg-card/95 backdrop-blur-sm shadow-md overflow-hidden">
-            {DOWNLOAD_FORMATS.map((f) => (
+          <div className="absolute right-0 mt-1 min-w-[160px] rounded-md border border-border/50 bg-card/95 backdrop-blur-sm shadow-md overflow-hidden max-h-64 overflow-y-auto">
+            {allDownloads.map((d) => (
               <button
-                key={f.key}
+                key={d.key}
                 onClick={() => {
-                  handleDownload(f.key);
+                  handleDownload(d.url, d.filename);
                   setDownloadOpen(false);
                 }}
-                disabled={!downloadUrls[f.key]}
-                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <Download size={12} />
-                {f.label}
+                <span className="truncate">{d.label}</span>
               </button>
             ))}
           </div>
         )}
       </div>
+
+      <AssemblyTree
+        parts={parts}
+        visibilityMap={visibilityMap}
+        onToggle={togglePartVisibility}
+      />
 
       <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-0.5 rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm p-1 shadow-sm">
         <button
@@ -171,7 +176,8 @@ export default function Viewer({
           intensity={isDark ? 0.3 : 0.4}
         />
         <Scene
-          url={stlUrl}
+          parts={parts}
+          visibilityMap={visibilityMap}
           viewCommand={viewCommand}
           showGrid={showGrid}
           wireframe={wireframe}
@@ -195,7 +201,7 @@ export default function Viewer({
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <p className="text-sm text-error">{loadError}</p>
         </div>
-      ) : !stlUrl && (
+      ) : !hasAnyStl && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <p className="text-sm text-muted-foreground">
             No model loaded. Generate one in the chat.
@@ -212,4 +218,27 @@ export default function Viewer({
       </div>
     </div>
   );
+}
+
+interface DownloadEntry {
+  key: string;
+  label: string;
+  filename: string;
+  url: string;
+}
+
+function buildDownloadEntries(parts: ViewerPart[]): DownloadEntry[] {
+  const entries: DownloadEntry[] = [];
+  for (const part of parts) {
+    for (const [fmt, url] of Object.entries(part.downloadUrls) as [DownloadFormat, string | undefined][]) {
+      if (!url) continue;
+      entries.push({
+        key: `${part.name}-${fmt}`,
+        label: parts.length > 1 ? `${part.name}.${fmt} (${DOWNLOAD_LABELS[fmt]})` : `${DOWNLOAD_LABELS[fmt]}`,
+        filename: `${part.name}.${fmt}`,
+        url,
+      });
+    }
+  }
+  return entries;
 }

@@ -44,6 +44,11 @@ export const ORBIT_MOUSE_BUTTONS = {
   RIGHT: THREE.MOUSE.PAN,
 } as const;
 
+export const PART_COLORS = [
+  "#94a3b8", "#60a5fa", "#34d399", "#fbbf24",
+  "#f87171", "#a78bfa", "#fb923c", "#2dd4bf",
+];
+
 const TRIAD_UP = new THREE.Vector3(0, 1, 0);
 
 export const TRIAD_AXES = ([
