@@ -11,7 +11,7 @@ import {
   MessageSquare,
   Image as ImageIcon,
   Box,
-  ShieldCheck,
+  Zap,
   FileDown,
   RefreshCcw
 } from "lucide-react";
@@ -37,9 +37,9 @@ const FEATURES = [
     icon: Box,
   },
   {
-    title: "Manufacturing ready",
-    description: "Catch manufacturing issues before production.",
-    icon: ShieldCheck,
+    title: "Rapid prototyping",
+    description: "Move from rough ideas to editable prototype geometry quickly.",
+    icon: Zap,
   },
   {
     title: "Universal export",
@@ -131,7 +131,7 @@ export default function Home() {
               Unlock physical product building
             </h1>
             <p className="mt-3 max-w-[44rem] text-base text-muted-foreground sm:text-lg leading-7 sm:leading-8">
-              For people building physical products, TexoCAD turns ideas, requirements, and sketches into editable, manufacturing-ready CAD with natural language.
+              For builders of physical products, TexoCAD turns ideas, requirements, and sketches into editable CAD with natural language, enabling rapid prototyping and fast iteration.
             </p>
 
             <div className="mt-5 flex flex-col items-center gap-4 sm:flex-row">

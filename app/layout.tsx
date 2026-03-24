@@ -7,9 +7,26 @@ import "./globals.css";
 
 const SITE_NAME = "TexoCAD";
 const SITE_URL = "https://texocad.com";
-const SITE_TITLE = "TexoCAD - Agentic text-to-CAD";
+const SITE_TITLE = "TexoCAD - Agentic Text-to-CAD";
 const SITE_DESCRIPTION =
   "Agentic text-to-CAD for people building physical products. Turn ideas, requirements, and sketches into editable, manufacturing-ready CAD.";
+const SITE_KEYWORDS = [
+  "text to CAD",
+  "agentic CAD",
+  "AI CAD",
+  "3D CAD",
+  "engineering drawings to CAD",
+  "CAD model generation",
+  "manufacturability checks",
+  "rapid prototyping",
+  "prototype CAD",
+  "natural language CAD",
+  "parametric CAD",
+  "CAD automation",
+  "BREP CAD",
+  "STL export",
+  "STEP export",
+];
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,17 +46,14 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  keywords: [
-    "text to CAD",
-    "agentic CAD",
-    "AI CAD",
-    "3D CAD",
-    "engineering drawings to CAD",
-    "CAD model generation",
-    "manufacturability checks",
-    "STL export",
-    "STEP export",
-  ],
+  keywords: SITE_KEYWORDS,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  referrer: "origin-when-cross-origin",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   alternates: {
     canonical: "/",
   },
@@ -49,6 +63,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
     },
   },
   openGraph: {
@@ -58,6 +75,7 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     locale: "en_US",
+    countryName: "US",
   },
   twitter: {
     card: "summary",
