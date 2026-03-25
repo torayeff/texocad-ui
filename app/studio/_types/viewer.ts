@@ -18,4 +18,5 @@ export interface ViewerPart {
   stlUrl: string | null;
   downloadUrls: { stl?: string; step?: string; py?: string };
   color: string;
+  executedAt: string;
 }

@@ -44,6 +44,7 @@ function buildViewerParts(
       stlUrl,
       downloadUrls,
       color: PART_COLORS[idx % PART_COLORS.length],
+      executedAt: part.executed_at,
     };
   });
 }
@@ -58,6 +59,7 @@ export default function StudioPage() {
   const handleProductEvent = useCallback((parts: PartEntry[]) => {
     const allExports = parts.flatMap((p) => p.exports ?? []);
     const uniqueUrls = [...new Set(allExports.map((e) => e.url))];
+    requestVersionRef.current += 1;
     const snapshotVersion = requestVersionRef.current;
 
     Promise.all(

@@ -39,7 +39,10 @@ export function Scene({
   onLoadError: (message: string | null) => void;
   onLoadingChange: (loading: boolean) => void;
 }) {
-  const [geometries, setGeometries] = useState<LoadedGeometry[]>([]);
+  const [geometries, setGeometries] = useState<Map<string, LoadedGeometry>>(
+    () => new Map(),
+  );
+  const geometriesRef = useRef<Map<string, LoadedGeometry>>(new Map());
   const getThree = useThree((s) => s.get);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const radiusRef = useRef(DEFAULT_RADIUS);
@@ -128,6 +131,35 @@ export function Scene({
     if (stlParts.length === 0) {
       onLoadError(null);
       onLoadingChange(false);
+      const prev = geometriesRef.current;
+      for (const g of prev.values()) g.geometry.dispose();
+      geometriesRef.current = new Map();
+      setGeometries(geometriesRef.current);
+      return;
+    }
+
+    const cacheKey = (p: ViewerPart) => `${p.name}::${p.executedAt}`;
+    const incoming = new Map(stlParts.map((p) => [cacheKey(p), p]));
+    const current = geometriesRef.current;
+
+    const toLoad = stlParts.filter((p) => !current.has(cacheKey(p)));
+    const toRemove = [...current.keys()].filter((k) => !incoming.has(k));
+
+    if (toLoad.length === 0 && toRemove.length === 0) {
+      return;
+    }
+
+    if (toRemove.length > 0) {
+      const next = new Map(current);
+      for (const k of toRemove) {
+        next.get(k)?.geometry.dispose();
+        next.delete(k);
+      }
+      geometriesRef.current = next;
+      setGeometries(next);
+    }
+
+    if (toLoad.length === 0) {
       return;
     }
 
@@ -136,9 +168,9 @@ export function Scene({
     const loader = new STLLoader();
     let cancelled = false;
 
-    const promises = stlParts.map(
+    const promises = toLoad.map(
       (part) =>
-        new Promise<LoadedGeometry | null>((resolve) => {
+        new Promise<{ key: string; geo: LoadedGeometry } | null>((resolve) => {
           loader.load(
             part.stlUrl!,
             (geo) => {
@@ -148,7 +180,10 @@ export function Scene({
                 return;
               }
               geo.computeVertexNormals();
-              resolve({ name: part.name, geometry: geo, color: part.color });
+              resolve({
+                key: cacheKey(part),
+                geo: { name: part.name, geometry: geo, color: part.color },
+              });
             },
             undefined,
             (err) => {
@@ -161,39 +196,36 @@ export function Scene({
 
     Promise.all(promises).then((results) => {
       if (cancelled) {
-        for (const r of results) r?.geometry.dispose();
+        for (const r of results) r?.geo.geometry.dispose();
         return;
       }
 
-      const loaded = results.filter((r): r is LoadedGeometry => r !== null);
+      const loaded = results.filter(
+        (r): r is { key: string; geo: LoadedGeometry } => r !== null,
+      );
+
       if (loaded.length === 0) {
         onLoadError("Failed to load models. Try generating again.");
         onLoadingChange(false);
-        setGeometries((prev) => {
-          for (const g of prev) g.geometry.dispose();
-          return [];
-        });
         return;
       }
 
       onLoadError(null);
       onLoadingChange(false);
 
-      setGeometries((prev) => {
-        for (const g of prev) g.geometry.dispose();
-        return loaded;
-      });
+      const next = new Map(geometriesRef.current);
+      for (const { key, geo } of loaded) {
+        next.set(key, geo);
+      }
+      geometriesRef.current = next;
+      setGeometries(new Map(next));
 
-      fitToGeometries(loaded);
+      fitToGeometries([...next.values()]);
     });
 
     return () => {
       cancelled = true;
       onLoadingChange(false);
-      setGeometries((prev) => {
-        for (const g of prev) g.geometry.dispose();
-        return [];
-      });
     };
   }, [parts, onLoadError, onLoadingChange, fitToGeometries]);
 
@@ -239,7 +271,7 @@ export function Scene({
         zoomToCursor
         mouseButtons={ORBIT_MOUSE_BUTTONS}
       />
-      {geometries.map((entry) => (
+      {[...geometries.values()].map((entry) => (
         <mesh
           key={entry.name}
           geometry={entry.geometry}

@@ -104,10 +104,16 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     : messageRows[messageRows.length - 1]?.messageType;
   const shouldShowTodoList = todos.length > 0 && lastMessageType !== "human";
 
+  const wasHydratingRef = useRef(false);
   const prevProductRef = useRef<PartEntry[] | null>(null);
 
   useEffect(() => {
-    if (isHydrating) return;
+    if (isHydrating) {
+      wasHydratingRef.current = true;
+      return;
+    }
+    if (!wasHydratingRef.current) return;
+    wasHydratingRef.current = false;
     if (product === prevProductRef.current) return;
     prevProductRef.current = product;
     onProductEventRef.current(product);

@@ -1,4 +1,5 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] UI/UX for tree and downloads
+- [ ] Moving objects in UI
+- [ ] UI/UX for tree and downloads (3mf included)

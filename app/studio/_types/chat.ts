@@ -9,6 +9,7 @@ export interface PartEntry {
   name: string;
   script_path: string;
   exports: GeomExportEntry[];
+  executed_at: string;
 }
 
 export interface TodoItem {
