@@ -16,7 +16,7 @@ export interface ViewCommand {
 export interface ViewerPart {
   name: string;
   stlUrl: string | null;
-  downloadUrls: { stl?: string; step?: string; py?: string };
+  downloadUrls: { stl?: string; step?: string; py?: string; "3mf"?: string };
   color: string;
   executedAt: string;
 }

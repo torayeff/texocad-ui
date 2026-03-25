@@ -11,12 +11,13 @@ import { AssemblyTree } from "@/app/studio/_components/viewer/AssemblyTree";
 import { VIEW_LABELS, INITIAL_CAMERA_POS } from "@/app/studio/_lib/viewer-constants";
 import type { ViewPreset, ViewCommand, ViewerPart } from "@/app/studio/_types/viewer";
 
-type DownloadFormat = "stl" | "step" | "py";
+type DownloadFormat = "stl" | "step" | "py" | "3mf";
 
 const DOWNLOAD_LABELS: Record<DownloadFormat, string> = {
   stl: "STL",
   step: "STEP",
   py: "PYTHON",
+  "3mf": "3MF",
 };
 
 export default function Viewer({ parts }: { parts: ViewerPart[] }) {
@@ -95,27 +96,49 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
         <button
           onClick={() => setDownloadOpen((o) => !o)}
           disabled={!hasAnyDownload}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card/80 backdrop-blur-sm border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card/80 backdrop-blur-md border border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           <Download size={13} />
           Download
           <ChevronDown size={11} className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`} />
         </button>
         {downloadOpen && (
-          <div className="absolute right-0 mt-1 min-w-[160px] rounded-md border border-border/50 bg-card/95 backdrop-blur-sm shadow-md overflow-hidden max-h-64 overflow-y-auto">
-            {allDownloads.map((d) => (
-              <button
-                key={d.key}
-                onClick={() => {
-                  handleDownload(d.url, d.filename);
-                  setDownloadOpen(false);
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <Download size={12} />
-                <span className="truncate">{d.label}</span>
-              </button>
-            ))}
+          <div className="absolute right-0 mt-2 min-w-[200px] rounded-lg border border-border/50 bg-card/80 backdrop-blur-md shadow-lg overflow-hidden max-h-[70vh] flex flex-col">
+            <div className="overflow-y-auto p-1.5 flex flex-col gap-1.5">
+              {parts.filter(p => Object.values(p.downloadUrls).some(url => !!url)).map((part, i) => {
+                const availableFormats = (Object.entries(part.downloadUrls) as [DownloadFormat, string | undefined][])
+                  .filter(([, url]) => !!url)
+                  .map(([fmt, url]) => ({ fmt, url: url! }));
+
+                return (
+                  <div key={part.name} className={`flex flex-col gap-1.5 p-2 rounded-md ${i % 2 === 0 ? "bg-muted/30" : "bg-transparent"}`}>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-[2px]"
+                        style={{ backgroundColor: part.color }}
+                      />
+                      <span className="text-xs font-medium text-foreground truncate">
+                        {part.name}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {availableFormats.map(({ fmt, url }) => (
+                        <button
+                          key={`${part.name}-${fmt}`}
+                          onClick={() => {
+                            handleDownload(url, `${part.name}.${fmt}`);
+                            setDownloadOpen(false);
+                          }}
+                          className="px-2 py-1 text-[10px] font-semibold rounded bg-muted/50 hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors border border-border/40"
+                        >
+                          {DOWNLOAD_LABELS[fmt]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

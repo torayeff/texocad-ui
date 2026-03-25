@@ -36,6 +36,8 @@ function buildViewerParts(
         downloadUrls.step = sas;
       } else if (exp.filename.endsWith(".py")) {
         downloadUrls.py = sas;
+      } else if (exp.filename.endsWith(".3mf")) {
+        downloadUrls["3mf"] = sas;
       }
     }
 
