@@ -104,13 +104,12 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     : messageRows[messageRows.length - 1]?.messageType;
   const shouldShowTodoList = todos.length > 0 && lastMessageType !== "human";
 
-  const prevProductKeyRef = useRef("[]");
+  const prevProductRef = useRef<PartEntry[] | null>(null);
 
   useEffect(() => {
     if (isHydrating) return;
-    const key = JSON.stringify(product);
-    if (key === prevProductKeyRef.current) return;
-    prevProductKeyRef.current = key;
+    if (product === prevProductRef.current) return;
+    prevProductRef.current = product;
     onProductEventRef.current(product);
   }, [isHydrating, product]);
 
@@ -313,8 +312,6 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
                   <EmptyChatState
                     isHydrating={isHydrating}
                     isBusy={isBusy}
-                    selectedEngine={selectedEngine}
-                    onSelectEngine={setSelectedEngine}
                     onExamplePrompt={handleExamplePrompt}
                   />
                 )}
