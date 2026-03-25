@@ -36,8 +36,6 @@ export const INITIAL_CAMERA_POS = new THREE.Vector3(...VIEW_DIRECTIONS.iso)
   .multiplyScalar(DEFAULT_RADIUS * 3.2)
   .toArray() as [number, number, number];
 
-export const GRID_ROTATION: [number, number, number] = [Math.PI / 2, 0, 0];
-
 export const ORBIT_MOUSE_BUTTONS = {
   LEFT: THREE.MOUSE.ROTATE,
   MIDDLE: THREE.MOUSE.PAN,

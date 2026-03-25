@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { Canvas } from "@react-three/fiber";
-import { Maximize2, Grid3x3, Box, RotateCw, Download, ChevronDown, Loader2 } from "lucide-react";
+import { Maximize2, Box, RotateCw, Download, ChevronDown, Loader2 } from "lucide-react";
 
 import { useMounted } from "@/app/hooks/use-mounted";
 import { Scene } from "@/app/studio/_components/viewer/Scene";
@@ -24,7 +24,6 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
   const mounted = useMounted();
   const [viewCommand, setViewCommand] = useState<ViewCommand | null>(null);
   const [activeView, setActiveView] = useState<ViewPreset>("iso");
-  const [showGrid, setShowGrid] = useState(true);
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -137,16 +136,6 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
         </button>
         <div className="w-4 h-px bg-border/60 my-0.5" />
         <button
-          onClick={() => setShowGrid((g) => !g)}
-          title="Toggle Grid"
-          className={`rounded p-1.5 transition-colors hover:bg-muted ${showGrid
-            ? "text-accent"
-            : "text-muted-foreground hover:text-foreground"
-            }`}
-        >
-          <Grid3x3 size={14} strokeWidth={1.75} />
-        </button>
-        <button
           onClick={() => setWireframe((w) => !w)}
           title="Toggle Wireframe"
           className={`rounded p-1.5 transition-colors hover:bg-muted ${wireframe
@@ -179,10 +168,8 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
           parts={parts}
           visibilityMap={visibilityMap}
           viewCommand={viewCommand}
-          showGrid={showGrid}
           wireframe={wireframe}
           autoRotate={autoRotate}
-          isDark={isDark}
           onLoadError={setLoadError}
           onLoadingChange={setStlLoading}
         />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useThree } from "@react-three/fiber";
-import { OrbitControls, Grid, GizmoHelper } from "@react-three/drei";
+import { OrbitControls, GizmoHelper } from "@react-three/drei";
 import { STLLoader, OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 
@@ -11,7 +11,6 @@ import type { ViewCommand, ViewerPart } from "@/app/studio/_types/viewer";
 import {
   DEFAULT_RADIUS,
   VIEW_DIRECTIONS,
-  GRID_ROTATION,
   ORBIT_MOUSE_BUTTONS,
 } from "@/app/studio/_lib/viewer-constants";
 
@@ -27,36 +26,26 @@ export function Scene({
   parts,
   visibilityMap,
   viewCommand,
-  showGrid,
   wireframe,
   autoRotate,
-  isDark,
   onLoadError,
   onLoadingChange,
 }: {
   parts: ViewerPart[];
   visibilityMap: Record<string, boolean>;
   viewCommand: ViewCommand | null;
-  showGrid: boolean;
   wireframe: boolean;
   autoRotate: boolean;
-  isDark: boolean;
   onLoadError: (message: string | null) => void;
   onLoadingChange: (loading: boolean) => void;
 }) {
   const [geometries, setGeometries] = useState<LoadedGeometry[]>([]);
-  const [radius, setRadius] = useState(DEFAULT_RADIUS);
   const getThree = useThree((s) => s.get);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const radiusRef = useRef(DEFAULT_RADIUS);
   const centerRef = useRef(new THREE.Vector3());
 
-  const sectionColor = isDark ? "#374151" : "#d1d5db";
-  const cellColor = isDark ? "#1f2937" : "#e5e7eb";
-
   const fitDistance = useCallback((r: number) => Math.max(r * 3.2, 30), []);
-
-  const gridScale = radius > 100 ? Math.pow(10, Math.floor(Math.log10(radius / 50))) : 1;
 
   const updateCameraBounds = useCallback(
     (r: number) => {
@@ -101,7 +90,6 @@ export function Scene({
       if (loaded.length === 0) {
         radiusRef.current = DEFAULT_RADIUS;
         centerRef.current.set(0, 0, 0);
-        setRadius(DEFAULT_RADIUS);
         return;
       }
 
@@ -119,7 +107,6 @@ export function Scene({
 
       radiusRef.current = r;
       centerRef.current.copy(center);
-      setRadius(r);
 
       const dist = fitDistance(r);
       const camera = getThree().camera;
@@ -252,18 +239,6 @@ export function Scene({
         zoomToCursor
         mouseButtons={ORBIT_MOUSE_BUTTONS}
       />
-      {showGrid && (
-        <Grid
-          rotation={GRID_ROTATION}
-          infiniteGrid
-          sectionSize={10 * gridScale}
-          sectionColor={sectionColor}
-          cellSize={1 * gridScale}
-          cellColor={cellColor}
-          fadeDistance={Math.max(radius * 25, 150)}
-          fadeStrength={1.5}
-        />
-      )}
       {geometries.map((entry) => (
         <mesh
           key={entry.name}
