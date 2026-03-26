@@ -47,37 +47,18 @@ const ThinkingSelector = ({ value, onChange }: { value: ThinkingLevel; onChange:
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${value === "none"
-          ? "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-          : "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
+        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${value === "none"
+          ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          : "text-blue-500 hover:bg-blue-500/10"
           }`}
       >
-        {value !== "none" ? <Brain size={12} /> : current.icon}
-        {current.label}
-        {value !== "none" && (
-          <div
-            role="button"
-            tabIndex={0}
-            className="ml-0.5 rounded-full p-0.5 hover:bg-blue-500/20"
-            onClick={(e) => {
-              e.stopPropagation();
-              onChange("none");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.stopPropagation();
-                onChange("none");
-              }
-            }}
-          >
-            <X size={10} />
-          </div>
-        )}
-        {value === "none" && <ChevronDown size={10} className="ml-0.5 opacity-50" />}
+        {value !== "none" ? <Timer size={14} /> : current.icon}
+        {value !== "none" ? "Extended thinking" : current.label}
+        <ChevronDown size={12} className="ml-0.5 opacity-50" />
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-xl border border-border/60 bg-background/95 backdrop-blur p-1 text-foreground shadow-md animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-xl border border-border/60 bg-background/95 backdrop-blur-md p-1 text-foreground shadow-md animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
           <div className="flex flex-col">
             {options.map((option) => (
               <button
@@ -126,15 +107,15 @@ const ModelSelector = ({ value, onChange }: { value: ModelTier; onChange: (v: Mo
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground bg-muted/60"
+        className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
       >
         {current.icon}
         {current.label}
-        <ChevronDown size={10} className="ml-0.5 opacity-50" />
+        <ChevronDown size={12} className="ml-0.5 opacity-50" />
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-xl border border-border/60 bg-background/95 backdrop-blur p-1 text-foreground shadow-md animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-xl border border-border/60 bg-background/95 backdrop-blur-md p-1 text-foreground shadow-md animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
           <div className="flex flex-col">
             {options.map((option) => (
               <button
@@ -284,7 +265,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
         />
 
         {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-1 pb-1.5">
+          <div className="flex flex-wrap gap-1.5 px-2 pb-2">
             {attachments.map((a) => (
               <span
                 key={a.url}
@@ -304,55 +285,58 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
           </div>
         )}
 
-        <div className="flex items-center gap-2 px-1 pb-1">
-          <ModelSelector value={modelTier} onChange={setModelTier} />
-          <ThinkingSelector value={thinking} onChange={setThinking} />
-        </div>
-
-        <div className="flex items-end gap-2">
-          <button
-            type="button"
-            disabled={isUploading}
-            onClick={triggerFileSelect}
-            aria-label="Attach file"
-            className="mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-          </button>
-
+        <div className="flex flex-col gap-2 px-1">
           <textarea
             ref={textareaRef}
             value={input}
             disabled={isBusy}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Describe a part..."
+            placeholder="Ask anything"
             rows={1}
-            className="flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none max-h-[200px]"
+            className="w-full resize-none overflow-y-auto bg-transparent px-2 pt-3 text-[15px] text-foreground placeholder:text-muted-foreground outline-none max-h-[200px]"
             style={{ minHeight: "24px" }}
           />
 
-          {isLoading ? (
-            <button
-              onClick={stopGeneration}
-              aria-label="Stop generation"
-              className="mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:opacity-90"
-            >
-              <Square size={14} fill="currentColor" />
-            </button>
-          ) : (
-            <button
-              onClick={sendMessage}
-              disabled={!hasContent || isBusy}
-              aria-label="Send message"
-              className={`mb-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors ${hasContent
-                ? "bg-foreground text-background hover:opacity-90"
-                : "bg-muted/80 text-muted-foreground/80"
-                } disabled:cursor-not-allowed disabled:opacity-50`}
-            >
-              <ArrowUp size={16} />
-            </button>
-          )}
+          <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={isUploading}
+                onClick={triggerFileSelect}
+                aria-label="Attach file"
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
+              </button>
+              <ModelSelector value={modelTier} onChange={setModelTier} />
+              <ThinkingSelector value={thinking} onChange={setThinking} />
+            </div>
+
+            <div className="flex items-center pr-1">
+              {isLoading ? (
+                <button
+                  onClick={stopGeneration}
+                  aria-label="Stop generation"
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:opacity-90"
+                >
+                  <Square size={14} fill="currentColor" />
+                </button>
+              ) : (
+                <button
+                  onClick={sendMessage}
+                  disabled={!hasContent || isBusy}
+                  aria-label="Send message"
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors ${hasContent
+                    ? "bg-foreground text-background hover:opacity-90"
+                    : "bg-muted text-muted-foreground"
+                    } disabled:cursor-not-allowed`}
+                >
+                  <ArrowUp size={16} />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
