@@ -17,7 +17,7 @@ import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithS
 import { TodoList } from "@/app/studio/_components/chat/TodoList";
 import ThreadHistoryPanel from "@/app/studio/_components/chat/ThreadHistoryPanel";
 import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
-import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
+import ChatInput, { type ChatInputHandle, type ModelConfig } from "@/app/studio/_components/chat/ChatInput";
 
 export interface ChatProps {
   onProductEvent: (parts: PartEntry[]) => void;
@@ -169,7 +169,7 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const sendMessage = useCallback((content: string) => {
+  const sendMessage = useCallback((content: string, modelConfig: ModelConfig) => {
     if (isBusy) return;
     const trimmed = content.trim();
     if (!trimmed) return;
@@ -177,6 +177,12 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     stream.submit(
       { messages: [{ type: "human", content: trimmed }] },
       {
+        config: {
+          configurable: {
+            model_tier: modelConfig.modelTier,
+            thinking: modelConfig.thinking,
+          },
+        },
         streamSubgraphs: true,
         optimisticValues: (prev) => ({
           ...prev,

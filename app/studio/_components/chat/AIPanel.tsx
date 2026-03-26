@@ -54,7 +54,7 @@ export function AIPanel({
       )}
       <div className={hideHeader ? "mt-1 flex flex-col gap-3" : "mt-2 flex flex-col gap-3 pl-5"}>
         {children}
-        {!isStreaming && (usage?.inputTokens || usage?.outputTokens) ? (
+        {process.env.NODE_ENV === "development" && !isStreaming && (usage?.inputTokens || usage?.outputTokens) ? (
           <div className="text-[11px] text-muted-foreground/70">
             {formatNumber(usage?.inputTokens ?? 0)} input ·{" "}
             {formatNumber(usage?.outputTokens ?? 0)} output tokens
