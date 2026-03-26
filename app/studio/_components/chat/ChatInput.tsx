@@ -172,8 +172,8 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
 }: ChatInputProps, ref) {
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<UploadedFile[]>([]);
-  const [modelTier, setModelTier] = React.useState<ModelTier>("pro");
-  const [thinking, setThinking] = React.useState<ThinkingLevel>("high");
+  const [modelTier, setModelTier] = React.useState<ModelTier>("fast");
+  const [thinking, setThinking] = React.useState<ThinkingLevel>("none");
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const onFileUploaded = useCallback((file: UploadedFile) => {
