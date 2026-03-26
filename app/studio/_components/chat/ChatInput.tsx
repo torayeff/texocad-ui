@@ -46,14 +46,15 @@ const ThinkingSelector = ({ value, onChange }: { value: ThinkingLevel; onChange:
     <div className="relative" ref={ref}>
       <button
         type="button"
+        title="Select reasoning level"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${value === "none"
           ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
           : "text-blue-500 hover:bg-blue-500/10"
           }`}
       >
-        {value !== "none" ? <Timer size={14} /> : current.icon}
-        {value !== "none" ? "Extended thinking" : current.label}
+        {current.icon}
+        {current.label}
         <ChevronDown size={12} className="ml-0.5 opacity-50" />
       </button>
 
@@ -106,8 +107,12 @@ const ModelSelector = ({ value, onChange }: { value: ModelTier; onChange: (v: Mo
     <div className="relative" ref={ref}>
       <button
         type="button"
+        title="Select model capability"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${value === "fast"
+          ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          : "text-blue-500 hover:bg-blue-500/10"
+          }`}
       >
         {current.icon}
         {current.label}
@@ -292,7 +297,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
             disabled={isBusy}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything"
+            placeholder="Describe a part..."
             rows={1}
             className="w-full resize-none overflow-y-auto bg-transparent px-2 pt-3 text-[15px] text-foreground placeholder:text-muted-foreground outline-none max-h-[200px]"
             style={{ minHeight: "24px" }}
@@ -305,6 +310,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                 disabled={isUploading}
                 onClick={triggerFileSelect}
                 aria-label="Attach file"
+                title="Attach file"
                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
@@ -318,6 +324,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                 <button
                   onClick={stopGeneration}
                   aria-label="Stop generation"
+                  title="Stop generation"
                   className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:opacity-90"
                 >
                   <Square size={14} fill="currentColor" />
@@ -327,6 +334,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                   onClick={sendMessage}
                   disabled={!hasContent || isBusy}
                   aria-label="Send message"
+                  title="Send message"
                   className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors ${hasContent
                     ? "bg-foreground text-background hover:opacity-90"
                     : "bg-muted text-muted-foreground"
