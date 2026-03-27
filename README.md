@@ -1,4 +1,8 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] Move objects in UI
+- [ ] Refresh bug
+- [ ] Remember choices
+- [ ] Download as engineering drawing
+- [ ] Inlcude step file
+- [ ] message queue

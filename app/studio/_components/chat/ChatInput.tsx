@@ -2,6 +2,7 @@ import React, { useCallback } from "react";
 import { Plus, Square, ArrowUp, Loader2, Paperclip, X, ChevronDown, Brain, Zap, Sparkles, Check, Clock, Timer } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_hooks/use-file-upload";
 import type { UploadedFile } from "@/app/studio/_hooks/use-file-upload";
+import { useLocalStorageState } from "@/app/studio/_hooks/use-local-storage-state";
 
 export type ModelTier = "fast" | "pro";
 export type ThinkingLevel = "none" | "low" | "medium" | "high";
@@ -172,8 +173,8 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
 }: ChatInputProps, ref) {
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<UploadedFile[]>([]);
-  const [modelTier, setModelTier] = React.useState<ModelTier>("pro");
-  const [thinking, setThinking] = React.useState<ThinkingLevel>("high");
+  const [modelTier, setModelTier] = useLocalStorageState<ModelTier>("chat-model-tier", "pro");
+  const [thinking, setThinking] = useLocalStorageState<ThinkingLevel>("chat-thinking-level", "high");
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const onFileUploaded = useCallback((file: UploadedFile) => {
