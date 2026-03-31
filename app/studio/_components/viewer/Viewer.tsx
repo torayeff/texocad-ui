@@ -6,6 +6,7 @@ import { Canvas } from "@react-three/fiber";
 import { Maximize2, Box, RotateCw, Download, ChevronDown, Loader2 } from "lucide-react";
 
 import { useMounted } from "@/app/hooks/use-mounted";
+import { trackFileDownload } from "@/app/lib/analytics";
 import { Scene } from "@/app/studio/_components/viewer/Scene";
 import { AssemblyTree } from "@/app/studio/_components/viewer/AssemblyTree";
 import { VIEW_LABELS, INITIAL_CAMERA_POS } from "@/app/studio/_lib/viewer-constants";
@@ -66,7 +67,8 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
   const allDownloads = buildDownloadEntries(parts);
   const hasAnyDownload = allDownloads.length > 0;
 
-  const handleDownload = useCallback((url: string, filename: string) => {
+  const handleDownload = useCallback((url: string, filename: string, format: DownloadFormat, partName: string) => {
+    trackFileDownload({ format, partName });
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
@@ -126,7 +128,7 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
                         <button
                           key={`${part.name}-${fmt}`}
                           onClick={() => {
-                            handleDownload(url, `${part.name}.${fmt}`);
+                            handleDownload(url, `${part.name}.${fmt}`, fmt, part.name);
                             setDownloadOpen(false);
                           }}
                           className="px-2 py-1 text-[10px] font-semibold rounded bg-muted/50 hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors border border-border/40"

@@ -12,6 +12,7 @@ import { getMessageTextContent } from "@/app/studio/_lib/message-content";
 import { engines, DEFAULT_ENGINE } from "@/app/studio/_lib/langgraph-config";
 import type { EngineKey } from "@/app/studio/_lib/langgraph-config";
 import type { PartEntry } from "@/app/studio/_types/chat";
+import { trackMessageSubmitted } from "@/app/lib/analytics";
 
 import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
 import { TodoList } from "@/app/studio/_components/chat/TodoList";
@@ -173,6 +174,11 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     if (isBusy) return;
     const trimmed = content.trim();
     if (!trimmed) return;
+    trackMessageSubmitted({
+      hasAttachments: trimmed.includes("Attachments:"),
+      modelTier: modelConfig.modelTier,
+      thinking: modelConfig.thinking,
+    });
     setPendingHumanMessage(new HumanMessage(trimmed));
     stream.submit(
       { messages: [{ type: "human", content: trimmed }] },
