@@ -9,7 +9,9 @@ import {
   FileDown,
   RefreshCcw,
   Terminal,
-  LifeBuoy
+  LifeBuoy,
+  Play,
+  Cog
 } from "lucide-react";
 import Link from "next/link";
 
@@ -90,36 +92,36 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Prompt CTA */}
-              <div className="w-full">
+              {/* CTA Row */}
+              <div className="flex flex-wrap items-center gap-3">
                 {isSignedIn ? (
                   <Link
                     href="/studio"
-                    className="group w-full border border-border bg-background shadow-sm hover:border-foreground/30 transition-all rounded-xl p-4 flex items-center justify-between text-left"
+                    className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-foreground/90 transition-colors"
                   >
-                    <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
-                      <span className="text-foreground animate-pulse font-mono">{'>'}</span>
-                      <span className="text-base">Describe the product you want...</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="hidden sm:inline-block text-[11px] font-mono border border-border rounded px-2 py-0.5 text-muted-foreground">↵</span>
-                    </div>
+                    <Cog size={16} strokeWidth={2} />
+                    Start Building
                   </Link>
                 ) : (
                   <button
                     type="button"
                     onClick={handleSignIn}
-                    className="group w-full border border-border bg-background shadow-sm hover:border-foreground/30 transition-all rounded-xl p-4 flex items-center justify-between text-left"
+                    className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-foreground/90 transition-colors"
                   >
-                    <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
-                      <span className="text-foreground animate-pulse font-mono">{'>'}</span>
-                      <span className="text-base">Describe the product you want...</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="hidden sm:inline-block text-[11px] font-mono border border-border rounded px-2 py-0.5 text-muted-foreground">↵ Enter</span>
-                    </div>
+                    <Cog size={16} strokeWidth={2} />
+                    Start Building
                   </button>
                 )}
+
+                <a
+                  href="https://www.youtube.com/watch?v=EIbIrcWQtNw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <Play size={15} strokeWidth={1.5} />
+                  Watch Demo
+                </a>
               </div>
             </div>
           </div>
