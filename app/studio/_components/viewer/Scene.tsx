@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { useThree } from "@react-three/fiber";
-import { OrbitControls, GizmoHelper } from "@react-three/drei";
+import { OrbitControls, PivotControls, GizmoHelper } from "@react-three/drei";
 import { STLLoader, OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 
@@ -25,19 +25,25 @@ interface LoadedGeometry {
 export function Scene({
   parts,
   visibilityMap,
+  partPositions,
+  showGizmos,
   viewCommand,
   wireframe,
   autoRotate,
   onLoadError,
   onLoadingChange,
+  onPartMove,
 }: {
   parts: ViewerPart[];
   visibilityMap: Record<string, boolean>;
+  partPositions: Record<string, [number, number, number]>;
+  showGizmos: boolean;
   viewCommand: ViewCommand | null;
   wireframe: boolean;
   autoRotate: boolean;
   onLoadError: (message: string | null) => void;
   onLoadingChange: (loading: boolean) => void;
+  onPartMove: (name: string, pos: [number, number, number]) => void;
 }) {
   const [geometries, setGeometries] = useState<Map<string, LoadedGeometry>>(
     () => new Map(),
@@ -46,6 +52,7 @@ export function Scene({
   const getThree = useThree((s) => s.get);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const radiusRef = useRef(DEFAULT_RADIUS);
+  const [sceneRadius, setSceneRadius] = useState(DEFAULT_RADIUS);
   const centerRef = useRef(new THREE.Vector3());
 
   const fitDistance = useCallback((r: number) => Math.max(r * 3.2, 30), []);
@@ -92,6 +99,7 @@ export function Scene({
     (loaded: LoadedGeometry[]) => {
       if (loaded.length === 0) {
         radiusRef.current = DEFAULT_RADIUS;
+        setSceneRadius(DEFAULT_RADIUS);
         centerRef.current.set(0, 0, 0);
         return;
       }
@@ -109,6 +117,7 @@ export function Scene({
       const r = Math.max(size.length() * 0.5, 1);
 
       radiusRef.current = r;
+      setSceneRadius(r);
       centerRef.current.copy(center);
 
       const dist = fitDistance(r);
@@ -272,19 +281,16 @@ export function Scene({
         mouseButtons={ORBIT_MOUSE_BUTTONS}
       />
       {[...geometries.values()].map((entry) => (
-        <mesh
+        <DraggableMesh
           key={entry.name}
-          geometry={entry.geometry}
+          entry={entry}
           visible={visibilityMap[entry.name] !== false}
-        >
-          <meshStandardMaterial
-            color={entry.color}
-            metalness={0.25}
-            roughness={0.5}
-            side={THREE.DoubleSide}
-            wireframe={wireframe}
-          />
-        </mesh>
+          wireframe={wireframe}
+          position={partPositions[entry.name]}
+          showGizmo={showGizmos}
+          sceneRadius={sceneRadius}
+          onMove={onPartMove}
+        />
       ))}
       <GizmoHelper alignment="bottom-left" margin={[58, 58]} renderPriority={1}>
         <CadAxisTriad />
@@ -292,3 +298,81 @@ export function Scene({
     </>
   );
 }
+
+const DraggableMesh = memo(function DraggableMesh({
+  entry,
+  visible,
+  wireframe,
+  position,
+  showGizmo,
+  sceneRadius,
+  onMove,
+}: {
+  entry: LoadedGeometry;
+  visible: boolean;
+  wireframe: boolean;
+  position: [number, number, number] | undefined;
+  showGizmo: boolean;
+  sceneRadius: number;
+  onMove: (name: string, pos: [number, number, number]) => void;
+}) {
+  const [ox, oy, oz] = position ?? [0, 0, 0];
+  const matrixRef = useRef(new THREE.Matrix4());
+
+  const matrix = useMemo(
+    () => new THREE.Matrix4().setPosition(ox, oy, oz),
+    [ox, oy, oz],
+  );
+
+  useEffect(() => {
+    matrixRef.current.copy(matrix);
+  }, [matrix]);
+
+  const handleDragEnd = useCallback(() => {
+    const m = matrixRef.current;
+    const pos: [number, number, number] = [
+      m.elements[12],
+      m.elements[13],
+      m.elements[14],
+    ];
+    onMove(entry.name, pos);
+  }, [onMove, entry.name]);
+
+  const gizmoScale = Math.max(sceneRadius * 0.35, 5);
+
+  const meshElement = (
+    <mesh geometry={entry.geometry} visible={visible}>
+      <meshStandardMaterial
+        color={entry.color}
+        metalness={0.25}
+        roughness={0.5}
+        side={THREE.DoubleSide}
+        wireframe={wireframe}
+      />
+    </mesh>
+  );
+
+  if (!showGizmo) {
+    return <group position={[ox, oy, oz]}>{meshElement}</group>;
+  }
+
+  return (
+    <PivotControls
+      matrix={matrix}
+      onDragEnd={handleDragEnd}
+      onDrag={(local) => {
+        matrixRef.current.copy(local);
+      }}
+      autoTransform
+      activeAxes={[true, true, true]}
+      depthTest={false}
+      scale={gizmoScale}
+      lineWidth={2}
+      visible={visible}
+      disableRotations
+      disableScaling
+    >
+      {meshElement}
+    </PivotControls>
+  );
+});

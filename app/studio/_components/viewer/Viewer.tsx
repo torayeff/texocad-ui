@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { Canvas } from "@react-three/fiber";
-import { Maximize2, Box, RotateCw, Download, ChevronDown, Loader2 } from "lucide-react";
+import { Maximize2, Box, Rotate3d, RotateCcw, Move3d, Download, ChevronDown, Loader2 } from "lucide-react";
 
 import { useMounted } from "@/app/hooks/use-mounted";
 import { trackFileDownload } from "@/app/lib/analytics";
+import { useLocalStorageState } from "@/app/studio/_hooks/use-local-storage-state";
 import { Scene } from "@/app/studio/_components/viewer/Scene";
 import { AssemblyTree } from "@/app/studio/_components/viewer/AssemblyTree";
 import { VIEW_LABELS, INITIAL_CAMERA_POS } from "@/app/studio/_lib/viewer-constants";
@@ -28,10 +29,14 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
   const [activeView, setActiveView] = useState<ViewPreset>("iso");
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
+  const [showGizmos, setShowGizmos] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [stlLoading, setStlLoading] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
+  const [partPositions, setPartPositions] = useLocalStorageState<
+    Record<string, [number, number, number]>
+  >("texocad:part-positions", {});
   const cmdIdRef = useRef(0);
   const downloadRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +57,17 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
   const togglePartVisibility = useCallback((name: string) => {
     setVisibilityMap((prev) => ({ ...prev, [name]: prev[name] === false }));
   }, []);
+
+  const handlePartMove = useCallback(
+    (name: string, pos: [number, number, number]) => {
+      setPartPositions((prev) => ({ ...prev, [name]: pos }));
+    },
+    [setPartPositions],
+  );
+
+  const resetPositions = useCallback(() => {
+    setPartPositions({});
+  }, [setPartPositions]);
 
   useEffect(() => {
     if (!downloadOpen) return;
@@ -178,7 +194,25 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
             : "text-muted-foreground hover:text-foreground"
             }`}
         >
-          <RotateCw size={14} strokeWidth={1.75} />
+          <Rotate3d size={14} strokeWidth={1.75} />
+        </button>
+        <button
+          onClick={() => setShowGizmos((g) => !g)}
+          title="Toggle Move Axes"
+          className={`rounded p-1.5 transition-colors hover:bg-muted ${showGizmos
+            ? "text-accent"
+            : "text-muted-foreground hover:text-foreground"
+            }`}
+        >
+          <Move3d size={14} strokeWidth={1.75} />
+        </button>
+        <div className="w-4 h-px bg-border/60 my-0.5" />
+        <button
+          onClick={resetPositions}
+          title="Reset Part Positions"
+          className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <RotateCcw size={14} strokeWidth={1.75} />
         </button>
       </div>
 
@@ -192,11 +226,14 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
         <Scene
           parts={parts}
           visibilityMap={visibilityMap}
+          partPositions={partPositions}
+          showGizmos={showGizmos}
           viewCommand={viewCommand}
           wireframe={wireframe}
           autoRotate={autoRotate}
           onLoadError={setLoadError}
           onLoadingChange={setStlLoading}
+          onPartMove={handlePartMove}
         />
       </Canvas>
 
@@ -227,6 +264,8 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
         <span>Middle/right-drag to pan</span>
         <span className="opacity-50">·</span>
         <span>Scroll to zoom</span>
+        <span className="opacity-50">·</span>
+        <span>Drag gizmo to move parts</span>
       </div>
     </div>
   );
