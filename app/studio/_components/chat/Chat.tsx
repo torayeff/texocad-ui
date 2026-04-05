@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
 import { ArrowDown, CirclePlus, History, Loader2 } from "lucide-react";
 
@@ -26,6 +27,8 @@ export interface ChatProps {
 }
 
 export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
+  const { isSignedIn } = useAuth();
+  const isGuest = !isSignedIn;
   const [selectedEngine, setSelectedEngine] = useState<EngineKey>(DEFAULT_ENGINE);
 
   const {
@@ -71,7 +74,7 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     onClearViewerRef.current = onClearViewer;
   }, [onClearViewer]);
 
-  const history = useThreadHistory(client, isAuthReady);
+  const history = useThreadHistory(client, isAuthReady && !isGuest);
 
   const conversationScope = urlThreadId ?? `draft-${draftConversationKey}`;
 
@@ -282,26 +285,30 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
           <span />
         )}
         <div className="flex items-center gap-0">
-          <button
-            onClick={handleNewChat}
-            title="New chat"
-            aria-label="New chat"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
-          >
-            <CirclePlus size={18} />
-          </button>
-          <button
-            onClick={toggleHistory}
-            title={historyOpen ? "Close history" : "History"}
-            aria-label={historyOpen ? "Close history" : "Open history"}
-            aria-pressed={historyOpen}
-            className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${historyOpen
-              ? "bg-muted/70 text-muted-foreground"
-              : "text-muted-foreground/70 hover:bg-muted/70 hover:text-muted-foreground"
-              }`}
-          >
-            <History size={16} />
-          </button>
+          {!isGuest && (
+            <>
+              <button
+                onClick={handleNewChat}
+                title="New chat"
+                aria-label="New chat"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
+              >
+                <CirclePlus size={18} />
+              </button>
+              <button
+                onClick={toggleHistory}
+                title={historyOpen ? "Close history" : "History"}
+                aria-label={historyOpen ? "Close history" : "Open history"}
+                aria-pressed={historyOpen}
+                className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${historyOpen
+                  ? "bg-muted/70 text-muted-foreground"
+                  : "text-muted-foreground/70 hover:bg-muted/70 hover:text-muted-foreground"
+                  }`}
+              >
+                <History size={16} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 

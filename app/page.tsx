@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth, useClerk } from "@clerk/nextjs";
 import {
   MessageSquare,
   Image as ImageIcon,
@@ -51,13 +50,6 @@ const FEATURES = [
 ];
 
 export default function Home() {
-  const { isSignedIn } = useAuth();
-  const clerk = useClerk();
-
-  const handleSignIn = () => {
-    clerk.openSignIn();
-  };
-
   return (
     <main className="min-h-dvh md:h-dvh flex flex-col text-foreground bg-background">
       <Header />
@@ -94,24 +86,13 @@ export default function Home() {
 
               {/* CTA Row */}
               <div className="flex flex-wrap items-center gap-3">
-                {isSignedIn ? (
-                  <Link
-                    href="/studio"
-                    className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-foreground/90 transition-colors"
-                  >
-                    <Cog size={16} strokeWidth={2} />
-                    Start Building
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSignIn}
-                    className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-foreground/90 transition-colors"
-                  >
-                    <Cog size={16} strokeWidth={2} />
-                    Start Building
-                  </button>
-                )}
+                <Link
+                  href="/studio"
+                  className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-foreground/90 transition-colors"
+                >
+                  <Cog size={16} strokeWidth={2} />
+                  Start Building
+                </Link>
 
                 <a
                   href="https://www.youtube.com/watch?v=EIbIrcWQtNw"

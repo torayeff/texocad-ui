@@ -28,7 +28,7 @@ export function useLanggraphAuth() {
     [getToken, isSignedIn],
   );
 
-  const isReady = isSignedIn === true;
+  const isReady = true;
 
   return { client, isReady };
 }

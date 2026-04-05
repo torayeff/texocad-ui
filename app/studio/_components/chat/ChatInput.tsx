@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
-import { Plus, Square, ArrowUp, Loader2, Paperclip, X, ChevronDown, Brain, Zap, Sparkles, Check, Clock, Timer } from "lucide-react";
+import { useAuth, useClerk } from "@clerk/nextjs";
+import { Plus, Square, ArrowUp, Loader2, Paperclip, X, ChevronDown, Brain, Zap, Sparkles, Check, Clock, Timer, Lock } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_hooks/use-file-upload";
 import type { UploadedFile } from "@/app/studio/_hooks/use-file-upload";
 import { useLocalStorageState } from "@/app/studio/_hooks/use-local-storage-state";
@@ -29,7 +30,18 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () =
   }, [ref, handler]);
 }
 
-const ThinkingSelector = ({ value, onChange }: { value: ThinkingLevel; onChange: (v: ThinkingLevel) => void }) => {
+const LOCKED_TOOLTIP = "Log in to access Pro modes";
+
+const LockedTooltip = ({ children }: { children: React.ReactNode }) => (
+  <div className="group/tip relative">
+    {children}
+    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1 text-xs text-background opacity-0 transition-opacity group-hover/tip:opacity-100">
+      {LOCKED_TOOLTIP}
+    </span>
+  </div>
+);
+
+const ThinkingSelector = ({ value, onChange, locked, onLockedClick }: { value: ThinkingLevel; onChange: (v: ThinkingLevel) => void; locked?: boolean; onLockedClick?: () => void }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const ref = React.useRef<HTMLDivElement>(null);
   useClickOutside(ref, () => setIsOpen(false));
@@ -47,16 +59,21 @@ const ThinkingSelector = ({ value, onChange }: { value: ThinkingLevel; onChange:
     <div className="relative" ref={ref}>
       <button
         type="button"
-        title="Select reasoning level"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${value === "none"
-          ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-          : "text-blue-500 hover:bg-blue-500/10"
+        title={locked ? LOCKED_TOOLTIP : "Select reasoning level"}
+        onClick={() => {
+          if (locked) { onLockedClick?.(); return; }
+          setIsOpen(!isOpen);
+        }}
+        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${locked
+          ? "text-muted-foreground/50 cursor-pointer"
+          : value === "none"
+            ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            : "text-blue-500 hover:bg-blue-500/10"
           }`}
       >
-        {current.icon}
+        {locked ? <Lock size={12} /> : current.icon}
         {current.label}
-        <ChevronDown size={12} className="ml-0.5 opacity-50" />
+        {!locked && <ChevronDown size={12} className="ml-0.5 opacity-50" />}
       </button>
 
       {isOpen && (
@@ -92,7 +109,7 @@ const ThinkingSelector = ({ value, onChange }: { value: ThinkingLevel; onChange:
   );
 };
 
-const ModelSelector = ({ value, onChange }: { value: ModelTier; onChange: (v: ModelTier) => void }) => {
+const ModelSelector = ({ value, onChange, locked, onLockedClick }: { value: ModelTier; onChange: (v: ModelTier) => void; locked?: boolean; onLockedClick?: () => void }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const ref = React.useRef<HTMLDivElement>(null);
   useClickOutside(ref, () => setIsOpen(false));
@@ -108,16 +125,21 @@ const ModelSelector = ({ value, onChange }: { value: ModelTier; onChange: (v: Mo
     <div className="relative" ref={ref}>
       <button
         type="button"
-        title="Select model capability"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${value === "fast"
-          ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-          : "text-blue-500 hover:bg-blue-500/10"
+        title={locked ? LOCKED_TOOLTIP : "Select model capability"}
+        onClick={() => {
+          if (locked) { onLockedClick?.(); return; }
+          setIsOpen(!isOpen);
+        }}
+        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${locked
+          ? "text-muted-foreground/50 cursor-pointer"
+          : value === "fast"
+            ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            : "text-blue-500 hover:bg-blue-500/10"
           }`}
       >
-        {current.icon}
+        {locked ? <Lock size={12} /> : current.icon}
         {current.label}
-        <ChevronDown size={12} className="ml-0.5 opacity-50" />
+        {!locked && <ChevronDown size={12} className="ml-0.5 opacity-50" />}
       </button>
 
       {isOpen && (
@@ -171,11 +193,22 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   onSubmit,
   stopGeneration,
 }: ChatInputProps, ref) {
+  const { isSignedIn } = useAuth();
+  const clerk = useClerk();
+  const isGuest = !isSignedIn;
+
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<UploadedFile[]>([]);
-  const [modelTier, setModelTier] = useLocalStorageState<ModelTier>("chat-model-tier", "pro");
-  const [thinking, setThinking] = useLocalStorageState<ThinkingLevel>("chat-thinking-level", "high");
+  const [storedModelTier, setModelTier] = useLocalStorageState<ModelTier>("chat-model-tier", "pro");
+  const [storedThinking, setThinking] = useLocalStorageState<ThinkingLevel>("chat-thinking-level", "high");
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const modelTier: ModelTier = isGuest ? "fast" : storedModelTier;
+  const thinking: ThinkingLevel = isGuest ? "none" : storedThinking;
+
+  const handleLockedClick = useCallback(() => {
+    clerk.openSignIn();
+  }, [clerk]);
 
   const onFileUploaded = useCallback((file: UploadedFile) => {
     setAttachments((prev) => [...prev, file]);
@@ -316,8 +349,20 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
               </button>
-              <ModelSelector value={modelTier} onChange={setModelTier} />
-              <ThinkingSelector value={thinking} onChange={setThinking} />
+              {isGuest ? (
+                <LockedTooltip>
+                  <ModelSelector value={modelTier} onChange={setModelTier} locked onLockedClick={handleLockedClick} />
+                </LockedTooltip>
+              ) : (
+                <ModelSelector value={modelTier} onChange={setModelTier} />
+              )}
+              {isGuest ? (
+                <LockedTooltip>
+                  <ThinkingSelector value={thinking} onChange={setThinking} locked onLockedClick={handleLockedClick} />
+                </LockedTooltip>
+              ) : (
+                <ThinkingSelector value={thinking} onChange={setThinking} />
+              )}
             </div>
 
             <div className="flex items-center pr-1">
