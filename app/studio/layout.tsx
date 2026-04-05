@@ -1,7 +1,9 @@
-export default async function StudioLayout({
+import { Suspense } from "react";
+
+export default function StudioLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return children;
+  return <Suspense>{children}</Suspense>;
 }
