@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   MessageSquare,
   Image as ImageIcon,
@@ -10,11 +11,14 @@ import {
   Terminal,
   LifeBuoy,
   Play,
-  Cog
+  Cog,
+  Grid3x3,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Header } from "@/app/components/Header";
+import type { ShowcaseItem } from "@/app/showcase/_types/showcase";
 
 const FEATURES = [
   {
@@ -50,15 +54,21 @@ const FEATURES = [
 ];
 
 export default function Home() {
+  const [items, setItems] = useState<ShowcaseItem[]>([]);
+
+  useEffect(() => {
+    fetch("/showcase/showcase.json")
+      .then((res) => res.json())
+      .then(setItems)
+      .catch(() => { });
+  }, []);
+
   return (
     <main className="min-h-dvh md:h-dvh flex flex-col text-foreground bg-background">
       <Header />
 
-      {/* Workspace */}
       <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden">
-        {/* Agent Canvas */}
         <section className="flex-1 flex flex-col relative min-h-[500px] md:min-h-0">
-          {/* Subtle background pattern (mimicking grid) */}
           <div
             className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none"
             style={{
@@ -84,8 +94,7 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* CTA Row */}
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3 mb-10">
                 <Link
                   href="/studio"
                   className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-foreground/90 transition-colors"
@@ -104,36 +113,55 @@ export default function Home() {
                   Watch Demo
                 </a>
               </div>
+
+              <div className="flex flex-col gap-2">
+                {FEATURES.map((feature) => {
+                  const Icon = feature.icon;
+                  return (
+                    <div
+                      key={feature.title}
+                      className="flex items-start gap-2.5"
+                    >
+                      <Icon size={15} strokeWidth={1.5} className="mt-0.5 shrink-0 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">{feature.title}</span>
+                        {" — "}
+                        {feature.description}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Sidebar Palette */}
-        <aside className="md:w-72 border-t md:border-t-0 md:border-l border-border md:overflow-y-auto bg-muted/20 flex flex-col shrink-0">
+        <aside className="md:w-96 border-t md:border-t-0 md:border-l border-border md:overflow-y-auto bg-muted/20 flex flex-col shrink-0">
           <div className="p-3 border-b border-border/50 text-xs font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-2 shrink-0">
-            <Box size={14} />
-            Properties
+            <Grid3x3 size={14} />
+            Showcase
           </div>
-          <div className="p-3 flex flex-col gap-2 flex-1">
-            {FEATURES.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={feature.title}
-                  className="group flex flex-col gap-1.5 cursor-pointer rounded-lg p-3 transition-colors hover:bg-muted/60 border border-transparent hover:border-border/50"
-                >
-                  <div className="flex items-center gap-2.5 text-foreground">
-                    <Icon size={16} strokeWidth={1.5} className="text-muted-foreground group-hover:text-foreground transition-colors" />
-                    <h3 className="text-sm font-medium tracking-tight">
-                      {feature.title}
-                    </h3>
-                  </div>
-                  <p className="text-[13px] leading-relaxed text-muted-foreground pl-6">
-                    {feature.description}
-                  </p>
+          <div className="p-2 grid grid-cols-2 gap-2 flex-1 content-start">
+            {items.map((item) => (
+              <Link
+                key={item.thread_id}
+                href={`/showcase/item?id=${item.thread_id}`}
+                className="group relative aspect-square overflow-hidden rounded-lg border border-border/50 bg-muted/30 transition-all hover:border-border hover:shadow-sm"
+              >
+                <Image
+                  src={`/showcase/images/${item.thread_id}.jpg`}
+                  alt={item.name}
+                  fill
+                  sizes="192px"
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6">
+                  <span className="text-[11px] font-medium leading-tight text-white line-clamp-2">
+                    {item.name}
+                  </span>
                 </div>
-              );
-            })}
+              </Link>
+            ))}
           </div>
 
           <div className="p-4 border-t border-border/50 mt-auto flex justify-center">
