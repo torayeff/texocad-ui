@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { Cog } from "lucide-react";
 
 interface PromptPanelProps {
   name: string;
@@ -32,6 +34,15 @@ export default function PromptPanel({ name, prompt, threadId }: PromptPanelProps
           <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
             {prompt}
           </p>
+          <div className="mt-4 flex justify-center">
+            <Link
+              href={`/studio?thread_id=${threadId}`}
+              className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-4 py-2 text-sm font-medium hover:bg-foreground/90 transition-colors"
+            >
+              <Cog size={15} strokeWidth={2} />
+              Start Building
+            </Link>
+          </div>
         </div>
       </div>
     </div>

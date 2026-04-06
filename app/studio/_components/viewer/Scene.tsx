@@ -32,6 +32,7 @@ export function Scene({
   autoRotate,
   onLoadError,
   onLoadingChange,
+  onLoadProgress,
   onPartMove,
 }: {
   parts: ViewerPart[];
@@ -43,6 +44,7 @@ export function Scene({
   autoRotate: boolean;
   onLoadError: (message: string | null) => void;
   onLoadingChange: (loading: boolean) => void;
+  onLoadProgress: (percent: number) => void;
   onPartMove: (name: string, pos: [number, number, number]) => void;
 }) {
   const [geometries, setGeometries] = useState<Map<string, LoadedGeometry>>(
@@ -174,11 +176,24 @@ export function Scene({
 
     onLoadError(null);
     onLoadingChange(true);
+    onLoadProgress(0);
     const loader = new STLLoader();
     let cancelled = false;
 
+    const partProgress = new Map<number, { loaded: number; total: number }>();
+
+    function emitProgress() {
+      let loaded = 0;
+      let total = 0;
+      for (const p of partProgress.values()) {
+        loaded += p.loaded;
+        total += p.total;
+      }
+      onLoadProgress(total > 0 ? Math.round((loaded / total) * 100) : 0);
+    }
+
     const promises = toLoad.map(
-      (part) =>
+      (part, idx) =>
         new Promise<{ key: string; geo: LoadedGeometry } | null>((resolve) => {
           loader.load(
             part.stlUrl!,
@@ -194,7 +209,14 @@ export function Scene({
                 geo: { name: part.name, geometry: geo, color: part.color },
               });
             },
-            undefined,
+            (event) => {
+              if (event.lengthComputable) {
+                partProgress.set(idx, { loaded: event.loaded, total: event.total });
+              } else {
+                partProgress.set(idx, { loaded: event.loaded, total: event.loaded });
+              }
+              emitProgress();
+            },
             (err) => {
               console.error(`Failed to load STL for part "${part.name}":`, err);
               resolve(null);
@@ -236,7 +258,7 @@ export function Scene({
       cancelled = true;
       onLoadingChange(false);
     };
-  }, [parts, onLoadError, onLoadingChange, fitToGeometries]);
+  }, [parts, onLoadError, onLoadingChange, onLoadProgress, fitToGeometries]);
 
   useEffect(() => {
     if (!viewCommand) return;

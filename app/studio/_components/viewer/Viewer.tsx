@@ -32,6 +32,7 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
   const [showGizmos, setShowGizmos] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [stlLoading, setStlLoading] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
   const [partPositions, setPartPositions] = useLocalStorageState<
@@ -233,15 +234,25 @@ export default function Viewer({ parts }: { parts: ViewerPart[] }) {
           autoRotate={autoRotate}
           onLoadError={setLoadError}
           onLoadingChange={setStlLoading}
+          onLoadProgress={setLoadProgress}
           onPartMove={handlePartMove}
         />
       </Canvas>
 
       {stlLoading && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-10">
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-3">
             <Loader2 size={24} className="animate-spin text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Loading model…</p>
+            <div className="flex flex-col items-center gap-1.5">
+              <p className="text-xs text-muted-foreground">Loading model…</p>
+              <div className="w-36 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-muted-foreground/60 transition-[width] duration-300 ease-out"
+                  style={{ width: `${loadProgress}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 tabular-nums">{loadProgress}%</p>
+            </div>
           </div>
         </div>
       )}

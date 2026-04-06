@@ -114,7 +114,7 @@ export default function Home() {
                 </a>
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                 {FEATURES.map((feature) => {
                   const Icon = feature.icon;
                   return (
@@ -123,11 +123,10 @@ export default function Home() {
                       className="flex items-start gap-2.5"
                     >
                       <Icon size={15} strokeWidth={1.5} className="mt-0.5 shrink-0 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium text-foreground">{feature.title}</span>
-                        {" — "}
-                        {feature.description}
-                      </p>
+                      <div>
+                        <div className="text-sm font-medium text-foreground">{feature.title}</div>
+                        <div className="text-[13px] leading-snug text-muted-foreground">{feature.description}</div>
+                      </div>
                     </div>
                   );
                 })}
@@ -136,12 +135,12 @@ export default function Home() {
           </div>
         </section>
 
-        <aside className="md:w-96 border-t md:border-t-0 md:border-l border-border md:overflow-y-auto bg-muted/20 flex flex-col shrink-0">
+        <aside className="md:w-[480px] border-t md:border-t-0 md:border-l border-border md:overflow-y-auto bg-muted/20 flex flex-col shrink-0">
           <div className="p-3 border-b border-border/50 text-xs font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-2 shrink-0">
             <Grid3x3 size={14} />
-            Showcase
+            Showcase: Built with TexoCAD
           </div>
-          <div className="p-2 grid grid-cols-2 gap-2 flex-1 content-start">
+          <div className="p-2 grid grid-cols-3 gap-2 flex-1 content-start">
             {items.map((item) => (
               <Link
                 key={item.thread_id}
