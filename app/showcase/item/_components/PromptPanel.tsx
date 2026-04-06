@@ -36,7 +36,7 @@ export default function PromptPanel({ name, prompt, threadId }: PromptPanelProps
           </p>
           <div className="mt-4 flex justify-center">
             <Link
-              href={`/studio?thread_id=${threadId}`}
+              href="/studio"
               className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-4 py-2 text-sm font-medium hover:bg-foreground/90 transition-colors"
             >
               <Cog size={15} strokeWidth={2} />
