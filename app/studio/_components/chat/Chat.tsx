@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useClerk } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
 import { ArrowDown, CirclePlus, History, Loader2 } from "lucide-react";
 
@@ -28,6 +28,7 @@ export interface ChatProps {
 
 export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
   const { isSignedIn } = useAuth();
+  const clerk = useClerk();
   const isGuest = !isSignedIn;
   const [selectedEngine, setSelectedEngine] = useState<EngineKey>(DEFAULT_ENGINE);
 
@@ -311,6 +312,19 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
           )}
         </div>
       </div>
+
+      {isGuest && (
+        <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-4 py-2 text-xs text-amber-700 dark:text-amber-400">
+          Guest mode conversations can be viewed and edited by anyone with the link.{" "}
+          <button
+            onClick={() => clerk.openSignIn()}
+            className="underline underline-offset-2 font-medium hover:text-amber-900 dark:hover:text-amber-300"
+          >
+            Sign in
+          </button>
+          {" "}for private conversations.
+        </div>
+      )}
 
       <div className="relative flex-1 min-h-0 overflow-hidden">
         {historyOpen ? (
