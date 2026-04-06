@@ -2,34 +2,34 @@ import { Loader2 } from "lucide-react";
 
 const EXAMPLE_PROMPTS = [
   {
-    label: "Spur gear",
+    label: "Spacer",
     prompt:
-      "Create a spur gear with 24 teeth, a 2 mm module, a 12 mm center bore, and an 8 mm thickness. Add a 2 mm keyway and 0.5 mm chamfers on both faces.",
+      "Create a flanged spacer with a 12 mm through-hole, 22 mm outer diameter barrel that is 14 mm long, and a 36 mm diameter flange that is 3 mm thick on one end.",
   },
   {
     label: "L-bracket",
     prompt:
-      "Design an L-shaped mounting bracket from 4 mm sheet metal with 80 mm and 60 mm legs, a 30 mm flange height, two 6 mm mounting holes on the base, and a 20 mm cable slot on the upright face.",
+      "Design an L-shaped bracket with 80 mm and 60 mm legs, 4 mm wall thickness, and two 6 mm mounting holes on the base leg.",
   },
   {
-    label: "Phone stand",
+    label: "Washer",
     prompt:
-      "Design a desk phone stand for a smartphone with a 75 mm wide base, a back support tilted at 70 degrees, and a 12 mm front lip to hold the device. Add a cable slot at the bottom for charging access and soften the outside edges with 3 mm fillets.",
+      "Create a flat washer with a 6 mm inner hole, 14 mm outer diameter, and 1.5 mm thickness. Add 0.3 mm chamfers on both faces.",
   },
   {
     label: "Pen holder",
     prompt:
-      "Create a round desk pen holder with a 90 mm outer diameter, a 70 mm inner diameter, and a 110 mm height. Add a 4 mm thick base and a shallow finger cutout on one side to make it easier to grab pens.",
+      "Create a cylindrical pen holder with a 40 mm outer diameter, 34 mm inner diameter, and 100 mm height with a 4 mm thick base.",
   },
   {
-    label: "Soap dish",
+    label: "Box with lid",
     prompt:
-      "Model a rectangular soap dish that is 120 mm long, 85 mm wide, and 18 mm tall with rounded corners. Add shallow drainage channels across the top surface and four small feet underneath to lift it off the counter.",
+      "Create a simple rectangular box 80 mm long, 60 mm wide, and 30 mm tall with 2 mm thick walls and a matching flat lid.",
   },
   {
-    label: "Storage tray",
+    label: "Knob",
     prompt:
-      "Create a small desktop storage tray with an overall size of 180 mm by 120 mm and a height of 25 mm. Divide the inside into three compartments for keys, coins, and small accessories, and round the top edges with 2 mm fillets.",
+      "Create a round knob with a 30 mm diameter head, 12 mm tall, a flat top, and a 6 mm diameter, 10 mm long shaft on the bottom.",
   },
 ];
 
