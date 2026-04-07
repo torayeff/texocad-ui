@@ -6,7 +6,7 @@ import ThemeProvider from "@/app/components/ThemeProvider";
 import "./globals.css";
 
 const SITE_NAME = "TexoCAD";
-const SITE_URL = "https://texocad.com";
+const SITE_URL = "https://texocad.ai";
 const SITE_TITLE = "TexoCAD - Agentic Text-to-CAD";
 const SITE_DESCRIPTION =
   "Agentic text-to-CAD for people building physical products. Turn ideas, requirements, and sketches into editable, manufacturing-ready CAD.";

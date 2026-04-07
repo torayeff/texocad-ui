@@ -42,6 +42,12 @@ export function Header() {
           />
           <span className="font-medium tracking-tight">TexoCAD</span>
         </Link>
+        <Link
+          href="https://blog.texocad.ai"
+          className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Blog
+        </Link>
       </div>
 
       <div className="flex items-center gap-4">
