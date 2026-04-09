@@ -1,179 +1,7 @@
 import React, { useCallback } from "react";
-import { useAuth, useClerk } from "@clerk/nextjs";
-import { Plus, Square, ArrowUp, Loader2, Paperclip, X, ChevronDown, Brain, Zap, Sparkles, Check, Clock, Timer, Lock } from "lucide-react";
+import { Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_hooks/use-file-upload";
 import type { UploadedFile } from "@/app/studio/_hooks/use-file-upload";
-import { useLocalStorageState } from "@/app/studio/_hooks/use-local-storage-state";
-
-export type ModelTier = "fast" | "pro";
-export type ThinkingLevel = "none" | "low" | "medium" | "high";
-
-export interface ModelConfig {
-  modelTier: ModelTier;
-  thinking: ThinkingLevel;
-}
-
-function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
-  React.useEffect(() => {
-    const listener = (event: MouseEvent | TouchEvent) => {
-      if (!ref.current || ref.current.contains(event.target as Node)) {
-        return;
-      }
-      handler();
-    };
-    document.addEventListener("mousedown", listener);
-    document.addEventListener("touchstart", listener);
-    return () => {
-      document.removeEventListener("mousedown", listener);
-      document.removeEventListener("touchstart", listener);
-    };
-  }, [ref, handler]);
-}
-
-const LOCKED_TOOLTIP = "Log in to access Pro modes";
-
-const LockedTooltip = ({ children }: { children: React.ReactNode }) => (
-  <div className="group/tip relative">
-    {children}
-    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1 text-xs text-background opacity-0 transition-opacity group-hover/tip:opacity-100">
-      {LOCKED_TOOLTIP}
-    </span>
-  </div>
-);
-
-const ThinkingSelector = ({ value, onChange, locked, onLockedClick }: { value: ThinkingLevel; onChange: (v: ThinkingLevel) => void; locked?: boolean; onLockedClick?: () => void }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
-  useClickOutside(ref, () => setIsOpen(false));
-
-  const options: { value: ThinkingLevel; label: string; icon: React.ReactNode; desc: string }[] = [
-    { value: "none", label: "Standard", icon: <Zap size={14} />, desc: "Fast responses, no reasoning steps" },
-    { value: "low", label: "Low thinking", icon: <Timer size={14} />, desc: "Brief reasoning before answering" },
-    { value: "medium", label: "Medium thinking", icon: <Clock size={14} />, desc: "Balanced reasoning and detail" },
-    { value: "high", label: "High thinking", icon: <Brain size={14} />, desc: "Deep analysis for complex tasks" },
-  ];
-
-  const current = options.find((o) => o.value === value) || options[0];
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        title={locked ? LOCKED_TOOLTIP : "Select reasoning level"}
-        onClick={() => {
-          if (locked) { onLockedClick?.(); return; }
-          setIsOpen(!isOpen);
-        }}
-        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${locked
-          ? "text-muted-foreground/50 cursor-pointer"
-          : value === "none"
-            ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-            : "text-blue-500 hover:bg-blue-500/10"
-          }`}
-      >
-        {locked ? <Lock size={12} /> : current.icon}
-        {current.label}
-        {!locked && <ChevronDown size={12} className="ml-0.5 opacity-50" />}
-      </button>
-
-      {isOpen && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-64 overflow-hidden rounded-xl border border-border/60 bg-background/95 backdrop-blur-md p-1 text-foreground shadow-md animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
-          <div className="flex flex-col">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`relative flex items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-muted/60 ${value === option.value ? "bg-muted/50" : ""
-                  }`}
-              >
-                <div className={`mt-0.5 shrink-0 ${value === option.value ? "text-foreground" : "text-muted-foreground"}`}>
-                  {option.icon}
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-medium leading-none">{option.label}</span>
-                  <span className="text-xs text-muted-foreground line-clamp-1">{option.desc}</span>
-                </div>
-                {value === option.value && (
-                  <Check size={14} className="absolute right-3 top-3 text-foreground" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const ModelSelector = ({ value, onChange, locked, onLockedClick }: { value: ModelTier; onChange: (v: ModelTier) => void; locked?: boolean; onLockedClick?: () => void }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
-  useClickOutside(ref, () => setIsOpen(false));
-
-  const options: { value: ModelTier; label: string; icon: React.ReactNode; desc: string }[] = [
-    { value: "fast", label: "Fast", icon: <Zap size={14} />, desc: "Default, quick answers" },
-    { value: "pro", label: "Pro", icon: <Sparkles size={14} />, desc: "Highest capability, slower" },
-  ];
-
-  const current = options.find((o) => o.value === value) || options[0];
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        title={locked ? LOCKED_TOOLTIP : "Select model capability"}
-        onClick={() => {
-          if (locked) { onLockedClick?.(); return; }
-          setIsOpen(!isOpen);
-        }}
-        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] font-medium transition-colors ${locked
-          ? "text-muted-foreground/50 cursor-pointer"
-          : value === "fast"
-            ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-            : "text-blue-500 hover:bg-blue-500/10"
-          }`}
-      >
-        {locked ? <Lock size={12} /> : current.icon}
-        {current.label}
-        {!locked && <ChevronDown size={12} className="ml-0.5 opacity-50" />}
-      </button>
-
-      {isOpen && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-xl border border-border/60 bg-background/95 backdrop-blur-md p-1 text-foreground shadow-md animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
-          <div className="flex flex-col">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`relative flex items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-muted/60 ${value === option.value ? "bg-muted/50" : ""
-                  }`}
-              >
-                <div className={`mt-0.5 shrink-0 ${value === option.value ? "text-foreground" : "text-muted-foreground"}`}>
-                  {option.icon}
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-medium leading-none">{option.label}</span>
-                  <span className="text-xs text-muted-foreground line-clamp-1">{option.desc}</span>
-                </div>
-                {value === option.value && (
-                  <Check size={14} className="absolute right-3 top-3 text-foreground" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 export interface ChatInputHandle {
   setPrompt: (text: string) => void;
@@ -183,7 +11,7 @@ export interface ChatInputHandle {
 interface ChatInputProps {
   isBusy: boolean;
   isLoading: boolean;
-  onSubmit: (text: string, modelConfig: ModelConfig) => void;
+  onSubmit: (text: string) => void;
   stopGeneration: () => void;
 }
 
@@ -193,22 +21,9 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   onSubmit,
   stopGeneration,
 }: ChatInputProps, ref) {
-  const { isSignedIn } = useAuth();
-  const clerk = useClerk();
-  const isGuest = !isSignedIn;
-
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<UploadedFile[]>([]);
-  const [storedModelTier, setModelTier] = useLocalStorageState<ModelTier>("chat-model-tier", "pro");
-  const [storedThinking, setThinking] = useLocalStorageState<ThinkingLevel>("chat-thinking-level", "high");
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
-  const modelTier: ModelTier = isGuest ? "fast" : storedModelTier;
-  const thinking: ThinkingLevel = isGuest ? "none" : storedThinking;
-
-  const handleLockedClick = useCallback(() => {
-    clerk.openSignIn();
-  }, [clerk]);
 
   const onFileUploaded = useCallback((file: UploadedFile) => {
     setAttachments((prev) => [...prev, file]);
@@ -265,13 +80,13 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
       const links = attachments.map((a) => `[${a.filename}](${a.url})`).join("\n");
       parts.push(`Attachments:\n${links}`);
     }
-    onSubmit(parts.join("\n\n"), { modelTier, thinking });
+    onSubmit(parts.join("\n\n"));
     setInput("");
     setAttachments([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [input, attachments, hasContent, isBusy, onSubmit, modelTier, thinking]);
+  }, [input, attachments, hasContent, isBusy, onSubmit]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -349,20 +164,6 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
               </button>
-              {isGuest ? (
-                <LockedTooltip>
-                  <ModelSelector value={modelTier} onChange={setModelTier} locked onLockedClick={handleLockedClick} />
-                </LockedTooltip>
-              ) : (
-                <ModelSelector value={modelTier} onChange={setModelTier} />
-              )}
-              {isGuest ? (
-                <LockedTooltip>
-                  <ThinkingSelector value={thinking} onChange={setThinking} locked onLockedClick={handleLockedClick} />
-                </LockedTooltip>
-              ) : (
-                <ThinkingSelector value={thinking} onChange={setThinking} />
-              )}
             </div>
 
             <div className="flex items-center pr-1">

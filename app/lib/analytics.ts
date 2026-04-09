@@ -6,8 +6,6 @@ export function trackFileDownload(properties: { format: string; partName: string
 
 export function trackMessageSubmitted(properties: {
   hasAttachments: boolean;
-  modelTier: string;
-  thinking: string;
 }) {
   posthog.capture("message_submitted", properties);
 }
