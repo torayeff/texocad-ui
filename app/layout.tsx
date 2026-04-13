@@ -2,31 +2,23 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+
+import {
+  COMPANY_NAME,
+  DEFAULT_OG_IMAGE_PATH,
+  DEFAULT_TWITTER_IMAGE_PATH,
+  SITE_CATEGORY,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_ROUTES,
+  SITE_TITLE,
+  SITE_URL,
+  SUPPORT_EMAIL,
+  absoluteSiteUrl,
+} from "@/app/lib/site";
 import ThemeProvider from "@/app/components/ThemeProvider";
 import "./globals.css";
-
-const SITE_NAME = "TexoCAD";
-const SITE_URL = "https://texocad.ai";
-const SITE_TITLE = "TexoCAD - Agentic Text-to-CAD";
-const SITE_DESCRIPTION =
-  "Agentic text-to-CAD for people building physical products. Turn ideas, requirements, and sketches into editable, manufacturing-ready CAD.";
-const SITE_KEYWORDS = [
-  "text to CAD",
-  "agentic CAD",
-  "AI CAD",
-  "3D CAD",
-  "engineering drawings to CAD",
-  "CAD model generation",
-  "manufacturability checks",
-  "rapid prototyping",
-  "prototype CAD",
-  "natural language CAD",
-  "parametric CAD",
-  "CAD automation",
-  "BREP CAD",
-  "STL export",
-  "STEP export",
-];
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,8 +47,11 @@ export const metadata: Metadata = {
     telephone: false,
   },
   alternates: {
-    canonical: "/",
+    types: {
+      "text/plain": [{ url: SITE_ROUTES.llms, title: `${SITE_NAME} LLMs.txt` }],
+    },
   },
+  manifest: SITE_ROUTES.manifest,
   robots: {
     index: true,
     follow: true,
@@ -75,16 +70,25 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     locale: "en_US",
+    images: [
+      {
+        url: absoluteSiteUrl(DEFAULT_OG_IMAGE_PATH),
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} social preview`,
+      },
+    ],
     countryName: "US",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
+    images: [absoluteSiteUrl(DEFAULT_TWITTER_IMAGE_PATH)],
   },
-  creator: SITE_NAME,
-  publisher: SITE_NAME,
-  category: "technology",
+  creator: COMPANY_NAME,
+  publisher: COMPANY_NAME,
+  category: SITE_CATEGORY,
 };
 
 export default function RootLayout({
@@ -92,11 +96,73 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
+    name: COMPANY_NAME,
+    url: SITE_URL,
+    email: SUPPORT_EMAIL,
+    logo: {
+      "@type": "ImageObject",
+      url: absoluteSiteUrl("/logo-black.png"),
+    },
+  };
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    inLanguage: "en-US",
+    publisher: {
+      "@id": `${SITE_URL}/#organization`,
+    },
+    about: {
+      "@type": "Thing",
+      name: "Text-to-CAD, AI CAD, manufacturing-ready CAD, and rapid prototyping",
+    },
+  };
+
+  const webApplicationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "@id": `${SITE_URL}/#webapplication`,
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    applicationCategory: "DesignApplication",
+    operatingSystem: "Web",
+    inLanguage: "en-US",
+    publisher: {
+      "@id": `${SITE_URL}/#organization`,
+    },
+    featureList: [
+      "Natural-language CAD generation",
+      "Sketch-guided design input",
+      "Editable parametric CAD output",
+      "STEP and STL export",
+    ],
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          id="texocad-site-jsonld"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              organizationJsonLd,
+              websiteJsonLd,
+              webApplicationJsonLd,
+            ]),
+          }}
+        />
         <ClerkProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </ClerkProvider>
