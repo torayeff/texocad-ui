@@ -10,8 +10,6 @@ import { useChatStream } from "@/app/studio/_hooks/use-chat-stream";
 import { useAssistantTimer } from "@/app/studio/_hooks/use-assistant-timer";
 import { useMessageRows } from "@/app/studio/_hooks/use-message-rows";
 import { getMessageTextContent } from "@/app/studio/_lib/message-content";
-import { engines, DEFAULT_ENGINE } from "@/app/studio/_lib/langgraph-config";
-import type { EngineKey } from "@/app/studio/_lib/langgraph-config";
 import type { PartEntry } from "@/app/studio/_types/chat";
 import { trackMessageSubmitted } from "@/app/lib/analytics";
 
@@ -30,7 +28,6 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
   const { isSignedIn } = useAuth();
   const clerk = useClerk();
   const isGuest = !isSignedIn;
-  const [selectedEngine, setSelectedEngine] = useState<EngineKey>(DEFAULT_ENGINE);
 
   const {
     client,
@@ -48,9 +45,7 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     pathname,
     router,
     handleThreadIdChange,
-  } = useChatStream(selectedEngine, onProductEvent);
-
-  const engineLocked = !!urlThreadId || messages.length > 0;
+  } = useChatStream(onProductEvent);
 
   const timer = useAssistantTimer();
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -227,7 +222,6 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
   const handleNewChat = useCallback(() => {
     setHistoryOpen(false);
     setPendingHumanMessage(null);
-    setSelectedEngine(DEFAULT_ENGINE);
     timer.reset();
     setDraftConversationKey((key) => key + 1);
     handleThreadIdChange(null);
@@ -270,13 +264,7 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
       ) : null}
 
       <div className="flex shrink-0 items-center justify-between gap-0 px-4 py-3">
-        {engineLocked ? (
-          <span className="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-            {engines[selectedEngine].label}
-          </span>
-        ) : (
-          <span />
-        )}
+        <span />
         <div className="flex items-center gap-0">
           {!isGuest && (
             <>

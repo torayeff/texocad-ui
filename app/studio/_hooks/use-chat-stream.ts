@@ -3,8 +3,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
-import { engines } from "@/app/studio/_lib/langgraph-config";
-import type { EngineKey } from "@/app/studio/_lib/langgraph-config";
+import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
 import type { StreamAccessors } from "@/app/studio/_hooks/use-message-rows";
 import type {
   TexocadGraphState,
@@ -16,7 +15,7 @@ import type {
 const EMPTY_TODOS: TodoItem[] = [];
 const EMPTY_PRODUCT: PartEntry[] = [];
 
-export function useChatStream(engineKey: EngineKey, onProductEvent?: (parts: PartEntry[]) => void) {
+export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,7 +47,7 @@ export function useChatStream(engineKey: EngineKey, onProductEvent?: (parts: Par
 
   const streamOptions = useMemo(() => ({
     client,
-    assistantId: engines[engineKey].assistantId,
+    assistantId: ASSISTANT_ID,
     threadId: isAuthReady ? (urlThreadId ?? undefined) : undefined,
     fetchStateHistory: true,
     filterSubagentMessages: true,
@@ -61,7 +60,6 @@ export function useChatStream(engineKey: EngineKey, onProductEvent?: (parts: Par
     },
   }), [
     client,
-    engineKey,
     handleThreadIdChange,
     isAuthReady,
     urlThreadId,
