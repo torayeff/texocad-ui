@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { ulid } from "ulidx";
 
 const ACCEPTED_TYPES =
-  ".txt,.md,.pdf,.png,.jpg,.jpeg,.gif,.webp,.svg";
+  ".txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.svg";
 
 const ACCEPTED_MIME_PREFIX = [
   "text/plain",
