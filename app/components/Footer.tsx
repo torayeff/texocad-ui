@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SITE_NAME, SUPPORT_EMAIL } from "@/app/lib/site";
+import { SITE_NAME, SITE_ROUTES, SUPPORT_EMAIL } from "@/app/lib/site";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -14,10 +14,10 @@ export function Footer() {
           <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-foreground transition-colors">
             Support
           </a>
-          <Link href="/privacy" className="hover:text-foreground transition-colors">
+          <Link href={SITE_ROUTES.privacy} className="hover:text-foreground transition-colors">
             Privacy Policy
           </Link>
-          <Link href="/terms" className="hover:text-foreground transition-colors">
+          <Link href={SITE_ROUTES.terms} className="hover:text-foreground transition-colors">
             Terms & Conditions
           </Link>
         </div>
