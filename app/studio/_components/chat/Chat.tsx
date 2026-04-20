@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useAuth, useClerk } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
 import { ArrowDown, CirclePlus, History, Loader2 } from "lucide-react";
 
@@ -25,10 +24,6 @@ export interface ChatProps {
 }
 
 export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
-  const { isSignedIn } = useAuth();
-  const clerk = useClerk();
-  const isGuest = !isSignedIn;
-
   const {
     client,
     stream,
@@ -70,7 +65,7 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     onClearViewerRef.current = onClearViewer;
   }, [onClearViewer]);
 
-  const history = useThreadHistory(client, isAuthReady && !isGuest);
+  const history = useThreadHistory(client, isAuthReady);
 
   const conversationScope = urlThreadId ?? `draft-${draftConversationKey}`;
 
@@ -266,45 +261,28 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
       <div className="flex shrink-0 items-center justify-between gap-0 px-4 py-3">
         <span />
         <div className="flex items-center gap-0">
-          {!isGuest && (
-            <>
-              <button
-                onClick={handleNewChat}
-                title="New chat"
-                aria-label="New chat"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
-              >
-                <CirclePlus size={18} />
-              </button>
-              <button
-                onClick={toggleHistory}
-                title={historyOpen ? "Close history" : "History"}
-                aria-label={historyOpen ? "Close history" : "Open history"}
-                aria-pressed={historyOpen}
-                className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${historyOpen
-                  ? "bg-muted/70 text-muted-foreground"
-                  : "text-muted-foreground/70 hover:bg-muted/70 hover:text-muted-foreground"
-                  }`}
-              >
-                <History size={16} />
-              </button>
-            </>
-          )}
+          <button
+            onClick={handleNewChat}
+            title="New chat"
+            aria-label="New chat"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
+          >
+            <CirclePlus size={18} />
+          </button>
+          <button
+            onClick={toggleHistory}
+            title={historyOpen ? "Close history" : "History"}
+            aria-label={historyOpen ? "Close history" : "Open history"}
+            aria-pressed={historyOpen}
+            className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${historyOpen
+              ? "bg-muted/70 text-muted-foreground"
+              : "text-muted-foreground/70 hover:bg-muted/70 hover:text-muted-foreground"
+              }`}
+          >
+            <History size={16} />
+          </button>
         </div>
       </div>
-
-      {isGuest && (
-        <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-4 py-2 text-xs text-amber-700 dark:text-amber-400">
-          Guest mode conversations can be viewed and edited by anyone with the link.{" "}
-          <button
-            onClick={() => clerk.openSignIn()}
-            className="underline underline-offset-2 font-medium hover:text-amber-900 dark:hover:text-amber-300"
-          >
-            Sign in
-          </button>
-          {" "}for private conversations.
-        </div>
-      )}
 
       <div className="relative flex-1 min-h-0 overflow-hidden">
         {historyOpen ? (

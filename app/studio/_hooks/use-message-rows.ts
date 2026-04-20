@@ -39,8 +39,6 @@ export function useMessageRows({
 }): { messageRows: MessageRow[]; activeAssistantRowKey: string | null } {
   const prevActiveRowKeyRef = useRef<string | null>(null);
   const prevIsLoadingRef = useRef(false);
-  const accessorsRef = useRef(streamAccessors);
-  accessorsRef.current = streamAccessors;
 
   useEffect(() => {
     if (isLoading && !prevIsLoadingRef.current) {
@@ -50,7 +48,7 @@ export function useMessageRows({
   }, [isLoading, timer]);
 
   const messageRows = useMemo(() => {
-    const accessors = accessorsRef.current;
+    const accessors = streamAccessors;
 
     let lastHumanIndex = -1;
     for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -159,6 +157,7 @@ export function useMessageRows({
     isLoading,
     messages,
     shouldRenderPendingHumanMessage,
+    streamAccessors,
     timer.runtimeSecondsByRow,
   ]);
 

@@ -27,9 +27,12 @@ export const SITE_CATEGORY = "technology";
 export const DEFAULT_OG_IMAGE_PATH = "/opengraph-image";
 export const DEFAULT_TWITTER_IMAGE_PATH = "/twitter-image";
 
+export const CLERK_PLAN_SLUG = process.env.NEXT_PUBLIC_CLERK_PLAN_SLUG!;
+
 export const SITE_ROUTES = {
   home: "/",
   studio: "/studio",
+  pricing: "/pricing",
   showcaseItemBase: "/showcase/item",
   llms: "/llms.txt",
   manifest: "/manifest.webmanifest",

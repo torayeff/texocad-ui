@@ -1,21 +1,25 @@
 "use client";
 
-import { UserButton, useAuth, useClerk } from "@clerk/nextjs";
+import { UserButton, useAuth, useClerk, useUser } from "@clerk/nextjs";
 import { Moon, Sun } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 
 import { useMounted } from "@/app/hooks/use-mounted";
+import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
 
 export function Header() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, has } = useAuth();
+  const { user } = useUser();
   const clerk = useClerk();
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useMounted();
 
   const isDark = mounted && resolvedTheme === "dark";
   const ThemeIcon = isDark ? Sun : Moon;
+  const hasAccess =
+    isSignedIn && (has?.({ plan: CLERK_PLAN_SLUG }) || user?.publicMetadata?.freeAccess === true);
 
   const handleThemeToggle = () => {
     setTheme(isDark ? "light" : "dark");
@@ -45,6 +49,14 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
+        {isSignedIn && !hasAccess && (
+          <Link
+            href={SITE_ROUTES.pricing}
+            className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Upgrade
+          </Link>
+        )}
         {isSignedIn ? (
           <UserButton appearance={{ elements: { avatarBox: "w-7 h-7" } }} />
         ) : (
