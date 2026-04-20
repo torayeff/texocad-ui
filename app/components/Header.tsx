@@ -36,7 +36,7 @@ export function Header() {
   };
 
   return (
-    <header className="h-12 shrink-0 border-b border-border px-4 md:px-8 flex items-center justify-between text-sm select-none relative z-50 bg-background">
+    <header className={`h-12 shrink-0 border-b border-border px-4 md:px-8 flex items-center justify-between text-sm select-none relative bg-background ${isMobileMenuOpen ? 'z-50' : 'z-0'}`}>
       <div className="flex items-center gap-4 md:gap-8">
         <button
           type="button"
