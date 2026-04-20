@@ -7,7 +7,6 @@ import {
   FileDown,
   RefreshCcw,
   Terminal,
-  LifeBuoy,
   Play,
   Cog,
   Grid3x3,
@@ -16,6 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Header } from "@/app/components/Header";
+import { Footer } from "@/app/components/Footer";
 import {
   SITE_DESCRIPTION,
   SITE_ROUTES,
@@ -104,7 +104,7 @@ export default async function Home() {
       <main className="min-h-dvh md:h-dvh flex flex-col text-foreground bg-background">
         <Header />
 
-        <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden min-h-0">
           <section className="flex-1 flex flex-col relative min-h-[500px] md:min-h-0">
             <div
               className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none"
@@ -183,17 +183,17 @@ export default async function Home() {
             </div>
           </section>
 
-          <aside className="md:w-[480px] border-t md:border-t-0 md:border-l border-border md:overflow-y-auto bg-muted/20 flex flex-col shrink-0">
+          <aside className="md:w-[480px] border-t md:border-t-0 md:border-l border-border bg-muted/20 flex flex-col shrink-0">
             <div className="p-3 border-b border-border/50 text-xs font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-2 shrink-0">
               <Grid3x3 size={14} />
               Showcase: Built with TexoCAD
             </div>
-            <div className="p-2 grid grid-cols-3 gap-2 flex-1 content-start">
+            <div className="p-2 grid grid-cols-3 md:grid-rows-4 gap-2 flex-1">
               {items.map((item) => (
                 <Link
                   key={item.thread_id}
                   href={getShowcaseItemPath(item.thread_id)}
-                  className="group relative aspect-square overflow-hidden rounded-lg border border-border/50 bg-muted/30 transition-all hover:border-border hover:shadow-sm"
+                  className="group relative aspect-square md:aspect-auto overflow-hidden rounded-lg border border-border/50 bg-muted/30 transition-all hover:border-border hover:shadow-sm"
                 >
                   <Image
                     src={`/showcase/images/${item.thread_id}.jpg`}
@@ -210,18 +210,9 @@ export default async function Home() {
                 </Link>
               ))}
             </div>
-
-            <div className="p-4 border-t border-border/50 mt-auto flex justify-center">
-              <a
-                href="mailto:support@texocad.ai"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <LifeBuoy size={16} />
-                <span>Support</span>
-              </a>
-            </div>
           </aside>
         </div>
+        <Footer />
       </main>
     </>
   );
