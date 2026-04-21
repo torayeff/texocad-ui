@@ -11,7 +11,8 @@ export default async function StudioPage() {
     redirect(SITE_ROUTES.home);
   }
 
-  if (!has({ plan: CLERK_PLAN_SLUG }) && !sessionClaims?.freeAccess) {
+  const hasGrant = sessionClaims?.freeAccess === true || sessionClaims?.vipAccess === true;
+  if (!has({ plan: CLERK_PLAN_SLUG }) && !hasGrant) {
     redirect(SITE_ROUTES.pricing);
   }
 

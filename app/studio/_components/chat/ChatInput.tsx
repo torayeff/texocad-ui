@@ -1,7 +1,9 @@
 import React, { useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_hooks/use-file-upload";
 import type { UploadedFile } from "@/app/studio/_hooks/use-file-upload";
+import ModelPicker from "@/app/studio/_components/chat/ModelPicker";
 
 export interface ChatInputHandle {
   setPrompt: (text: string) => void;
@@ -13,6 +15,8 @@ interface ChatInputProps {
   isLoading: boolean;
   onSubmit: (text: string) => void;
   stopGeneration: () => void;
+  model: string;
+  onModelChange: (modelId: string) => void;
 }
 
 const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
@@ -20,10 +24,14 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   isLoading,
   onSubmit,
   stopGeneration,
+  model,
+  onModelChange,
 }: ChatInputProps, ref) {
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<UploadedFile[]>([]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const { sessionClaims } = useAuth();
+  const isVip = sessionClaims?.vipAccess === true;
 
   const onFileUploaded = useCallback((file: UploadedFile) => {
     setAttachments((prev) => [...prev, file]);
@@ -164,6 +172,13 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
               </button>
+              {isVip && (
+                <ModelPicker
+                  value={model}
+                  onChange={onModelChange}
+                  disabled={isBusy}
+                />
+              )}
             </div>
 
             <div className="flex items-center pr-1">

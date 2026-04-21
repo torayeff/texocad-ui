@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
 import { ArrowDown, CirclePlus, History, Loader2 } from "lucide-react";
 
@@ -9,6 +10,7 @@ import { useChatStream } from "@/app/studio/_hooks/use-chat-stream";
 import { useAssistantTimer } from "@/app/studio/_hooks/use-assistant-timer";
 import { useMessageRows } from "@/app/studio/_hooks/use-message-rows";
 import { getMessageTextContent } from "@/app/studio/_lib/message-content";
+import { DEFAULT_MODEL_ID, MODELS } from "@/app/studio/_lib/models";
 import type { PartEntry } from "@/app/studio/_types/chat";
 import { trackMessageSubmitted } from "@/app/lib/analytics";
 
@@ -43,10 +45,18 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
   } = useChatStream(onProductEvent);
 
   const timer = useAssistantTimer();
+  const { sessionClaims } = useAuth();
+  const isVip = sessionClaims?.vipAccess === true;
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [pendingHumanMessage, setPendingHumanMessage] = useState<HumanMessage | null>(null);
   const [draftConversationKey, setDraftConversationKey] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
+
+  const handleModelChange = useCallback((modelId: string) => {
+    if (!MODELS.some((m) => m.id === modelId)) return;
+    setSelectedModel(modelId);
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -172,10 +182,12 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
       hasAttachments: trimmed.includes("Attachments:"),
     });
     setPendingHumanMessage(new HumanMessage(trimmed));
+    const metadata = isVip ? { model: selectedModel } : undefined;
     stream.submit(
       { messages: [{ type: "human", content: trimmed }] },
       {
         streamSubgraphs: true,
+        metadata,
         optimisticValues: (prev) => ({
           ...prev,
           todos: [],
@@ -187,7 +199,7 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-  }, [isBusy, stream]);
+  }, [isBusy, isVip, selectedModel, stream]);
 
   const handleExamplePrompt = useCallback((prompt: string) => {
     if (chatInputRef.current) {
@@ -378,6 +390,8 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
         isBusy={isBusy}
         onSubmit={sendMessage}
         stopGeneration={() => stream.stop()}
+        model={selectedModel}
+        onModelChange={handleModelChange}
       />
     </div>
   );

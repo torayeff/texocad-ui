@@ -8,7 +8,9 @@ import { SITE_ROUTES } from "@/app/lib/site";
 
 export default async function PricingPage() {
   const { userId, sessionClaims } = await auth();
-  const hasFreeAccess = userId && sessionClaims?.freeAccess === true;
+  const hasGrantedAccess =
+    !!userId &&
+    (sessionClaims?.freeAccess === true || sessionClaims?.vipAccess === true);
 
   return (
     <main className="flex h-dvh flex-col bg-background text-foreground overflow-hidden">
@@ -17,7 +19,7 @@ export default async function PricingPage() {
         <div className="flex flex-col items-center justify-center min-h-full p-6 md:p-8">
           <div className="w-full max-w-md flex flex-col items-center">
             <h1 className="mb-2 text-3xl font-semibold tracking-tight">Pricing</h1>
-            {hasFreeAccess ? (
+            {hasGrantedAccess ? (
               <>
                 <p className="mb-6 max-w-md text-center text-muted-foreground">
                   You have been granted unlimited free access to TexoCAD Studio.

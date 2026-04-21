@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserButton, useAuth, useClerk, useUser } from "@clerk/nextjs";
+import { UserButton, useAuth, useClerk } from "@clerk/nextjs";
 import { Moon, Sun, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,8 +11,7 @@ import { useMounted } from "@/app/hooks/use-mounted";
 import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
 
 export function Header() {
-  const { isSignedIn, has } = useAuth();
-  const { user } = useUser();
+  const { isSignedIn, has, sessionClaims } = useAuth();
   const clerk = useClerk();
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useMounted();
@@ -21,7 +20,10 @@ export function Header() {
   const isDark = mounted && resolvedTheme === "dark";
   const ThemeIcon = isDark ? Sun : Moon;
   const hasAccess =
-    isSignedIn && (has?.({ plan: CLERK_PLAN_SLUG }) || user?.publicMetadata?.freeAccess === true);
+    isSignedIn &&
+    (has?.({ plan: CLERK_PLAN_SLUG }) ||
+      sessionClaims?.freeAccess === true ||
+      sessionClaims?.vipAccess === true);
 
   const handleThemeToggle = () => {
     setTheme(isDark ? "light" : "dark");
