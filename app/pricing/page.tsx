@@ -1,9 +1,15 @@
+import { auth } from "@clerk/nextjs/server";
 import { PricingTable } from "@clerk/nextjs";
+import Link from "next/link";
 
 import { Header } from "@/app/components/Header";
 import { Footer } from "@/app/components/Footer";
+import { SITE_ROUTES } from "@/app/lib/site";
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const { userId, sessionClaims } = await auth();
+  const hasFreeAccess = userId && sessionClaims?.freeAccess === true;
+
   return (
     <main className="flex h-dvh flex-col bg-background text-foreground overflow-hidden">
       <Header />
@@ -11,15 +17,31 @@ export default function PricingPage() {
         <div className="flex flex-col items-center justify-center min-h-full p-6 md:p-8">
           <div className="w-full max-w-md flex flex-col items-center">
             <h1 className="mb-2 text-3xl font-semibold tracking-tight">Pricing</h1>
-            <p className="mb-6 max-w-md text-center text-muted-foreground">
-              Subscribe to unlock TexoCAD Studio and start building.
-            </p>
-            <div className="mb-8 inline-flex items-center rounded-full bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent ring-1 ring-accent/20">
-              ✨ 30-Day Free Trial
-            </div>
-            <div className="w-full">
-              <PricingTable />
-            </div>
+            {hasFreeAccess ? (
+              <>
+                <p className="mb-6 max-w-md text-center text-muted-foreground">
+                  You have been granted unlimited free access to TexoCAD Studio.
+                </p>
+                <Link
+                  href={SITE_ROUTES.studio}
+                  className="inline-flex items-center rounded-lg bg-foreground px-5 py-2.5 text-sm font-medium text-background hover:bg-foreground/90 transition-colors"
+                >
+                  Go to Studio
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="mb-6 max-w-md text-center text-muted-foreground">
+                  Subscribe to unlock TexoCAD Studio and start building.
+                </p>
+                <div className="mb-8 inline-flex items-center rounded-full bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent ring-1 ring-accent/20">
+                  ✨ 30-Day Free Trial
+                </div>
+                <div className="w-full">
+                  <PricingTable />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
