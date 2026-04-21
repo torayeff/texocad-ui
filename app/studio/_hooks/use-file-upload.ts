@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { ulid } from "ulidx";
 
 const ACCEPTED_TYPES =
   ".txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.svg";
@@ -29,16 +28,12 @@ export interface UploadedFile {
 }
 
 async function uploadToAzure(file: File): Promise<UploadedFile> {
-  const date = new Date().toISOString().slice(0, 10);
   const sanitized = sanitizeFilename(file.name);
-  const ext = sanitized.includes(".") ? sanitized.slice(sanitized.lastIndexOf(".")) : "";
-  const base = sanitized.includes(".") ? sanitized.slice(0, sanitized.lastIndexOf(".")) : sanitized;
-  const blobName = `uploads/${date}/${base}_${ulid()}${ext}`;
 
   const res = await fetch("/api/blob", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ blobName }),
+    body: JSON.stringify({ filename: sanitized }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
