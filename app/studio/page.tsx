@@ -7,7 +7,11 @@ import StudioClient from "@/app/studio/_components/StudioClient";
 export default async function StudioPage() {
   const { userId, has, sessionClaims } = await auth();
 
-  if (!userId || (!has({ plan: CLERK_PLAN_SLUG }) && !sessionClaims?.freeAccess)) {
+  if (!userId) {
+    redirect(SITE_ROUTES.home);
+  }
+
+  if (!has({ plan: CLERK_PLAN_SLUG }) && !sessionClaims?.freeAccess) {
     redirect(SITE_ROUTES.pricing);
   }
 
