@@ -1,6 +1,6 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] Download as engineering drawing
-- [ ] Inlcude step file
-- [ ] message queue
+- [ ] STEP file viewer
+- [ ] Measurement tool
+- [ ] Share and replay

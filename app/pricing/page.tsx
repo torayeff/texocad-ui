@@ -37,7 +37,7 @@ export default async function PricingPage() {
                   Subscribe to unlock TexoCAD Studio and start building.
                 </p>
                 <div className="mb-8 inline-flex items-center rounded-full bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent ring-1 ring-accent/20">
-                  ✨ 30-Day Free Trial
+                  ✨ 7-Day Free Trial
                 </div>
                 <div className="w-full">
                   <PricingTable />
