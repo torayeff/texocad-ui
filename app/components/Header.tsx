@@ -72,6 +72,12 @@ export function Header() {
             Studio
           </Link>
           <Link
+            href="https://viewer.texocad.ai"
+            className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Viewer
+          </Link>
+          <Link
             href={SITE_ROUTES.pricing}
             className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -119,6 +125,13 @@ export function Header() {
             onClick={closeMobileMenu}
           >
             Studio
+          </Link>
+          <Link
+            href="https://viewer.texocad.ai"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            onClick={closeMobileMenu}
+          >
+            Viewer
           </Link>
           <Link
             href={SITE_ROUTES.pricing}
