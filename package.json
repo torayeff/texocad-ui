@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.31.0",
-    "@clerk/nextjs": "^7.2.1",
+    "@clerk/nextjs": "^7.2.4",
     "@langchain/core": "^1.1.42",
     "@langchain/react": "^0.2.0",
     "@react-three/drei": "^10.7.7",
