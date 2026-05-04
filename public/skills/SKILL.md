@@ -10,7 +10,7 @@ This skill is an index. Do not solve domain tasks from this file alone; read the
 
 ## Canonical Base
 
-`BASE_URL=https://texocad.ai/`
+`BASE_URL=https://texocad.ai/skills/`
 
 Use `BASE_URL` for remote reads. When reading a remote markdown file, resolve its relative links relative to the file that contains them.
 

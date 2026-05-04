@@ -8,7 +8,7 @@ license: MIT
 
 Set:
 
-`BASE_URL=https://texocad.ai/`
+`BASE_URL=https://texocad.ai/skills/`
 
 Fetch the latest canonical router with `curl`, then read and follow it:
 
