@@ -22,7 +22,7 @@ Use this shared reference only when multiple TexoCAD skills need common conventi
 
 ## Model Viewing
 
-- For TexoCAD Cloud runs, report the generated output/viewer URLs returned by the API. Read [execution-modes.md](execution-modes.md) for the required API-key validation gate.
+- For TexoCAD API runs, report the generated output/viewer URLs returned by the API. Read [texocad-cloud.md](texocad-cloud.md) for the required API-key validation gate.
 - STL, STEP, BREP, 3MF, DXF, SVG, and glTF can be generated outputs, but the current TexoCAD Cloud API does not accept those files as inputs for direct validation.
 
 ## Tolerances And Clearances

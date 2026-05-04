@@ -14,9 +14,9 @@ This skill is an index. Do not solve domain tasks from this file alone; read the
 
 Use `BASE_URL` for remote reads. When reading a remote markdown file, resolve its relative links relative to the file that contains them.
 
-## Required TexoCAD Cloud Gate
+## Required TexoCAD Execution
 
-TexoCAD Cloud is the only supported execution path for generated CAD code. Do not start CAD execution, validation-by-execution, export generation, or viewer URL work until `https://api.texocad.ai/api-key/validate` returns `true`.
+Running generated CAD code through the TexoCAD API is part of the workflow. Do not start CAD execution, validation-by-execution, export generation, or viewer URL work until you read `shared/references/texocad-cloud.md` and `https://api.texocad.ai/api-key/validate` returns `true`.
 
 Use this key lookup order:
 
@@ -24,9 +24,7 @@ Use this key lookup order:
 2. Otherwise, use `TEXOCAD_API_KEY` from the environment.
 3. If no key exists, stop and ask the user to get a TexoCAD API key and provide it in chat or configure it in the environment.
 
-Validate the key with bearer authentication before continuing. Send generated Python code to `https://api.texocad.ai/run` as `text/plain` with `Authorization: Bearer <key>`.
-
-Read `shared/references/execution-modes.md` when a task asks to run code, validate by execution, export files, avoid setup, or return viewer/output URLs.
+Validate the key with bearer authentication before continuing. Send generated Python code as `text/plain` with `Authorization: Bearer <key>`. Do not send STL, STEP, BREP, 3MF, DXF, SVG, glTF, or other geometry files as API inputs.
 
 ## Skill Routing
 
@@ -52,6 +50,6 @@ Read `shared/references/units-and-outputs.md` only when multiple skills need com
 2. Read the selected child `SKILL.md`.
 3. Follow that skill's reference routing; do not browse every reference file by default.
 4. Use shared references only for cross-skill conventions.
-5. After writing CAD code, validate the TexoCAD API key, send the code to TexoCAD Cloud, and collect returned output/viewer URLs.
+5. After writing CAD code, read `shared/references/texocad-cloud.md`, validate the TexoCAD API key, send the code to the TexoCAD API, and collect returned output/viewer URLs.
 6. If browser-control tooling or a browser skill is available, open the returned URL for inspection. When multiple generated files exist, prefer the STEP output/viewer URL unless the task asks for another format.
 7. Before finalizing, apply the selected skill's validation or review checklist and report the relevant URLs.
