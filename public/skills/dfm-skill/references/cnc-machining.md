@@ -77,7 +77,7 @@ Rules of thumb below assume conventional subtractive machining. Supplier tooling
 
 ## Supplier Handoff
 
-- Send STEP for CAM handoff; BREP can help preserve OCCT topology in local workflows.
+- Send STEP for CAM handoff; BREP can help preserve OCCT topology in exact-geometry workflows.
 - Provide a drawing for toleranced features, threads, surface finish, datums, inspection requirements, critical dimensions, and edge-break notes.
 - Specify material, alloy, temper, hardness, grain direction if relevant, finish, coating, and any certification requirement.
 - Identify acceptable tool marks, cosmetic faces, deburr expectations, masking areas, and part marking.

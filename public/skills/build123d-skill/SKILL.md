@@ -66,10 +66,10 @@ Prefer global offset planes for asymmetric placements whose signs matter. Reserv
 ## Validation And Outputs
 
 - Before finalizing CAD code, read [references/validation-checklist.md](references/validation-checklist.md) and apply only the checks relevant to the requested output.
-- Before running generated code, validating by execution, exporting files, or returning viewer URLs, read [../shared/references/execution-modes.md](../shared/references/execution-modes.md) and choose local or TexoCAD Cloud execution.
+- Before running generated code, validating by execution, exporting files, or returning viewer URLs, read [../shared/references/execution-modes.md](../shared/references/execution-modes.md) and use TexoCAD Cloud only after the required API-key validation gate passes.
 - For manufacturability review beyond CAD-code hygiene, read `../dfm-skill/SKILL.md` after the build123d model is coherent.
 - Prefer STEP for CAD/CAM handoff, STL or 3MF for printing, DXF/SVG for 2D cutting, and glTF only for visual exchange.
-- For local exports, tell users they can inspect exported models at `https://viewer.texocad.ai`, but they must upload the file manually. For TexoCAD Cloud runs, report the generated output/viewer URLs returned by the API.
+- For TexoCAD Cloud runs, report the generated output/viewer URLs returned by the API.
 - If this skill later gains deterministic helpers, keep them in `scripts/` and run them from the skill instructions instead of recreating the same validation logic in prose.
 - Keep templates, parameter schemas, or reusable export/report examples in `assets/` and load them only when the task asks for that output shape.
 
@@ -78,7 +78,7 @@ Prefer global offset planes for asymmetric placements whose signs matter. Reserv
 Read only the files needed for the current task:
 
 - CAD design intent, datum strategy, tolerances, manufacturability: [references/cad-engineering.md](references/cad-engineering.md)
-- Execution modes, local setup, TexoCAD Cloud code execution, API keys, and viewer/output URLs: [../shared/references/execution-modes.md](../shared/references/execution-modes.md)
+- TexoCAD Cloud code execution, API-key validation, and viewer/output URLs: [../shared/references/execution-modes.md](../shared/references/execution-modes.md)
 - Coordinate systems, reference-view reconciliation, left/right mirroring, and face-local axis mapping: [references/coordinate-system-protocol.md](references/coordinate-system-protocol.md)
 - Builder/algebra/direct workflow and movement rules: [references/build123d-workflows.md](references/build123d-workflows.md)
 - Workplanes, selectors, `ShapeList`, operators, and topology selection: [references/selectors-and-workplanes.md](references/selectors-and-workplanes.md)

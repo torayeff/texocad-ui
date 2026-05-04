@@ -90,7 +90,7 @@ For drawings, place hidden lines on a different layer/style.
 
 ## 3D Exporters
 
-- `export_brep(to_export, file_path) -> bool` - OpenCascade-native BREP; best for preserving exact OCCT topology in local workflows.
+- `export_brep(to_export, file_path) -> bool` - OpenCascade-native BREP; best for preserving exact OCCT topology in debugging or exact-geometry workflows.
 - `export_gltf(to_export, file_path, unit=Unit.MM, binary=False, linear_deflection=0.001, angular_deflection=0.1) -> bool` - visual/scene exchange.
 - `export_step(to_export, file_path, unit=Unit.MM, write_pcurves=True, precision_mode=PrecisionMode.AVERAGE, timestamp=None) -> bool` - solid/assembly exchange for CAD/CAM.
 - `export_stl(to_export, file_path, tolerance=0.001, angular_tolerance=0.1, ascii_format=False) -> bool` - mesh export for 3D printing; tune tolerance.
@@ -126,7 +126,7 @@ Always validate imported geometry before using it as a construction reference.
 ## Export Selection Guide
 
 - Editable CAD/CAM: STEP.
-- Exact OCCT local persistence: BREP.
+- Exact OCCT topology preservation: BREP.
 - 3D printing simple mesh: STL.
 - 3D printing multi-part/color/metadata: 3MF via `Mesher`.
 - Web/visual scene: glTF.

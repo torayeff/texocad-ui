@@ -13,7 +13,7 @@ Use this shared reference only when multiple TexoCAD skills need common conventi
 ## Export Defaults
 
 - STEP: default for CAD/CAM handoff, assemblies, supplier review, and editable solid geometry.
-- BREP: useful for preserving OCCT-native topology in debugging or local workflows.
+- BREP: useful for preserving OCCT-native topology in debugging or exact-geometry workflows.
 - STL: simple mesh handoff for 3D printing when metadata is not needed.
 - 3MF: preferred for multipart, metadata, material, color, or print-plate workflows.
 - DXF: default for 2D manufacturing profiles, laser cutting, waterjet, routing, and flat patterns.
@@ -22,8 +22,8 @@ Use this shared reference only when multiple TexoCAD skills need common conventi
 
 ## Model Viewing
 
-- For local exports, end users can view exported models at `https://viewer.texocad.ai`, but they need to upload the exported file manually.
-- For TexoCAD Cloud runs, report the generated output/viewer URLs returned by the API. Read [execution-modes.md](execution-modes.md) for TexoCAD Cloud execution rules.
+- For TexoCAD Cloud runs, report the generated output/viewer URLs returned by the API. Read [execution-modes.md](execution-modes.md) for the required API-key validation gate.
+- STL, STEP, BREP, 3MF, DXF, SVG, and glTF can be generated outputs, but the current TexoCAD Cloud API does not accept those files as inputs for direct validation.
 
 ## Tolerances And Clearances
 
