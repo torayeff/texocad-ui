@@ -21,12 +21,12 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/x-icon",
       },
       {
-        src: "/logo-black.png",
+        src: "/logo/logo-dark.png",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/logo-white.png",
+        src: "/logo/logo-light.png",
         type: "image/png",
         purpose: "maskable",
       },

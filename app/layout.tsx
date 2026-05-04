@@ -105,7 +105,7 @@ export default function RootLayout({
     email: SUPPORT_EMAIL,
     logo: {
       "@type": "ImageObject",
-      url: absoluteSiteUrl("/logo-black.png"),
+      url: absoluteSiteUrl("/logo-dark.png"),
     },
   };
 

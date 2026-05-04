@@ -1,0 +1,679 @@
+# Full API Symbol And Signature Index
+
+Bundled symbol and signature index for build123d. Use the routed compact reference files for practical guidance.
+
+Entry format: `signature` - kind; routed compact reference.
+
+Coverage includes object constructors, operations, builders/enums, direct topology methods, assemblies, joints, and import/export symbols.
+
+## Bundled Coverage Map
+
+- Object constructors -> [api-objects.md](api-objects.md)
+- Operations -> [api-operations.md](api-operations.md)
+- Builders, locations, and enums -> [api-builders-locations-enums.md](api-builders-locations-enums.md)
+- Direct geometry and topology -> [api-topology-direct.md](api-topology-direct.md)
+- Assemblies, joints, drawings, import/export, and mesh -> [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md)
+
+## Objects
+
+- `*class* BaseLineObject(curve: ~build123d.topology.one_d.Wire, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Airfoil(airfoil_code: str, n_points: int = 50, finite_te: bool = False, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `Airfoil.camber_pos *: float*` - property/enum; see [api-objects.md](api-objects.md).
+- `Airfoil.code *: str*` - property/enum; see [api-objects.md](api-objects.md).
+- `Airfoil.finite_te *: bool*` - property/enum; see [api-objects.md](api-objects.md).
+- `Airfoil.max_camber *: float*` - property/enum; see [api-objects.md](api-objects.md).
+- `Airfoil.parse_naca4(value: str | float) → tuple[float, float, float]` - method/function; see [api-objects.md](api-objects.md).
+- `Airfoil.thickness *: float*` - property/enum; see [api-objects.md](api-objects.md).
+- `*class* Bezier(*cntl_pnts: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], weights: list[float] | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* BlendCurve(curve0: ~build123d.topology.one_d.Edge, curve1: ~build123d.topology.one_d.Edge, continuity: ~build123d.build_enums.ContinuityLevel = ContinuityLevel.C2, end_points: tuple[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]] | None = None, tangent_scalars: tuple[float, float] | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* CenterArc(center: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], radius: float, start_angle: float, arc_size: float | ~build123d.topology.shape_core.Shape | ~build123d.geometry.Axis | ~build123d.geometry.Location | ~build123d.geometry.Plane | ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConstrainedArcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, tangency_two: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, *, radius: float, sagitta: Sagitta = Sagitta.SHORT, selector: Callable[[ShapeList[Edge]], Edge | ShapeList[Edge]] = lambda arcs: ..., mode: Mode = Mode.ADD)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConstrainedArcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, tangency_two: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, *, center_on: Axis | Edge, sagitta: Sagitta = Sagitta.SHORT, selector: Callable[[ShapeList[Edge]], Edge | ShapeList[Edge]] = lambda arcs: ..., mode: Mode = Mode.ADD)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConstrainedArcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, tangency_two: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, tangency_three: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, *, sagitta: Sagitta = Sagitta.SHORT, selector: Callable[[ShapeList[Edge]], Edge | ShapeList[Edge]] = lambda arcs: ..., mode: Mode = Mode.ADD)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConstrainedArcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, *, center: VectorLike, selector: Callable[[ShapeList[Edge]], Edge | ShapeList[Edge]] = lambda arcs: ..., mode: Mode = Mode.ADD)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConstrainedArcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, *, radius: float, center_on: Edge, selector: Callable[[ShapeList[Edge]], Edge | ShapeList[Edge]] = lambda arcs: ..., mode: Mode = Mode.ADD)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConstrainedLines(tangency_one: tuple[Edge, Tangency] | Axis | Edge, tangency_two: tuple[Edge, Tangency] | Axis | Edge, *, selector: Callable[[ShapeList[Edge]], Edge | ShapeList[Edge]] = lambda lines: ..., mode: Mode = Mode.ADD)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConstrainedLines(tangency_one: tuple[Edge, Tangency] | Edge, tangency_two: VectorLike, *, selector: Callable[[ShapeList[Edge]], Edge | ShapeList[Edge]] = lambda lines: ..., mode: Mode = Mode.ADD)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConstrainedLines(tangency_one: tuple[Edge, Tangency] | Edge, tangency_two: Axis, *, angle: float | None = None, direction: VectorLike | None = None, selector: Callable[[ShapeList[Edge]], Edge | ShapeList[Edge]] = lambda lines: ..., mode: Mode = Mode.ADD)` - class; see [api-objects.md](api-objects.md).
+- `*class* DoubleTangentArc(pnt: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], tangent: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], other: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, keep: ~build123d.build_enums.Keep = <Keep.TOP>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* EllipticalCenterArc(center: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], x_radius: float, y_radius: float, start_angle: float = 0.0, end_angle: float | None = None, *, arc_size: float | ~build123d.topology.shape_core.Shape | ~build123d.geometry.Axis | ~build123d.geometry.Location | ~build123d.geometry.Plane | ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] = 90.0, rotation: float = 0.0, angular_direction: ~build123d.build_enums.AngularDirection | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* EllipticalStartArc(start_pnt: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], start_tangent: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], x_radius: float, y_radius: float, arc_size: float, *, start_angle: float | None = None, major_axis_dir: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* ParabolicCenterArc(vertex: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], focal_length: float, start_angle: float = 0.0, end_angle: float = 90.0, rotation: float = 0.0, angular_direction: ~build123d.build_enums.AngularDirection = <AngularDirection.COUNTER_CLOCKWISE>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* HyperbolicCenterArc(center: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], x_radius: float, y_radius: float, start_angle: float = 0.0, end_angle: float = 90.0, rotation: float = 0.0, angular_direction: ~build123d.build_enums.AngularDirection = <AngularDirection.COUNTER_CLOCKWISE>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* FilletPolyline(*pts: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]], radius: float | ~collections.abc.Iterable[float], close: bool = False, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Helix(pitch: float, height: float, radius: float, center: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] = (0, 0, 0), direction: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] = (0, 0, 1), cone_angle: float = 0, lefthand: bool = False, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* IntersectingLine(start: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], direction: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], other: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* JernArc(start: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], tangent: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], radius: float, arc_size: float | ~build123d.topology.shape_core.Shape | ~build123d.geometry.Axis | ~build123d.geometry.Location | ~build123d.geometry.Plane | ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Line(*pts: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]], mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* PolarLine(start: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], length: float | ~build123d.topology.shape_core.Shape | ~build123d.geometry.Axis | ~build123d.geometry.Location | ~build123d.geometry.Plane | ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], angle: float | None = None, direction: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | None = None, length_mode: ~build123d.build_enums.LengthMode = <LengthMode.DIAGONAL>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Polyline(*pts: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]], close: bool = False, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* RadiusArc(start_point: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], end_point: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], radius: float, short_sagitta: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* SagittaArc(start_point: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], end_point: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], sagitta: float, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Spline(*pts: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]], tangents: ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]] | None = None, tangent_scalars: ~collections.abc.Iterable[float] | None = None, periodic: bool = False, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* TangentArc(*pts: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]], tangent: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], tangent_from_first: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* ThreePointArc(*pts: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]], mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* ArcArcTangentLine(start_arc: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, end_arc: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, side: ~build123d.build_enums.Side = <Side.LEFT>, keep: ~build123d.build_enums.Keep = <Keep.INSIDE>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* ArcArcTangentArc(start_arc: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, end_arc: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, radius: float, side: ~build123d.build_enums.Side = <Side.LEFT>, keep: ~build123d.build_enums.Keep | tuple[~build123d.build_enums.Keep, ~build123d.build_enums.Keep] = (<Keep.INSIDE>, <Keep.INSIDE>), short_sagitta: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* PointArcTangentLine(point: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], arc: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, side: ~build123d.build_enums.Side = <Side.LEFT>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* PointArcTangentArc(point: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], direction: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], arc: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, side: ~build123d.build_enums.Side = <Side.LEFT>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* BaseSketchObject(obj: ~build123d.topology.composite.Compound | ~build123d.topology.two_d.Face, rotation: float = 0, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Arrow(arrow_size: float, shaft_path: ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, shaft_width: float, head_at_start: bool = True, head_type: ~build123d.build_enums.HeadType = <HeadType.CURVED>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* ArrowHead(size: float, head_type: ~build123d.build_enums.HeadType = <HeadType.CURVED>, rotation: float = 0, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Circle(radius: float, arc_size: float = 360.0, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = (<Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* DimensionLine(path: ~build123d.topology.one_d.Wire | ~build123d.topology.one_d.Edge | list[~build123d.geometry.Vector | ~build123d.topology.zero_d.Vertex | tuple[float, float, float]], draft: ~drafting.Draft, sketch: ~build123d.topology.composite.Sketch | None = None, label: str | None = None, arrows: tuple[bool, bool] = (True, True), tolerance: float | tuple[float, float] | None = None, label_angle: bool = False, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `DimensionLine.dimension` - method/function; see [api-objects.md](api-objects.md).
+- `*class* Ellipse(x_radius: float, y_radius: float, rotation: float = 0, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = (<Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* ExtensionLine(border: ~build123d.topology.one_d.Wire | ~build123d.topology.one_d.Edge | list[~build123d.geometry.Vector | ~build123d.topology.zero_d.Vertex | tuple[float, float, float]], offset: float, draft: ~drafting.Draft, sketch: ~build123d.topology.composite.Sketch | None = None, label: str | None = None, arrows: tuple[bool, bool] = (True, True), tolerance: float | tuple[float, float] | None = None, label_angle: bool = False, measurement_direction: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `ExtensionLine.dimension` - method/function; see [api-objects.md](api-objects.md).
+- `*class* Polygon(*pts: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]], rotation: float = 0, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = (<Align.NONE>, <Align.NONE>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Rectangle(width: float, height: float, rotation: float = 0, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = (<Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* RectangleRounded(width: float, height: float, radius: float, rotation: float = 0, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = (<Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* RegularPolygon(radius: float, side_count: int, major_radius: bool = True, rotation: float = 0, align: tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `RegularPolygon.apothem *: float*` - property/enum; see [api-objects.md](api-objects.md).
+- `RegularPolygon.radius *: float*` - property/enum; see [api-objects.md](api-objects.md).
+- `*class* SlotArc(arc: ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire, height: float, rotation: float = 0, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* SlotCenterPoint(center: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], point: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], height: float, rotation: float = 0, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* SlotCenterToCenter(center_separation: float, height: float, rotation: float = 0, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* SlotOverall(width: float, height: float, rotation: float = 0, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = (<Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* TechnicalDrawing(designed_by: str = 'build123d', design_date: ~datetime.date | None = None, page_size: ~build123d.build_enums.PageSize = <PageSize.A4>, title: str = 'Title', sub_title: str = 'Sub Title', drawing_number: str = 'B3D-1', sheet_number: int | None = None, drawing_scale: float = 1.0, nominal_text_size: float = 10.0, line_width: float = 0.5, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Text(txt: str, font_size: float, font: str = 'Arial', font_path: ~os.PathLike[str] | str | None = None, font_style: ~build123d.build_enums.FontStyle = <FontStyle.REGULAR>, text_align: tuple[~build123d.build_enums.TextAlign, ~build123d.build_enums.TextAlign] = (<TextAlign.CENTER>, <TextAlign.CENTER>), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = None, path: ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | None = None, position_on_path: float = 0.0, single_line_width: float | None = None, rotation: float = 0.0, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Trapezoid(width: float, height: float, left_side_angle: float, right_side_angle: float | None = None, rotation: float = 0, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = (<Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Triangle(*, a: float | None = None, b: float | None = None, c: float | None = None, A: float | None = None, B: float | None = None, C: float | None = None, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = None, rotation: float = 0, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `Triangle.A` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.B` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.C` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.a` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.b` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.c` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.edge_a` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.edge_b` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.edge_c` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.vertex_A` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.vertex_B` - method/function; see [api-objects.md](api-objects.md).
+- `Triangle.vertex_C` - method/function; see [api-objects.md](api-objects.md).
+- `*class* BasePartObject(part: ~build123d.topology.composite.Part | ~build123d.topology.three_d.Solid, rotation: ~build123d.geometry.Rotation | tuple[float, float, float] = (0, 0, 0), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Box(length: float, width: float, height: float, rotation: ~build123d.geometry.Rotation | tuple[float, float, float] = (0, 0, 0), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Cone(bottom_radius: float, top_radius: float, height: float, arc_size: float = 360, rotation: ~build123d.geometry.Rotation | tuple[float, float, float] = (0, 0, 0), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* ConvexPolyhedron(points: ~collections.abc.Iterable[~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float]], rotation: ~build123d.geometry.Rotation | tuple[float, float, float] = (0, 0, 0), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = <Align.NONE>, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* CounterBoreHole(radius: float, counter_bore_radius: float, counter_bore_depth: float, depth: float | None = None, mode: ~build123d.build_enums.Mode = <Mode.SUBTRACT>)` - class; see [api-objects.md](api-objects.md).
+- `*class* CounterSinkHole(radius: float, counter_sink_radius: float, depth: float | None = None, counter_sink_angle: float = 82, mode: ~build123d.build_enums.Mode = <Mode.SUBTRACT>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Cylinder(radius: float, height: float, arc_size: float = 360, rotation: ~build123d.geometry.Rotation | tuple[float, float, float] = (0, 0, 0), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Hole(radius: float, depth: float | None = None, mode: ~build123d.build_enums.Mode = <Mode.SUBTRACT>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Sphere(radius: float, arc_size1: float = -90, arc_size2: float = 90, arc_size3: float = 360, rotation: ~build123d.geometry.Rotation | tuple[float, float, float] = (0, 0, 0), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Torus(major_radius: float, minor_radius: float, minor_start_angle: float = 0, minor_end_angle: float = 360, major_angle: float = 360, rotation: ~build123d.geometry.Rotation | tuple[float, float, float] = (0, 0, 0), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+- `*class* Wedge(xsize: float, ysize: float, zsize: float, xmin: float, zmin: float, xmax: float, zmax: float, rotation: ~build123d.geometry.Rotation | tuple[float, float, float] = (0, 0, 0), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>, <Align.CENTER>), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-objects.md](api-objects.md).
+
+## Operations
+
+- `add(objects: ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.two_d.Face | ~build123d.topology.three_d.Solid | ~build123d.topology.composite.Compound | ~build123d.build_common.Builder | ~collections.abc.Iterable[~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.two_d.Face | ~build123d.topology.three_d.Solid | ~build123d.topology.composite.Compound | ~build123d.build_common.Builder], rotation: float | ~build123d.geometry.Rotation | tuple[float, float, float] | None = None, clean: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Compound` - function/class overload; see [api-operations.md](api-operations.md).
+- `bounding_box(objects: ~build123d.topology.shape_core.Shape | ~collections.abc.Iterable[~build123d.topology.shape_core.Shape] | None = None, mode: ~build123d.build_enums.Mode = <Mode.PRIVATE>) → Sketch | Part` - function/class overload; see [api-operations.md](api-operations.md).
+- `chamfer(objects: Edge | Vertex | Iterable[Edge | Vertex], length: float, length2: float | None = None, angle: float | None = None, reference: Edge | Face | None = None) → Sketch | Part` - function/class overload; see [api-operations.md](api-operations.md).
+- `draft(faces: Face | Iterable[Face], neutral_plane: Plane, angle: float) → Part` - function/class overload; see [api-operations.md](api-operations.md).
+- `extrude(to_extrude: ~build123d.topology.two_d.Face | ~build123d.topology.composite.Sketch | None = None, amount: float | None = None, dir: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | None = None, until: ~build123d.build_enums.Until | None = None, target: ~build123d.topology.composite.Compound | ~build123d.topology.three_d.Solid | None = None, both: bool = False, taper: float = 0.0, clean: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Part` - function/class overload; see [api-operations.md](api-operations.md).
+- `fillet(objects: Edge | Vertex | Iterable[Edge | Vertex], radius: float) → Sketch | Part | Curve` - function/class overload; see [api-operations.md](api-operations.md).
+- `full_round(edge: ~build123d.topology.one_d.Edge, invert: bool = False, voronoi_point_count: int = 100, mode: ~build123d.build_enums.Mode = <Mode.REPLACE>) → tuple[Sketch, Vector, float]` - function/class overload; see [api-operations.md](api-operations.md).
+- `loft(sections: ~build123d.topology.two_d.Face | ~build123d.topology.composite.Sketch | ~collections.abc.Iterable[~build123d.topology.zero_d.Vertex | ~build123d.topology.two_d.Face | ~build123d.topology.composite.Sketch] | None = None, ruled: bool = False, clean: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Part` - function/class overload; see [api-operations.md](api-operations.md).
+- `make_brake_formed(thickness: float, station_widths: float | ~collections.abc.Iterable[float], line: ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.composite.Curve | None = None, side: ~build123d.build_enums.Side = <Side.LEFT>, kind: ~build123d.build_enums.Kind = <Kind.ARC>, clean: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Part` - function/class overload; see [api-operations.md](api-operations.md).
+- `make_face(edges: ~build123d.topology.one_d.Edge | ~collections.abc.Iterable[~build123d.topology.one_d.Edge] | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Sketch` - function/class overload; see [api-operations.md](api-operations.md).
+- `make_hull(edges: ~build123d.topology.one_d.Edge | ~collections.abc.Iterable[~build123d.topology.one_d.Edge] | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Sketch` - function/class overload; see [api-operations.md](api-operations.md).
+- `mirror(objects: ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.two_d.Face | ~build123d.topology.composite.Compound | ~build123d.topology.composite.Curve | ~build123d.topology.composite.Sketch | ~build123d.topology.composite.Part | ~collections.abc.Iterable[~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.two_d.Face | ~build123d.topology.composite.Compound | ~build123d.topology.composite.Curve | ~build123d.topology.composite.Sketch | ~build123d.topology.composite.Part] | None = None, about: ~build123d.geometry.Plane = Plane((0, 0, 0), (1, 0, 0), (0, -1, 0)), mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Curve | Sketch | Part | Compound` - function/class overload; see [api-operations.md](api-operations.md).
+- `offset(objects: ~build123d.topology.one_d.Edge | ~build123d.topology.two_d.Face | ~build123d.topology.three_d.Solid | ~build123d.topology.composite.Compound | ~collections.abc.Iterable[~build123d.topology.one_d.Edge | ~build123d.topology.two_d.Face | ~build123d.topology.three_d.Solid | ~build123d.topology.composite.Compound] | None = None, amount: float = 0, openings: ~build123d.topology.two_d.Face | list[~build123d.topology.two_d.Face] | None = None, kind: ~build123d.build_enums.Kind = <Kind.ARC>, side: ~build123d.build_enums.Side = <Side.BOTH>, closed: bool = True, min_edge_length: float | None = None, mode: ~build123d.build_enums.Mode = <Mode.REPLACE>) → Curve | Sketch | Part | Compound` - function/class overload; see [api-operations.md](api-operations.md).
+- `project(objects: ~build123d.topology.one_d.Edge | ~build123d.topology.two_d.Face | ~build123d.topology.one_d.Wire | ~build123d.geometry.Vector | ~build123d.topology.zero_d.Vertex | ~collections.abc.Iterable[~build123d.topology.one_d.Edge | ~build123d.topology.two_d.Face | ~build123d.topology.one_d.Wire | ~build123d.geometry.Vector | ~build123d.topology.zero_d.Vertex] | None = None, workplane: ~build123d.geometry.Plane | None = None, target: ~build123d.topology.three_d.Solid | ~build123d.topology.composite.Compound | ~build123d.topology.composite.Part | None = None, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Curve | Sketch | Compound | ShapeList[Vector]` - function/class overload; see [api-operations.md](api-operations.md).
+- `project_workplane(origin: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | Vertex, x_dir: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | Vertex, projection_dir: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], distance: float) → Plane` - function/class overload; see [api-operations.md](api-operations.md).
+- `revolve(profiles: ~build123d.topology.two_d.Face | ~collections.abc.Iterable[~build123d.topology.two_d.Face] | None = None, axis: ~build123d.geometry.Axis = Axis((0, 0, 0), (0, 0, 1)), revolution_arc: float = 360.0, clean: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Part` - function/class overload; see [api-operations.md](api-operations.md).
+- `scale(objects: ~build123d.topology.shape_core.Shape | ~collections.abc.Iterable[~build123d.topology.shape_core.Shape] | None = None, by: float | tuple[float, float, float] = 1, mode: ~build123d.build_enums.Mode = <Mode.REPLACE>) → Curve | Sketch | Part | Compound` - function/class overload; see [api-operations.md](api-operations.md).
+- `section(obj: ~build123d.topology.composite.Part | None = None, section_by: ~build123d.geometry.Plane | ~collections.abc.Iterable[~build123d.geometry.Plane] = Plane((0, 0, 0), (1, 0, 0), (0, -1, 0)), height: float = 0.0, clean: bool = True, mode: ~build123d.build_enums.Mode = <Mode.PRIVATE>) → Sketch` - function/class overload; see [api-operations.md](api-operations.md).
+- `split(objects: ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.two_d.Face | ~build123d.topology.three_d.Solid | ~collections.abc.Iterable[~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.two_d.Face | ~build123d.topology.three_d.Solid] | None = None, bisect_by: ~build123d.geometry.Plane | ~build123d.topology.two_d.Face | ~build123d.topology.two_d.Shell = Plane((0, 0, 0), (1, 0, 0), (0, -1, 0)), keep: ~build123d.build_enums.Keep = <Keep.TOP>, mode: ~build123d.build_enums.Mode = <Mode.REPLACE>)` - function/class overload; see [api-operations.md](api-operations.md).
+- `sweep(sections: ~build123d.topology.composite.Compound | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.two_d.Face | ~build123d.topology.three_d.Solid | ~collections.abc.Iterable[~build123d.topology.composite.Compound | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~build123d.topology.two_d.Face | ~build123d.topology.three_d.Solid] | None = None, path: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~collections.abc.Iterable[~build123d.topology.one_d.Edge] | None = None, multisection: bool = False, is_frenet: bool = False, transition: ~build123d.build_enums.Transition = <Transition.TRANSFORMED>, normal: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | None = None, binormal: ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | None = None, clean: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Part | Sketch` - function/class overload; see [api-operations.md](api-operations.md).
+- `thicken(to_thicken: ~build123d.topology.two_d.Face | ~build123d.topology.composite.Sketch | None = None, amount: float | None = None, normal_override: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | None = None, both: bool = False, clean: bool = True, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Part` - function/class overload; see [api-operations.md](api-operations.md).
+- `trace(lines: ~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire | ~collections.abc.Iterable[~build123d.topology.composite.Curve | ~build123d.topology.one_d.Edge | ~build123d.topology.one_d.Wire] | None = None, line_width: float = 1, mode: ~build123d.build_enums.Mode = <Mode.ADD>) → Sketch` - function/class overload; see [api-operations.md](api-operations.md).
+- `edge(self, select: ~build123d.build_enums.Select = <Select.ALL>) → Edge` - function/class overload; see [api-operations.md](api-operations.md).
+- `edges(self, select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Edge]` - function/class overload; see [api-operations.md](api-operations.md).
+- `face(self, select: ~build123d.build_enums.Select = <Select.ALL>) → Face` - function/class overload; see [api-operations.md](api-operations.md).
+- `faces(self, select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Face]` - function/class overload; see [api-operations.md](api-operations.md).
+- `solid(self, select: ~build123d.build_enums.Select = <Select.ALL>) → Solid` - function/class overload; see [api-operations.md](api-operations.md).
+- `solids(self, select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Solid]` - function/class overload; see [api-operations.md](api-operations.md).
+- `vertex(self, select: ~build123d.build_enums.Select = <Select.ALL>) → Vertex` - function/class overload; see [api-operations.md](api-operations.md).
+- `vertices(self, select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Vertex]` - function/class overload; see [api-operations.md](api-operations.md).
+- `wire(self, select: ~build123d.build_enums.Select = <Select.ALL>) → Wire` - function/class overload; see [api-operations.md](api-operations.md).
+- `wires(self, select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Wire]` - function/class overload; see [api-operations.md](api-operations.md).
+
+## Builder API, Locations, Enums
+
+- `Builder.vertices(select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Vertex]` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Builder.faces(select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Face]` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Builder.edges(select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Edge]` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Builder.wires(select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Wire]` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Builder.solids(select: ~build123d.build_enums.Select = <Select.ALL>) → ShapeList[Solid]` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* Align(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Align.CENTER *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Align.MAX *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Align.MIN *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Align.NONE *= None*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* CenterOf(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `CenterOf.BOUNDING_BOX *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `CenterOf.GEOMETRY *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `CenterOf.MASS *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* FontStyle(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `FontStyle.BOLD *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `FontStyle.BOLDITALIC *= 4*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `FontStyle.ITALIC *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `FontStyle.REGULAR *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* GeomType(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.BEZIER *= 6*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.BSPLINE *= 7*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.CIRCLE *= 12*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.CONE *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.CYLINDER *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.ELLIPSE *= 13*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.EXTRUSION *= 9*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.HYPERBOLA *= 14*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.LINE *= 11*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.OFFSET *= 10*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.OTHER *= 16*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.PARABOLA *= 15*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.PLANE *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.REVOLUTION *= 8*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.SPHERE *= 4*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GeomType.TORUS *= 5*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* Keep(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Keep.ALL *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Keep.BOTH *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Keep.BOTTOM *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Keep.INSIDE *= 4*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Keep.OUTSIDE *= 5*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Keep.TOP *= 6*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* Kind(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Kind.ARC *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Kind.INTERSECTION *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Kind.TANGENT *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* Mode(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Mode.ADD *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Mode.INTERSECT *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Mode.PRIVATE *= 5*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Mode.REPLACE *= 4*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Mode.SUBTRACT *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* Select(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Select.ALL *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Select.LAST *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Select.NEW *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* SortBy(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `SortBy.AREA *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `SortBy.DISTANCE *= 5*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `SortBy.LENGTH *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `SortBy.RADIUS *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `SortBy.VOLUME *= 4*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* Transition(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Transition.RIGHT *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Transition.ROUND *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Transition.TRANSFORMED *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* Until(*values)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Until.FIRST *= 4*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Until.LAST *= 2*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Until.NEXT *= 1*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Until.PREVIOUS *= 3*` - property/enum; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* Locations(*pts: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | Vertex | Location | Face | Plane | Axis | Iterable[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | Vertex | Location | Face | Plane | Axis])` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `Locations.local_locations` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* GridLocations(x_spacing: float, y_spacing: float, x_count: int, y_count: int, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>))` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GridLocations.local_locations` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GridLocations.max` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GridLocations.min` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `GridLocations.size` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* HexLocations(radius: float, x_count: int, y_count: int, major_radius: bool = False, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] = (<Align.CENTER>, <Align.CENTER>))` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `HexLocations.local_locations` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `*class* PolarLocations(radius: float, count: int, start_angle: float = 0.0, angular_range: float = 360.0, rotate: bool = True, endpoint: bool = False)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `PolarLocations.local_locations` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+
+## BuildLine
+
+- `*class* BuildLine(workplane: ~build123d.topology.two_d.Face | ~build123d.geometry.Plane | ~build123d.geometry.Location = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `BuildLine.face(*args)` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `BuildLine.faces(*args)` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `BuildLine.solid(*args)` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `BuildLine.solids(*args)` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+
+## BuildSketch
+
+- `*class* BuildSketch(*workplanes: ~build123d.topology.two_d.Face | ~build123d.geometry.Plane | ~build123d.geometry.Location, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `BuildSketch.consolidate_edges() → Wire | list[Wire]` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `BuildSketch.solid(*args)` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+- `BuildSketch.solids(*args)` - method/function; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+
+## BuildPart
+
+- `*class* BuildPart(*workplanes: ~build123d.topology.two_d.Face | ~build123d.geometry.Plane | ~build123d.geometry.Location, mode: ~build123d.build_enums.Mode = <Mode.ADD>)` - class; see [api-builders-locations-enums.md](api-builders-locations-enums.md).
+
+## Direct API
+
+## Direct API Factory And Class Methods
+
+- `Compound.cast(obj: TopoDS_Shape) → Vertex | Edge | Wire | Face | Shell | Solid | Compound` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.extrude(obj: Shell, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Compound` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.make_text(txt: str, font_size: float, font: str = 'Arial', font_path: ~os.PathLike[str] | str | None = None, font_style: ~build123d.build_enums.FontStyle = <FontStyle.REGULAR>, text_align: tuple[~build123d.build_enums.TextAlign, ~build123d.build_enums.TextAlign] = (<TextAlign.CENTER>, <TextAlign.CENTER>), align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = None, position_on_path: float = 0.0, text_path: ~topology.one_d.Edge | ~topology.one_d.Wire | None = None, single_line_width: float = 0.0) → Compound` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.make_triad(axes_scale: float) → Compound` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.extrude(obj: Vertex, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_bezier(\*cntl_pnts: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], weights: list[float] | None = None) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_circle(radius: float, plane: ~build123d.geometry.Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), start_angle: float = 360.0, end_angle: float = 360, angular_direction: ~build123d.build_enums.AngularDirection = <AngularDirection.COUNTER_CLOCKWISE>) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_constrained_arcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, tangency_two: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, \*, radius: float, sagitta: Sagitta = Sagitta.SHORT) → ShapeList[Edge]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_constrained_arcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, tangency_two: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, \*, center_on: Axis | Edge, sagitta: Sagitta = Sagitta.SHORT) → ShapeList[Edge]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_constrained_arcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, tangency_two: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, tangency_three: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, \*, sagitta: Sagitta = Sagitta.SHORT) → ShapeList[Edge]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_constrained_arcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, \*, center: VectorLike) → ShapeList[Edge]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_constrained_arcs(tangency_one: tuple[Axis | Edge, Tangency] | Axis | Edge | Vertex | VectorLike, \*, radius: float, center_on: Edge) → ShapeList[Edge]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_constrained_lines(tangency_one: tuple[Edge, Tangency] | Axis | Edge, tangency_two: tuple[Edge, Tangency] | Axis | Edge) → ShapeList[Edge]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_constrained_lines(tangency_one: tuple[Edge, Tangency] | Edge, tangency_two: Vector) → ShapeList[Edge]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_constrained_lines(tangency_one: tuple[Edge, Tangency] | Edge, tangency_two: Axis, \*, angle: float | None = None, direction: VectorLike | None = None) → ShapeList[Edge]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_ellipse(x_radius: float, y_radius: float, plane: ~build123d.geometry.Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), start_angle: float = 360.0, end_angle: float = 360.0, angular_direction: ~build123d.build_enums.AngularDirection = <AngularDirection.COUNTER_CLOCKWISE>) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_helix(pitch: float, height: float, radius: float, center: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 0), normal: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 1), angle: float = 0.0, lefthand: bool = False) → Wire` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_hyperbola(x_radius: float, y_radius: float, plane: ~build123d.geometry.Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), start_angle: float = 360.0, end_angle: float = 360.0, angular_direction: ~build123d.build_enums.AngularDirection = <AngularDirection.COUNTER_CLOCKWISE>) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_line(point1: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], point2: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_mid_way(first: Edge, second: Edge, middle: float = 0.5) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_parabola(focal_length: float, plane: ~build123d.geometry.Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), start_angle: float = 0.0, end_angle: float = 90.0, angular_direction: ~build123d.build_enums.AngularDirection = <AngularDirection.COUNTER_CLOCKWISE>) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_spline(points: list[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]], tangents: list[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]] | None = None, periodic: bool = False, parameters: list[float] | None = None, scale: bool = True, tol: float = 1e-06) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_spline_approx(points: list[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]], tol: float = 0.001, smoothing: tuple[float, float, float] | None = None, min_deg: int = 1, max_deg: int = 6) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_tangent_arc(start: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], tangent: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], end: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.make_three_point_arc(point1: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], point2: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], point3: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Edge` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.extrude(obj: Edge, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_bezier_surface(points: list[list[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]]], weights: list[list[float]] | None = None) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_gordon_surface(profiles: Iterable[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | Edge], guides: Iterable[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | Edge], tolerance: float = 0.0003) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_plane(plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_rect(width: float, height: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_surface(exterior: Wire | Iterable[Edge], surface_points: Iterable[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]] | None = None, interior_wires: Iterable[Wire] | None = None) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_surface_from_array_of_points(points: list[list[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]]], tol: float = 0.01, smoothing: tuple[float, float, float] | None = None, min_deg: int = 1, max_deg: int = 3) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_surface_from_curves(edge1: Edge, edge2: Edge) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_surface_from_curves(wire1: Wire, wire2: Wire) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_surface_patch(edge_face_constraints: Iterabletuple[[Edge, Face, ContinuityLevel]] | None = None, edge_constraints: Iterable[Edge] | None = None, point_constraints: Iterable[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]] | None = None) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.revolve(profile: Edge, angle: float, axis: Axis) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.sew_faces(faces: Iterable[Face]) → list[ShapeList[Face]]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.sweep(profile: Curve | Edge | Wire, path: Curve | Edge | Wire, transition=<Transition.TRANSFORMED>) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Shell.extrude(obj: Wire, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Shell` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Shell.make_loft(objs: Iterable[Vertex | Wire], ruled: bool = False) → Shell` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Shell.revolve(profile: Curve | Wire, angle: float, axis: Axis) → Face` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Shell.sweep(profile: Curve | Edge | Wire, path: Curve | Edge | Wire, transition=<Transition.TRANSFORMED>) → Shell` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.extrude(obj: Face, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.extrude_linear_with_rotation(section: Face | Wire, center: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], normal: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], angle: float, inner_wires: list[Wire] | None = None) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.extrude_taper(profile: Face, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], taper: float, flip_inner: bool = True) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.extrude_until(profile: Face, target: Compound | Solid, direction: VectorLike, until: Until = <Until.NEXT>) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.from_bounding_box(bbox: BoundBox | OrientedBoundBox) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.make_box(length: float, width: float, height: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.make_cone(base_radius: float, top_radius: float, height: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), angle: float = 360) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.make_cylinder(radius: float, height: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), angle: float = 360) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.make_loft(objs: Iterable[Vertex | Wire], ruled: bool = False) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.make_sphere(radius: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), angle1: float = -90, angle2: float = 90, angle3: float = 360) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.make_torus(major_radius: float, minor_radius: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), start_angle: float = 0, end_angle: float = 360, major_angle: float = 360) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.make_wedge(delta_x: float, delta_y: float, delta_z: float, min_x: float, min_z: float, max_x: float, max_z: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.revolve(section: Face | Wire, angle: float, axis: Axis, inner_wires: list[Wire] | None = None) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.sweep(section: ~topology.two_d.Face | ~topology.one_d.Wire, path: ~topology.one_d.Wire | ~topology.one_d.Edge, inner_wires: list[~topology.one_d.Wire] | None = None, make_solid: bool = True, is_frenet: bool = False, mode: ~build123d.geometry.Vector | ~topology.one_d.Wire | ~topology.one_d.Edge | None = None, transition: ~build123d.build_enums.Transition = <Transition.TRANSFORMED>) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.sweep_multi(profiles: Iterable[Wire | Face], path: Wire | Edge, make_solid: bool = True, is_frenet: bool = False, binormal: Vector | Wire | Edge | None = None) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.thicken(surface: Face | Shell, depth: float, normal_override: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None) → Solid` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.combine(wires: Iterable[Wire | Edge], tol: float = 1e-09) → ShapeList[Wire]` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.extrude(obj: Shape, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Wire` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.make_circle(radius: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))) → Wire` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.make_convex_hull(edges: Iterable[Edge], tolerance: float = 0.001) → Wire` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.make_ellipse(x_radius: float, y_radius: float, plane: ~build123d.geometry.Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)), start_angle: float = 360.0, end_angle: float = 360.0, angular_direction: ~build123d.build_enums.AngularDirection = <AngularDirection.COUNTER_CLOCKWISE>, closed: bool = True) → Wire` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.make_polygon(vertices: Iterable[Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]], close: bool = True) → Wire` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.make_rect(width: float, height: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))) → Wire` - classmethod; see [api-topology-direct.md](api-topology-direct.md).
+
+- `*class* Axis(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.angle_between(other: Axis) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.intersect(*args, **kwargs)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.is_coaxial(other: Axis, angular_tolerance: float = 1e-05, linear_tolerance: float = 1e-05) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.is_normal(other: Axis, angular_tolerance: float = 1e-05) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.is_opposite(other: Axis, angular_tolerance: float = 1e-05) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.is_parallel(other: Axis, angular_tolerance: float = 1e-05) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.is_skew(other: Axis, tolerance: float = 1e-05) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.located(new_location: Location)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.reverse() → Axis` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Axis.to_plane() → Plane` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* BoundBox(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `BoundBox.add(obj: tuple[float, float, float] | Vector | BoundBox, tol: float | None = None) → BoundBox` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `BoundBox.center() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `BoundBox.find_outside_box_2d(bb1: BoundBox, bb2: BoundBox) → BoundBox | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `BoundBox.is_inside(second_box: BoundBox) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `BoundBox.overlaps(other: BoundBox, tolerance: float = 1e-06) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `BoundBox.to_align_offset(align: Align | None | tuple[Align | None, Align | None] | tuple[Align | None, Align | None, Align | None]) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Color(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Location(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Location.center() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Location.intersect(*args, **kwargs)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Location.inverse() → Location` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Location.mirror(mirror_plane: Plane) → Location` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Location.to_axis() → Axis` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Location.to_tuple() → tuple[tuple[float, float, float], tuple[float, float, float]]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* LocationEncoder(*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `LocationEncoder.default(o: Location) → dict` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `LocationEncoder.location_hook(obj) → dict` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Pos(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Rot` - function/class overload; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Matrix(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Matrix.inverse() → Matrix` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Matrix.multiply(other)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Matrix.rotate(axis: Axis, angle: float)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Matrix.transposed_list() → Sequence[float]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Plane(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.contains(obj: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | Axis, tolerance: float = 1e-06) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.from_local_coords(obj: tuple | Vector | Any | BoundBox)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.get_topods_face_normal(face: TopoDS_Face) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.intersect(*args, **kwargs)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.location_between(other: Plane) → Location` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.move(loc: Location | Plane) → Plane` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.moved(loc: Location | Plane) → Plane` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.offset(amount: float) → Plane` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.reverse() → Plane` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.rotated(rotation: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 0), ordering: Extrinsic | Intrinsic | None = None) → Plane` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.shift_origin(locator: Axis | VectorLike | Vertex) → Plane` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.to_gp_ax2() → gp_Ax2` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Plane.to_local_coords(obj: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | Any | BoundBox)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Rotation(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Vector(*args, **kwargs)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.add(vec: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.center() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.cross(vec: Vector) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.distance_to_plane(plane: Plane) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.dot(vec: Vector) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.get_angle(vec: Vector) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.get_signed_angle(vec: Vector, normal: Vector | None = None) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.intersect(*args, **kwargs)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.multiply(scale: float) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.normalized() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.project_to_line(line: Vector) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.project_to_plane(plane: Plane) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.reverse() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.rotate(axis: Axis, angle: float) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.signed_distance_from_plane(plane: Plane) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.sub(vec: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.to_dir() → gp_Dir` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.to_pnt() → gp_Pnt` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.to_tuple() → tuple[float, float, float]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vector.transform(affine_transform: Matrix, is_direction: bool = False) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Compound(obj: TopoDS_Compound | Iterable[Shape] | None = None, label: str = '', color: Color | None = None, material: str = '', joints: dictstr, [Joint] | None = None, parent: Compound | None = None, children: Sequence[Shape] | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.center(center_of: ~build123d.build_enums.CenterOf = <CenterOf.MASS>) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.compound() → Compound | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.compounds() → ShapeList[Compound]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.do_children_intersect(include_parent: bool = False, tolerance: float = 1e-05) → tuplebool, tuple[[Shape | None, Shape | None], float]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.get_type(obj_type: type[Vertex] | type[Edge] | type[Face] | type[Shell] | type[Solid] | type[Wire]) → list[Vertex | Edge | Face | Shell | Solid | Wire]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.project_to_viewport(viewport_origin: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], viewport_up: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 1), look_at: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None, focus: float | None = None) → tuple[ShapeList[Edge], ShapeList[Edge]]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.touch(other: Shape, tolerance: float = 1e-06) → ShapeList[Vertex | Edge | Face]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Compound.unwrap(fully: bool = True) → Self | Shape` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Edge(obj: TopoDS_Edge | Axis | None | None = None, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.close() → Edge | Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.distribute_locations(count: int, start: float = 0.0, stop: float = 1.0, positions_only: bool = False) → list[Location]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.find_intersection_points(other: Axis | Edge | None = None, tolerance: float = 1e-06) → ShapeList[Vector]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.find_tangent(angle: float) → list[float]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.geom_adaptor() → BRepAdaptor_Curve` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.geom_equal(other: Edge, tol: float = 1e-06, num_interpolation_points: int = 5) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.param_at(position: float) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.param_at_point(point: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.project_to_shape(target_object: Shape, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None, center: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None) → ShapeList[Edge]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.reversed(reconstruct: bool = False) → Edge` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.to_axis() → Axis` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.to_wire() → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.trim(start: float | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], end: float | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Edge` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.trim_infinite(half_length: float) → Edge` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.trim_to_length(start: float | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], length: float) → Edge` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Edge.trim_to_other(other: Shape | Axis | Location | Plane | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Edge | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Face(obj: TopoDS_Face | Plane, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Face(outer_wire: Wire, inner_wires: Iterable[Wire] | None = None, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.center(center_of: ~build123d.build_enums.CenterOf = <CenterOf.GEOMETRY>) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.chamfer_2d(distance: float, distance2: float, vertices: Iterable[Vertex], edge: Edge | None = None) → Face` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.fillet_2d(radius: float, vertices: Iterable[Vertex]) → Face` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.geom_adaptor() → Geom_Surface` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.inner_wires() → ShapeList[Wire]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.is_coplanar(plane: Plane) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.is_inside(point: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], tolerance: float = 1e-06) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.location_at(surface_point: VectorLike | None = None, *, x_dir: VectorLike | None = None) → Location` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.location_at(u: float, v: float, *, x_dir: VectorLike | None = None) → Location` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.make_holes(interior_wires: list[Wire]) → Face` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.normal_at(surface_point: VectorLike | None = None) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.normal_at(u: float, v: float) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.outer_wire() → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.position_at(u: float, v: float) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.project_to_shape(target_object: Shape, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → ShapeList[Face | Shell]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.to_arcs(tolerance: float = 0.001) → Face` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.wire() → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.without_holes() → Face` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.wrap(planar_shape: Edge, surface_loc: Location, tolerance: float = 0.001, extension_factor: float = 0.1) → Edge` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.wrap(planar_shape: Wire, surface_loc: Location, tolerance: float = 0.001, extension_factor: float = 0.1) → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.wrap(planar_shape: Face, surface_loc: Location, tolerance: float = 0.001, extension_factor: float = 0.1) → Face` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Face.wrap_faces(faces: Iterable[Face], path: Wire | Edge, start: float = 0.0) → ShapeList[Face]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Mixin1D(obj: TopoDS_Shape | None = None, label: str = '', color: ColorLike | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.center(center_of: ~build123d.build_enums.CenterOf = <CenterOf.GEOMETRY>) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.common_plane(*lines: Edge | Wire | None, tolerance: float = 1e-06) → None | Plane` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.curvature_comb(count: int = 100, max_tooth_size: float | None = None) → ShapeList[Edge]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.derivative_at(position: float | ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float], order: int = 2, position_mode: ~build123d.build_enums.PositionMode = <PositionMode.PARAMETER>) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.end_point() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.location_at(distance: float, position_mode: ~build123d.build_enums.PositionMode = <PositionMode.PARAMETER>, frame_method: ~build123d.build_enums.FrameMethod = <FrameMethod.FRENET>, x_dir: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | None = None) → Location` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.locations(distances: ~collections.abc.Iterable[float], position_mode: ~build123d.build_enums.PositionMode = <PositionMode.PARAMETER>, frame_method: ~build123d.build_enums.FrameMethod = <FrameMethod.FRENET>, x_dir: ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] | None = None) → list[Location]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.normal() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.offset_2d(distance: float, kind: ~build123d.build_enums.Kind = <Kind.ARC>, side: ~build123d.build_enums.Side = <Side.BOTH>, closed: bool = True) → Edge | Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.perpendicular_line(length: float, u_value: float, plane: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))) → Edge` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.position_at(position: float, position_mode: ~build123d.build_enums.PositionMode = <PositionMode.PARAMETER>) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.positions(distances: ~collections.abc.Iterable[float] | None = None, position_mode: ~build123d.build_enums.PositionMode = <PositionMode.PARAMETER>, deflection: float | None = None) → list[Vector]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.project(face: Face, direction: VectorLike, closest: bool = True) → Edge | Wire | ShapeList[Edge | Wire]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.project_to_viewport(viewport_origin: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], viewport_up: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 1), look_at: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None, focus: float | None = None) → tuple[ShapeList[Edge], ShapeList[Edge]]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.start_point() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.tangent_angle_at(location_param: float = 0.5, position_mode: ~build123d.build_enums.PositionMode = <PositionMode.PARAMETER>, plane: ~build123d.geometry.Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1))) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin1D.tangent_at(position: float | ~build123d.geometry.Vector | tuple[float, float] | tuple[float, float, float] | ~collections.abc.Sequence[float] = 0.5, position_mode: ~build123d.build_enums.PositionMode = <PositionMode.PARAMETER>) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Mixin2D(obj: TopoDS_Shape | None = None, label: str = '', color: ColorLike | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin2D.find_intersection_points(other: Axis, tolerance: float = 1e-06) → list[tuple[Vector, Vector]]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin2D.offset(amount: float) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin2D.project_to_viewport(viewport_origin: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], viewport_up: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 1), look_at: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None, focus: float | None = None) → tuple[ShapeList[Edge], ShapeList[Edge]]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin2D.touch(other: Shape, tolerance: float = 1e-06, found_faces: ShapeList | None = None, found_edges: ShapeList | None = None) → ShapeList` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Mixin3D(obj: TopoDS_Shape | None = None, label: str = '', color: ColorLike | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.center(center_of: ~build123d.build_enums.CenterOf = <CenterOf.MASS>) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.chamfer(length: float, length2: float | None, edge_list: Iterable[Edge], face: Face | None = None) → Solid | Part` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.dprism(basis: Face | None, bounds: list[Face | Wire], depth: float | None = None, taper: float = 0, up_to_face: Face | None = None, thru_all: bool = True, additive: bool = True) → Solid` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.fillet(radius: float, edge_list: Iterable[Edge]) → Solid | Part` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.find_intersection_points(other: Axis, tolerance: float = 1e-06) → list[tuple[Vector, Vector]]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.hollow(faces: ~collections.abc.Iterable[~topology.two_d.Face] | None, thickness: float, tolerance: float = 0.0001, kind: ~build123d.build_enums.Kind = <Kind.ARC>) → Solid` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.is_inside(point: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], tolerance: float = 1e-06) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.max_fillet(edge_list: Iterable[Edge], tolerance=0.1, max_iterations: int = 10) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.offset_3d(openings: ~collections.abc.Iterable[~topology.two_d.Face] | None, thickness: float, tolerance: float = 0.0001, kind: ~build123d.build_enums.Kind = <Kind.ARC>) → Solid` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Mixin3D.project_to_viewport(viewport_origin: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], viewport_up: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 1), look_at: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None, focus: float | None = None) → tuple[ShapeList[Edge], ShapeList[Edge]]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Shape(obj: TopoDS_Shape | None = None, label: str = '', color: ColorLike | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.bounding_box(tolerance: float | None = None, optimal: bool = True) → BoundBox` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.clean() → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.closest_points(other: Shape | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → tuple[Vector, Vector]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.combined_center(objects: ~collections.abc.Iterable[~topology.shape_core.Shape], center_of: ~build123d.build_enums.CenterOf = <CenterOf.MASS>) → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.composite_factories *: ClassVardict[int | None, Callable[[Iterable[[Shape]], Shape]]]* *= {1: <class 'topology.composite.Curve'>, 2: <class 'topology.composite.Sketch'>, 3: <class 'topology.composite.Part'>, None: <class 'topology.composite.Compound'>}*` - property/enum; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.compound() → Compound | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.compounds() → ShapeList[Compound]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.compute_mass(obj: Shape) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.copy_attributes_to(target: Shape, exceptions: Iterable[str] | None = None)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.cut(*to_cut: Shape) → Self | Compound` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.distance(other: Shape) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.distance_to(other: Shape | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.distance_to_with_closest_points(other: Shape | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → tuple[float, Vector, Vector]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.distances(*others: Shape) → Iterator[float]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.edge() → Edge | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.edges() → ShapeList[Edge]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.entities(topo_type: Literal['Vertex', 'Edge', 'Wire', 'Face', 'Shell', 'Solid', 'Compound']) → list[TopoDS_Shape]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.face() → Face | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.faces() → ShapeList[Face]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.faces_intersected_by_axis(axis: Axis, tol: float = 0.0001) → ShapeList[Face]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.fix() → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.fuse(*to_fuse: Shape, glue: bool = False, tol: float | None = None) → Self | Compound` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.geom_LUT_EDGE *: dict[GeomAbs_CurveType, GeomType]* *= {<GeomAbs_CurveType.GeomAbs_BSplineCurve: 6>: <GeomType.BSPLINE>, <GeomAbs_CurveType.GeomAbs_BezierCurve: 5>: <GeomType.BEZIER>, <GeomAbs_CurveType.GeomAbs_Circle: 1>: <GeomType.CIRCLE>, <GeomAbs_CurveType.GeomAbs_Ellipse: 2>: <GeomType.ELLIPSE>, <GeomAbs_CurveType.GeomAbs_Hyperbola: 3>: <GeomType.HYPERBOLA>, <GeomAbs_CurveType.GeomAbs_Line: 0>: <GeomType.LINE>, <GeomAbs_CurveType.GeomAbs_OffsetCurve: 7>: <GeomType.OFFSET>, <GeomAbs_CurveType.GeomAbs_OtherCurve: 8>: <GeomType.OTHER>, <GeomAbs_CurveType.GeomAbs_Parabola: 4>: <GeomType.PARABOLA>}*` - property/enum; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.geom_LUT_FACE *: dict[GeomAbs_SurfaceType, GeomType]* *= {<GeomAbs_SurfaceType.GeomAbs_BSplineSurface: 6>: <GeomType.BSPLINE>, <GeomAbs_SurfaceType.GeomAbs_BezierSurface: 5>: <GeomType.BEZIER>, <GeomAbs_SurfaceType.GeomAbs_Cone: 2>: <GeomType.CONE>, <GeomAbs_SurfaceType.GeomAbs_Cylinder: 1>: <GeomType.CYLINDER>, <GeomAbs_SurfaceType.GeomAbs_OffsetSurface: 9>: <GeomType.OFFSET>, <GeomAbs_SurfaceType.GeomAbs_OtherSurface: 10>: <GeomType.OTHER>, <GeomAbs_SurfaceType.GeomAbs_Plane: 0>: <GeomType.PLANE>, <GeomAbs_SurfaceType.GeomAbs_Sphere: 3>: <GeomType.SPHERE>, <GeomAbs_SurfaceType.GeomAbs_SurfaceOfExtrusion: 8>: <GeomType.EXTRUSION>, <GeomAbs_SurfaceType.GeomAbs_SurfaceOfRevolution: 7>: <GeomType.REVOLUTION>, <GeomAbs_SurfaceType.GeomAbs_Torus: 4>: <GeomType.TORUS>}*` - property/enum; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.get_shape_list(shape: Shape, entity_type: Literal['Vertex', 'Edge', 'Wire', 'Face', 'Shell', 'Solid', 'Compound']) → ShapeList` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.get_single_shape(shape: Shape, entity_type: Literal['Vertex', 'Edge', 'Wire', 'Face', 'Shell', 'Solid', 'Compound']) → Shape | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.get_top_level_shapes() → ShapeList[Shape]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.intersect(*to_intersect: Shape | Vector | Location | Axis | Plane, tolerance: float = 1e-06, include_touched: bool = False) → ShapeList | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.is_equal(other: Shape) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.is_same(other: Shape) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.locate(loc: Location) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.located(loc: Location) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.mesh(tolerance: float, angular_tolerance: float = 0.1)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.mirror(mirror_plane: Plane | None = None) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.move(loc: Location) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.moved(loc: Location | Plane) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.oriented_bounding_box() → OrientedBoundBox` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.project_faces(faces: list[Face] | Compound, path: Wire | Edge, start: float = 0) → ShapeList[Face]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.radius_of_gyration(axis: Axis) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.relocate(loc: Location)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.rotate(axis: Axis, angle: float, transform: bool = False) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.scale(factor: float) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.shape_properties_LUT *: dict[TopAbs_ShapeEnum, Callable[[TopoDS_Shape, GProp_GProps], None] | None]* *= {<TopAbs_ShapeEnum.TopAbs_COMPOUND: 0>: <built-in method VolumeProperties_s of PyCapsule object>, <TopAbs_ShapeEnum.TopAbs_COMPSOLID: 1>: <built-in method VolumeProperties_s of PyCapsule object>, <TopAbs_ShapeEnum.TopAbs_EDGE: 6>: <built-in method LinearProperties_s of PyCapsule object>, <TopAbs_ShapeEnum.TopAbs_FACE: 4>: <built-in method SurfaceProperties_s of PyCapsule object>, <TopAbs_ShapeEnum.TopAbs_SHELL: 3>: <built-in method SurfaceProperties_s of PyCapsule object>, <TopAbs_ShapeEnum.TopAbs_SOLID: 2>: <built-in method VolumeProperties_s of PyCapsule object>, <TopAbs_ShapeEnum.TopAbs_VERTEX: 7>: None, <TopAbs_ShapeEnum.TopAbs_WIRE: 5>: <built-in method LinearProperties_s of PyCapsule object>}*` - property/enum; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.shell() → Shell | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.shells() → ShapeList[Shell]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.show_topology(limit_class: Literal['Compound', 'Edge', 'Face', 'Shell', 'Solid', 'Vertex', 'Wire'] = 'Vertex', show_center: bool | None = None) → str` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.solid() → Solid | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.solids() → ShapeList[Solid]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.split(tool: TrimmingTool, keep: Literal[Keep.TOP, Keep.BOTTOM]) → Self | list[Self] | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.split(tool: TrimmingTool, keep: Literal[Keep.ALL]) → list[Self]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.split(tool: TrimmingTool, keep: Literal[Keep.BOTH]) → tuple[Self | list[Self] | None, Self | list[Self] | None]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.split(tool: TrimmingTool, keep: Literal[Keep.INSIDE, Keep.OUTSIDE]) → None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.split(tool: TrimmingTool) → Self | list[Self] | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.split_by_perimeter(perimeter: Edge | Wire, keep: Literal[Keep.INSIDE, Keep.OUTSIDE]) → Face | Shell | ShapeList[Face] | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.split_by_perimeter(perimeter: Edge | Wire, keep: Literal[Keep.BOTH]) → tuple[Face | Shell | ShapeList[Face] | None, Face | Shell | ShapeList[Face] | None]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.split_by_perimeter(perimeter: Edge | Wire) → Face | Shell | ShapeList[Face] | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.tessellate(tolerance: float, angular_tolerance: float = 0.1) → tuple[list[Vector], list[tuple[int, int, int]]]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.to_splines(degree: int = 3, tolerance: float = 0.001, nurbs: bool = False) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.touch(other: Shape, tolerance: float = 1e-06) → ShapeList` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.transform_geometry(t_matrix: Matrix) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.transform_shape(t_matrix: Matrix) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.transformed(rotate: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 0), offset: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] = (0, 0, 0)) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.translate(vector: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], transform: bool = False) → Self` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.vertex() → Vertex | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.vertices() → ShapeList[Vertex]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.wire() → Wire | None` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shape.wires() → ShapeList[Wire]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* ShapeList(iterable=(), /)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.center() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.compound() → Compound` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.compounds() → ShapeList[Compound]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.edge() → Edge` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.edges() → ShapeList[Edge]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.expand() → ShapeList` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.face() → Face` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.faces() → ShapeList[Face]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.filter_by(filter_by: ShapePredicate | Axis | Plane | GeomType | property, reverse: bool = False, tolerance: float = 1e-05) → ShapeList[T]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.filter_by_position(axis: Axis, minimum: float, maximum: float, inclusive: tuple[bool, bool] = (True, True)) → ShapeList[T]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.group_by(group_by: Callable[[Shape], K] | Axis | Edge | Wire | SortBy | property = Axis((0, 0, 0), (0, 0, 1)), reverse=False, tol_digits=6) → GroupBy[T, K]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.shell() → Shell` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.shells() → ShapeList[Shell]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.solid() → Solid` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.solids() → ShapeList[Solid]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.sort_by(sort_by: Axis | Callable[[T], K] | Edge | Wire | SortBy | property = Axis((0, 0, 0), (0, 0, 1)), reverse: bool = False) → ShapeList[T]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.sort_by_distance(other: Shape | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], reverse: bool = False) → ShapeList[T]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.vertex() → Vertex` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.vertices() → ShapeList[Vertex]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.wire() → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `ShapeList.wires() → ShapeList[Wire]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Shell(obj: TopoDS_Shell | Face | Iterable[Face] | None = None, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Shell.center() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Shell.location_at(surface_point: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], *, x_dir: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None) → Location` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Solid(obj: TopoDS_Solid | Shell | None = None, label: str = '', color: Color | None = None, material: str = '', joints: dictstr, [Joint] | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.draft(faces: Iterable[Face], neutral_plane: Plane, angle: float) → Solid` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Solid.touch(other: Shape, tolerance: float = 1e-06, found_solids: ShapeList | None = None) → ShapeList[Vertex | Edge | Face]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Wire(obj: TopoDS_Wire, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Wire(edge: Edge, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Wire(wire: Wire, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Wire(wire: Curve, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Wire(edges: Iterable[Edge], sequenced: bool = False, label: str = '', color: Color | None = None, parent: Compound | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.chamfer_2d(distance: float, distance2: float, vertices: Iterable[Vertex], edge: Edge | None = None) → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.close() → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.edges() → ShapeList[Edge]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.fillet_2d(radius: float, vertices: Iterable[Vertex]) → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.fix_degenerate_edges(precision: float) → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.geom_adaptor() → BRepAdaptor_CompCurve` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.geom_equal(other: Wire, tol: float = 1e-06, num_interpolation_points: int = 5) → bool` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.order_chamfer_edges(reference_edge: Edge | None, edges: tuple[Edge, Edge]) → tuple[Edge, Edge]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.order_edges() → ShapeList[Edge]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.param_at(position: float) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.param_at_point(point: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → float` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.project_to_shape(target_object: Shape, direction: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None, center: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None) → ShapeList[Wire]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.stitch(other: Wire) → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.to_wire() → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Wire.trim(start: float | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float], end: float | Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float]) → Wire` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Vertex` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Vertex(ocp_vx: TopoDS_Vertex)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Vertex(X: float, Y: float, Z: float)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Vertex(v: Iterable[float])` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Vertex.center() → Vector` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vertex.split(tool: TrimmingTool, keep: Keep = <Keep.TOP>)` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vertex.to_tuple() → tuple[float, float, float]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vertex.transform_shape(t_matrix: Matrix) → Vertex` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vertex.vertex() → Vertex` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `Vertex.vertices() → ShapeList[Vertex]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Curve(obj: TopoDS_Compound | Iterable[Shape] | None = None, label: str = '', color: Color | None = None, material: str = '', joints: dictstr, [Joint] | None = None, parent: Compound | None = None, children: Sequence[Shape] | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `Curve.wires() → ShapeList[Wire]` - method/function; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Part(obj: TopoDS_Compound | Iterable[Shape] | None = None, label: str = '', color: Color | None = None, material: str = '', joints: dictstr, [Joint] | None = None, parent: Compound | None = None, children: Sequence[Shape] | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Sketch(obj: TopoDS_Compound | Iterable[Shape] | None = None, label: str = '', color: Color | None = None, material: str = '', joints: dictstr, [Joint] | None = None, parent: Compound | None = None, children: Sequence[Shape] | None = None)` - class; see [api-topology-direct.md](api-topology-direct.md).
+- `import_brep(file_name: PathLike | str | bytes) → Shape` - function/class overload; see [api-topology-direct.md](api-topology-direct.md).
+- `import_step(filename: PathLike | str | bytes) → Compound` - function/class overload; see [api-topology-direct.md](api-topology-direct.md).
+- `import_stl(file_name: ~os.PathLike | str | bytes, model_unit: ~build123d.build_enums.Unit = <Unit.MM>) → Face` - function/class overload; see [api-topology-direct.md](api-topology-direct.md).
+- `import_svg(svg_file: str | ~pathlib.Path | ~typing.TextIO, *, flip_y: bool = True, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = <Align.MIN>, ignore_visibility: bool = False, label_by: ~typing.Literal['id', 'class', 'inkscape:label'] | str = 'id', is_inkscape_label: bool | None = None) → ShapeList[Wire | Face]` - function/class overload; see [api-topology-direct.md](api-topology-direct.md).
+- `import_svg_as_buildline_code(file_name: PathLike | str | bytes, precision: int = 6) → tuple[str, str]` - function/class overload; see [api-topology-direct.md](api-topology-direct.md).
+- `*class* Joint(label: str, parent: BuildPart | Solid | Compound)` - class; see [api-topology-direct.md](api-topology-direct.md).
+
+## Assemblies
+
+- `pack(objects: Collection[Shape], padding: float, align_z: bool = False) → Collection[Shape]` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+
+## Joints
+
+- `*class* RigidJoint(label: str, to_part: Solid | Compound | None = None, joint_location: Location | None = None)` - class; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.connect_to(other: BallJoint, *, angles: RotationLike | None = None, **kwargs)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.connect_to(other: CylindricalJoint, *, position: float | None = None, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.connect_to(other: LinearJoint, *, position: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.connect_to(other: RevoluteJoint, *, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.connect_to(other: RigidJoint)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.relative_to(other: BallJoint, *, angles: RotationLike | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.relative_to(other: CylindricalJoint, *, position: float | None = None, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.relative_to(other: LinearJoint, *, position: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.relative_to(other: RevoluteJoint, *, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RigidJoint.relative_to(other: RigidJoint)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `*class* RevoluteJoint(label: str, to_part: Solid | Compound | None = None, axis: Axis = Axis((0, 0, 0), (0, 0, 1)), angle_reference: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None, angular_range: tuple[float, float] = (0, 360))` - class; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RevoluteJoint.connect_to(other: RigidJoint, *, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `RevoluteJoint.relative_to(other: RigidJoint, *, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `*class* LinearJoint(label: str, to_part: Solid | Compound | None = None, axis: Axis = Axis((0, 0, 0), (0, 0, 1)), linear_range: tuple[float, float] = (0, inf))` - class; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `LinearJoint.connect_to(other: RevoluteJoint, *, position: float | None = None, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `LinearJoint.connect_to(other: RigidJoint, *, position: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `LinearJoint.relative_to(other: RigidJoint, *, position: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `LinearJoint.relative_to(other: RevoluteJoint, *, position: float | None = None, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `*class* CylindricalJoint(label: str, to_part: Solid | Compound | None = None, axis: Axis = Axis((0, 0, 0), (0, 0, 1)), angle_reference: Vector | tuple[float, float] | tuple[float, float, float] | Sequence[float] | None = None, linear_range: tuple[float, float] = (0, inf), angular_range: tuple[float, float] = (0, 360))` - class; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `CylindricalJoint.connect_to(other: RigidJoint, *, position: float | None = None, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `CylindricalJoint.relative_to(other: RigidJoint, *, position: float | None = None, angle: float | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `*class* BallJoint(label: str, to_part: Solid | Compound | None = None, joint_location: Location | None = None, angular_range: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = ((0, 360), (0, 360), (0, 360)), angle_reference: Plane = Plane((0, 0, 0), (1, 0, 0), (0, 0, 1)))` - class; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `BallJoint.connect_to(other: RigidJoint, *, angles: Rotation | tuple[float, float, float] | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `BallJoint.relative_to(other: RigidJoint, *, angles: Rotation | tuple[float, float, float] | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+
+## Import/Export
+
+- `BREP` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `DXF` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `glTF` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `STL` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `STEP` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `SVG` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `LineType` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportDXF` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `*class* ExportDXF(version: str = 'AC1027', unit: ~build123d.build_enums.Unit = <Unit.MM>, color: ~exporters.ColorIndex | None = None, line_weight: float | None = None, line_type: ~exporters.LineType | None = None)` - class; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportDXF.METRIC_UNITS *= {<Unit.CM>, <Unit.M>, <Unit.MM>}*` - property/enum; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportDXF.add_layer(name: str, *, color: ColorIndex | None = None, line_weight: float | None = None, line_type: LineType | None = None) → Self` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportDXF.add_shape(shape: Shape | Iterable[Shape], layer: str = '') → Self` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportDXF.write(file_name: PathLike | str | bytes | BytesIO)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportSVG` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `*class* ExportSVG(unit: ~build123d.build_enums.Unit = <Unit.MM>, scale: float = 1, margin: float = 0, fit_to_stroke: bool = True, precision: int = 6, fill_color: ~exporters.ColorIndex | ~ezdxf.colors.RGB | ~build123d.geometry.Color | None = None, line_color: ~exporters.ColorIndex | ~ezdxf.colors.RGB | ~build123d.geometry.Color | None = ColorIndex.BLACK, line_weight: float = 0.09, line_type: ~exporters.LineType = LineType.CONTINUOUS, dot_length: ~exporters.DotLength | float = DotLength.INKSCAPE_COMPAT)` - class; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportSVG.add_layer(name: str, *, fill_color: ColorIndex | RGB | Color | None = None, line_color: ColorIndex | RGB | Color | None = ColorIndex.BLACK, line_weight: float = 0.09, line_type: LineType = LineType.CONTINUOUS) → Self` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportSVG.add_shape(shape: Shape | Iterable[Shape], layer: str = '', reverse_wires: bool = False)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `ExportSVG.write(path: PathLike | str | bytes | BytesIO)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `export_brep(to_export: Shape, file_path: PathLike | str | bytes | BytesIO | BinaryIO) → bool` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `export_gltf(to_export: ~build123d.topology.shape_core.Shape, file_path: ~os.PathLike | str | bytes, unit: ~build123d.build_enums.Unit = <Unit.MM>, binary: bool = False, linear_deflection: float = 0.001, angular_deflection: float = 0.1) → bool` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `export_step(to_export: ~build123d.topology.shape_core.Shape, file_path: ~os.PathLike | str | bytes | ~_io.BytesIO | ~typing.BinaryIO, unit: ~build123d.build_enums.Unit = <Unit.MM>, write_pcurves: bool = True, precision_mode: ~build123d.build_enums.PrecisionMode = <PrecisionMode.AVERAGE>, *, timestamp: str | ~datetime.datetime | None = None) → bool` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `export_stl(to_export: Shape, file_path: PathLike | str | bytes, tolerance: float = 0.001, angular_tolerance: float = 0.1, ascii_format: bool = False) → bool` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `*class* Mesher(unit: ~build123d.build_enums.Unit = <Unit.MM>)` - class; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.add_code_to_metadata()` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.add_meta_data(name_space: str, name: str, value: str, metadata_type: str, must_preserve: bool)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.add_shape(shape: ~build123d.topology.shape_core.Shape | ~collections.abc.Iterable[~build123d.topology.shape_core.Shape], linear_deflection: float = 0.001, angular_deflection: float = 0.1, mesh_type: ~build123d.build_enums.MeshType = <MeshType.MODEL>, part_number: str | None = None, uuid_value: ~uuid.UUID | None = None)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.get_mesh_properties() → list[dict]` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.get_meta_data() → list[dict]` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.get_meta_data_by_key(name_space: str, name: str) → dict` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.read(file_name: PathLike | str | bytes) → list[Shape]` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.write(file_name: PathLike | str | bytes)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `Mesher.write_stream(stream: BytesIO, file_type: str)` - method/function; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `import_svg(svg_file: str | ~pathlib.Path | ~typing.TextIO, *, flip_y: bool = True, align: ~build123d.build_enums.Align | tuple[~build123d.build_enums.Align, ~build123d.build_enums.Align] | None = <Align.MIN>, ignore_visibility: bool = False, label_by: ~typing.Literal['id', 'class', 'inkscape:label'] | str = 'id', is_inkscape_label: bool | None = None) → ShapeList[Wire | Face]` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `import_svg_as_buildline_code(file_name: PathLike | str | bytes, precision: int = 6) → tuple[str, str]` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `import_brep(file_name: PathLike | str | bytes) → Shape` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `import_step(filename: PathLike | str | bytes) → Compound` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).
+- `import_stl(file_name: ~os.PathLike | str | bytes, model_unit: ~build123d.build_enums.Unit = <Unit.MM>) → Face` - function/class overload; see [api-assemblies-joints-import-export.md](api-assemblies-joints-import-export.md).

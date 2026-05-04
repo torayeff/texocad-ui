@@ -56,7 +56,7 @@ export function Header() {
           className="transition-opacity hover:opacity-80 flex items-center gap-2"
         >
           <Image
-            src={isDark ? "/logo-white.png" : "/logo-black.png"}
+            src={isDark ? "/logo/logo-light.png" : "/logo/logo-dark.png"}
             alt="TexoCAD"
             width={20}
             height={20}
