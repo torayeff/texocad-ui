@@ -11,6 +11,12 @@
   --accent-foreground: #ffffff;
   --success: #16a34a;
   --error: #dc2626;
+  --viewer-radius: 0.875rem;
+  --viewer-control-radius: 0.75rem;
+  --viewer-background: #f4f4f5;
+  --viewer-glass-background: rgb(255 255 255 / 0.62);
+  --viewer-modal-background: rgb(255 255 255 / 0.78);
+  --viewer-field-background: rgb(255 255 255 / 0.5);
 }
 
 .dark {
@@ -24,6 +30,10 @@
   --accent-foreground: #ffffff;
   --success: #22c55e;
   --error: #ef4444;
+  --viewer-background: #09090b;
+  --viewer-glass-background: rgb(24 24 27 / 0.76);
+  --viewer-modal-background: rgb(24 24 27 / 0.9);
+  --viewer-field-background: rgb(9 9 11 / 0.46);
 }
 
 @theme inline {

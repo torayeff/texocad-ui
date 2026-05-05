@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isStudioRoute = createRouteMatcher(["/studio(.*)"]);
+const isStudioRoute = createRouteMatcher(["/studio(.*)", "/studio-v2(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isStudioRoute(req)) {
