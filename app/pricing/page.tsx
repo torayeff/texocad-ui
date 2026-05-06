@@ -2,8 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import { PricingTable } from "@clerk/nextjs";
 import Link from "next/link";
 
-import { Header } from "@/app/components/Header";
-import { Footer } from "@/app/components/Footer";
+import { Header } from "@/app/components/header";
+import { Footer } from "@/app/components/footer";
 import { SITE_ROUTES } from "@/app/lib/site";
 
 export default async function PricingPage() {

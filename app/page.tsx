@@ -9,22 +9,18 @@ import {
   Terminal,
   Play,
   Cog,
-  Grid3x3,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
-import { Header } from "@/app/components/Header";
-import { Footer } from "@/app/components/Footer";
+import { Header } from "@/app/components/header";
+import { Footer } from "@/app/components/footer";
 import {
   SITE_DESCRIPTION,
   SITE_ROUTES,
   SITE_TITLE,
   SITE_URL,
   absoluteSiteUrl,
-  getShowcaseItemPath,
 } from "@/app/lib/site";
-import { getAllShowcaseItems } from "@/app/showcase/_lib/showcase";
 
 const FEATURES = [
   {
@@ -69,11 +65,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function Home() {
-  const items = await getAllShowcaseItems();
+export default function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "CollectionPage",
+    "@type": "WebPage",
     "@id": `${SITE_URL}/#webpage`,
     name: SITE_TITLE,
     description: SITE_DESCRIPTION,
@@ -81,16 +76,6 @@ export default async function Home() {
     url: absoluteSiteUrl(SITE_ROUTES.home),
     isPartOf: {
       "@id": `${SITE_URL}/#website`,
-    },
-    mainEntity: {
-      "@type": "ItemList",
-      "@id": `${SITE_URL}/#showcase-list`,
-      itemListElement: items.map((item, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        url: absoluteSiteUrl(getShowcaseItemPath(item.thread_id)),
-        name: item.name,
-      })),
     },
   };
 
@@ -104,7 +89,7 @@ export default async function Home() {
       <main className="min-h-dvh md:h-dvh flex flex-col text-foreground bg-background">
         <Header />
 
-        <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden min-h-0">
+        <div className="flex-1 flex flex-col md:overflow-hidden min-h-0">
           <section className="flex-1 flex flex-col relative min-h-[500px] md:min-h-0">
             <div
               className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none"
@@ -183,34 +168,6 @@ export default async function Home() {
             </div>
           </section>
 
-          <aside className="md:w-[480px] border-t md:border-t-0 md:border-l border-border bg-muted/20 flex flex-col shrink-0">
-            <div className="p-3 border-b border-border/50 text-xs font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-2 shrink-0">
-              <Grid3x3 size={14} />
-              Showcase: Built with TexoCAD
-            </div>
-            <div className="p-2 grid grid-cols-3 md:grid-rows-4 gap-2 flex-1">
-              {items.map((item) => (
-                <Link
-                  key={item.thread_id}
-                  href={getShowcaseItemPath(item.thread_id)}
-                  className="group relative aspect-square md:aspect-auto overflow-hidden rounded-lg border border-border/50 bg-muted/30 transition-all hover:border-border hover:shadow-sm"
-                >
-                  <Image
-                    src={`/showcase/images/${item.thread_id}.jpg`}
-                    alt={item.name}
-                    fill
-                    sizes="192px"
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6">
-                    <span className="text-[11px] font-medium leading-tight text-white line-clamp-2">
-                      {item.name}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </aside>
         </div>
         <Footer />
       </main>

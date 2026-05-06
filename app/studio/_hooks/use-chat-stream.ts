@@ -4,18 +4,17 @@ import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
 import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
+import { designRevisionsFromMessages, isDesignRevisionArtifact } from "@/app/studio/_lib/design-artifacts";
 import type { StreamAccessors } from "@/app/studio/_hooks/use-message-rows";
 import type {
   TexocadGraphState,
-  CustomProductEvent,
-  PartEntry,
+  DesignRevisionArtifact,
   TodoItem,
 } from "@/app/studio/_types/chat";
 
 const EMPTY_TODOS: TodoItem[] = [];
-const EMPTY_PRODUCT: PartEntry[] = [];
 
-export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
+export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionArtifact) => void) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,10 +22,10 @@ export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
-  const onProductEventRef = useRef(onProductEvent);
+  const onDesignRevisionEventRef = useRef(onDesignRevisionEvent);
   useEffect(() => {
-    onProductEventRef.current = onProductEvent;
-  }, [onProductEvent]);
+    onDesignRevisionEventRef.current = onDesignRevisionEvent;
+  }, [onDesignRevisionEvent]);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
@@ -53,9 +52,8 @@ export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
     filterSubagentMessages: true,
     onThreadId: (id: string) => handleThreadIdChange(id),
     onCustomEvent: (data: unknown) => {
-      const event = data as CustomProductEvent;
-      if (event.type === "product" && Array.isArray(event.parts)) {
-        onProductEventRef.current?.(event.parts);
+      if (isDesignRevisionArtifact(data)) {
+        onDesignRevisionEventRef.current?.(data);
       }
     },
   }), [
@@ -70,11 +68,18 @@ export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
   const { messages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
   const todos: TodoItem[] = Array.isArray(values.todos) ? values.todos : EMPTY_TODOS;
-  const product: PartEntry[] = useMemo(
-    () => Array.isArray(values.product) ? values.product : EMPTY_PRODUCT,
-    [values.product],
+  const designRevisions = useMemo(
+    () => designRevisionsFromMessages(messages),
+    [messages],
   );
+  const latestRevision = designRevisions.at(-1) ?? null;
   const isBusy = isLoading || isHydrating || !isAuthReady;
+
+  useEffect(() => {
+    if (latestRevision) {
+      onDesignRevisionEventRef.current?.(latestRevision);
+    }
+  }, [latestRevision]);
 
   const raw = stream as unknown as Record<string, unknown>;
   const streamAccessors: StreamAccessors = {
@@ -100,7 +105,8 @@ export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
     isBusy,
     error,
     todos,
-    product,
+    designRevisions,
+    latestRevision,
     urlThreadId,
     pathname,
     router,

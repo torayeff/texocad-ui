@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { SITE_NAME, SITE_ROUTES } from "@/app/lib/site";
+import { SITE_NAME } from "@/app/lib/site";
 
 export const metadata: Metadata = {
   title: {
     absolute: `Studio | ${SITE_NAME}`,
   },
   description:
-    "Use TexoCAD Studio to generate editable CAD from natural-language prompts and visual inputs.",
+    "Use TexoCAD Studio to generate CAD designs and inspect generated STEP exports.",
   alternates: {
-    canonical: SITE_ROUTES.studio,
+    canonical: "/studio",
   },
   robots: {
     index: false,

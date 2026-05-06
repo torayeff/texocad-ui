@@ -1,0 +1,161 @@
+import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { AIPanel } from "@/app/studio/_components/chat/ai-panel";
+import { ToolCallCard, type StreamToolCall } from "@/app/studio/_components/chat/tool-call-card";
+import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/inline-blocks";
+import type { MessageUsage } from "@/app/studio/_lib/message-rows";
+
+export type ChatMessageType = "human" | "ai";
+
+interface ChatMessageProps {
+  messageType: ChatMessageType;
+  textContent: string;
+  thinkingContent?: string;
+  agentName?: string;
+  usage?: MessageUsage;
+  isStreaming?: boolean;
+  startedAtMs?: number;
+  toolCalls?: StreamToolCall[];
+  forcePanelShell?: boolean;
+  renderMarkdown?: boolean;
+  children?: React.ReactNode;
+}
+
+const REMARK_PLUGINS = [remarkGfm];
+
+function HumanMessageBubble({ content }: { content: string }) {
+  return (
+    <div className="flex justify-end">
+      <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
+        <div className="prose-chat text-foreground">
+          <ReactMarkdown
+            remarkPlugins={REMARK_PLUGINS}
+            components={{
+              a: ({ children }) => (
+                <span className="font-medium underline decoration-muted-foreground/30 underline-offset-2">
+                  {children}
+                </span>
+              ),
+              p: ({ children }) => (
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed m-0">
+                  {children}
+                </p>
+              ),
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AIMessageView({
+  agentName = "",
+  textContent,
+  thinkingContent = "",
+  usage,
+  isStreaming,
+  startedAtMs,
+  toolCalls,
+  forcePanelShell,
+  renderMarkdown,
+  children,
+}: {
+  agentName?: string;
+  textContent: string;
+  thinkingContent?: string;
+  usage?: MessageUsage;
+  isStreaming: boolean;
+  startedAtMs?: number;
+  toolCalls: StreamToolCall[];
+  forcePanelShell: boolean;
+  renderMarkdown: boolean;
+  children?: React.ReactNode;
+}) {
+  const hasText = textContent.trim().length > 0;
+  const hasToolCalls = toolCalls.length > 0;
+  const hasThinking = thinkingContent.trim().length > 0;
+
+  let statusLabel: string | null = null;
+  if (hasThinking && isStreaming) statusLabel = "Thinking";
+  else if (isStreaming) statusLabel = "Working";
+
+  if (!hasText && !hasToolCalls && !hasThinking && !isStreaming && !forcePanelShell) return null;
+
+  return (
+    <AIPanel
+      agentName={agentName}
+      statusLabel={statusLabel}
+      isStreaming={isStreaming}
+      timerStartedAtMs={startedAtMs}
+      usage={usage}
+    >
+      {hasThinking || (isStreaming && !hasText) ? (
+        <InlineThinkingBlock
+          content={thinkingContent}
+          isStreaming={isStreaming}
+          defaultOpen={false}
+        />
+      ) : null}
+
+      {hasToolCalls ? (
+        <div className="flex flex-col gap-2">
+          {toolCalls.map((tc) => (
+            <ToolCallCard
+              key={tc.id}
+              toolCall={tc}
+              isStreaming={isStreaming}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {hasText ? (
+        <InlineTextContent
+          content={textContent}
+          isStreaming={isStreaming}
+          renderMarkdown={renderMarkdown}
+        />
+      ) : null}
+
+      {children}
+    </AIPanel>
+  );
+}
+
+export const ChatMessage = React.memo(function ChatMessage({
+  messageType,
+  textContent,
+  thinkingContent = "",
+  agentName,
+  usage,
+  isStreaming = false,
+  startedAtMs,
+  toolCalls = [],
+  forcePanelShell = false,
+  renderMarkdown = false,
+  children,
+}: ChatMessageProps) {
+  if (messageType === "human") {
+    return <HumanMessageBubble content={textContent} />;
+  }
+
+  return (
+    <AIMessageView
+      agentName={agentName}
+      textContent={textContent}
+      thinkingContent={thinkingContent}
+      usage={usage}
+      isStreaming={isStreaming}
+      startedAtMs={startedAtMs}
+      toolCalls={toolCalls}
+      forcePanelShell={forcePanelShell}
+      renderMarkdown={renderMarkdown}
+    >
+      {children}
+    </AIMessageView>
+  );
+});

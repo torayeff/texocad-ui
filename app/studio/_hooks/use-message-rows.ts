@@ -13,7 +13,7 @@ import {
   getToolCallsSignature,
 } from "@/app/studio/_lib/message-rows";
 import type { MessageRow } from "@/app/studio/_lib/message-rows";
-import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
+import type { StreamToolCall } from "@/app/studio/_components/chat/tool-call-card";
 import type { useAssistantTimer } from "@/app/studio/_hooks/use-assistant-timer";
 
 export interface StreamAccessors {

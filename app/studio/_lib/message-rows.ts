@@ -1,7 +1,7 @@
 import { AIMessage } from "@langchain/core/messages";
 import type { ClassSubagentStreamInterface } from "@langchain/react";
 import { getMessageTextContent, getReasoningContent } from "@/app/studio/_lib/message-content";
-import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
+import type { StreamToolCall } from "@/app/studio/_components/chat/tool-call-card";
 
 export interface MessageUsage {
   inputTokens: number;
