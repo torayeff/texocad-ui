@@ -1,7 +1,8 @@
 import React from "react";
-import { AIMessage, ToolMessage } from "@langchain/core/messages";
-import type { AIMessageChunk } from "@langchain/core/messages";
-import type { SubagentDiscoverySnapshot } from "@langchain/react";
+import { AIMessage } from "@langchain/core/messages";
+import type { BaseMessage } from "@langchain/core/messages";
+import { useMessages, useToolCalls } from "@langchain/react";
+import type { AnyStream, AssembledToolCall, SubagentDiscoverySnapshot } from "@langchain/react";
 import { Bot, ChevronDown, CircleCheck, CircleDot, CircleX } from "lucide-react";
 import type { StreamToolCall } from "@/app/studio/_components/chat/tool-call-card";
 import { ToolCallCard } from "@/app/studio/_components/chat/tool-call-card";
@@ -10,82 +11,33 @@ import { AIPanel } from "@/app/studio/_components/chat/ai-panel";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_components/chat/inline-blocks";
 import type { MessageUsage } from "@/app/studio/_lib/message-rows";
 
-interface SubagentCardSnapshot extends SubagentDiscoverySnapshot {
-  messages?: unknown[];
-  result?: string;
-  toolCall?: {
-    name: string;
-    args: Record<string, unknown>;
-  };
+function toStreamToolCalls(toolCalls: AssembledToolCall[]): StreamToolCall[] {
+  return toolCalls
+    .filter((toolCall) => toolCall.name !== "task" && toolCall.name !== "write_todos")
+    .map((toolCall) => ({
+      id: toolCall.callId,
+      state: "pending",
+      call: {
+        id: toolCall.callId,
+        name: toolCall.name,
+        args: typeof toolCall.input === "object" && toolCall.input !== null
+          ? toolCall.input as Record<string, unknown>
+          : {},
+      },
+    }));
 }
 
-function getSubagentToolCalls(subagent: SubagentCardSnapshot): StreamToolCall[] {
-  const allToolCalls: StreamToolCall[] = [];
-  const knownIds = new Set<string>();
-
-  for (const message of subagent.messages ?? []) {
-    if (AIMessage.isInstance(message) && message.tool_calls) {
-      for (const tc of message.tool_calls) {
-        if (!tc.id || tc.name === "task" || tc.name === "write_todos") continue;
-        knownIds.add(tc.id);
-        allToolCalls.push({
-          id: tc.id,
-          state: "completed",
-          call: {
-            id: tc.id,
-            name: tc.name,
-            args: tc.args as Record<string, unknown>,
-          },
-          result: "",
-        });
-      }
-    }
-
-    if (ToolMessage.isInstance(message)) {
-      const tc = allToolCalls.find((t) => t.id === message.tool_call_id);
-      if (tc) {
-        tc.result = { content: message.content };
-        tc.state = "completed";
-      }
-    }
-
-    const chunk = message as AIMessageChunk;
-    if (AIMessage.isInstance(message) && chunk.tool_call_chunks) {
-      for (const tcc of chunk.tool_call_chunks) {
-        if (!tcc.id || tcc.name === "task" || tcc.name === "write_todos") continue;
-        if (knownIds.has(tcc.id)) continue;
-        knownIds.add(tcc.id);
-        let parsedArgs = {};
-        if (tcc.args) {
-          try { parsedArgs = JSON.parse(tcc.args); } catch { /* partial JSON */ }
-        }
-        allToolCalls.push({
-          id: tcc.id,
-          state: "pending",
-          call: {
-            id: tcc.id,
-            name: tcc.name!,
-            args: parsedArgs,
-          },
-        });
-      }
-    }
-  }
-
-  return allToolCalls;
-}
-
-function getDisplayContent(subagent: SubagentCardSnapshot): { text: string; thinking: string } {
+function getDisplayContent(
+  messages: BaseMessage[],
+  output: unknown,
+): { text: string; thinking: string } {
   let text = "";
   let thinking = "";
 
-  if (subagent.result?.trim()) {
-    text = subagent.result;
-  } else if (typeof subagent.output === "string") {
-    text = subagent.output;
+  if (typeof output === "string") {
+    text = output;
   }
 
-  const messages = subagent.messages ?? [];
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
     if (!AIMessage.isInstance(message)) continue;
@@ -130,20 +82,20 @@ const STATUS_STYLES = {
 } as const;
 
 export const SubagentCard = React.memo(function SubagentCard({
+  stream,
   subagent,
   status,
   parentIsStreaming,
 }: {
+  stream: AnyStream;
   subagent: SubagentDiscoverySnapshot;
   status?: "pending" | "running" | "complete" | "error";
   parentIsStreaming?: boolean;
 }) {
-  const snapshot = subagent as SubagentCardSnapshot;
+  const messages = useMessages(stream, subagent);
+  const toolCalls = useToolCalls(stream, subagent);
   const resolvedStatus = status ?? subagent.status;
-  const toolCallArgs = snapshot.toolCall?.args ?? {};
-  const title = typeof toolCallArgs.subagent_type === "string"
-    ? toolCallArgs.subagent_type
-    : subagent.name;
+  const title = subagent.name;
   const isStreaming = resolvedStatus === "running" && !!parentIsStreaming;
   const style = STATUS_STYLES[resolvedStatus];
   const StatusIcon = style.icon;
@@ -163,15 +115,13 @@ export const SubagentCard = React.memo(function SubagentCard({
   }, [resolvedStatus]);
 
   const shouldRenderDetails = isOpen || isStreaming || resolvedStatus === "error";
-  const inputArgs = Object.keys(toolCallArgs).length > 0 ? toolCallArgs : {
-    ...(subagent.taskInput ? { task: subagent.taskInput } : {}),
-  };
+  const inputArgs = subagent.taskInput ? { task: subagent.taskInput } : {};
   const hasInputArgs = Object.keys(inputArgs).length > 0;
 
   const cachedDetails = React.useMemo(() => {
-    const { text: displayContent, thinking } = getDisplayContent(snapshot);
-    const visibleToolCalls = getSubagentToolCalls(snapshot);
-    const usage = (snapshot.messages ?? []).reduce<MessageUsage>(
+    const { text: displayContent, thinking } = getDisplayContent(messages, subagent.output);
+    const visibleToolCalls = toStreamToolCalls(toolCalls);
+    const usage = messages.reduce<MessageUsage>(
       (acc, m) => {
         if (AIMessage.isInstance(m) && m.usage_metadata) {
           acc.inputTokens += m.usage_metadata.input_tokens || 0;
@@ -183,7 +133,7 @@ export const SubagentCard = React.memo(function SubagentCard({
       { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 },
     );
     return { displayContent, thinking, visibleToolCalls, usage };
-  }, [snapshot]);
+  }, [messages, subagent.output, toolCalls]);
 
   const detailState = shouldRenderDetails ? cachedDetails : null;
   const hasDetailPanel = !!detailState && (

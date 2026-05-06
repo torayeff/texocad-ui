@@ -1,6 +1,9 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] STEP file viewer
-- [ ] Measurement tool
-- [ ] Share and replay
+- [ ] Add revisions history
+- [ ] Fix browser refreshes when model loaded
+- [ ] Share button
+- [ ] Move legal to privacy policy
+- [ ] Restyle, check all buttons, components, dropdowns etc., responsiveness
+- [ ] Security audit

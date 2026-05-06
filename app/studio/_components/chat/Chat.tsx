@@ -309,6 +309,7 @@ export default function Chat({ onDesignRevisionEvent, onClearViewer }: ChatProps
                 {messageRows.map((row) => (
                   <MessageWithSubagents
                     key={row.rowKey}
+                    chatStream={stream}
                     messageType={row.messageType}
                     textContent={row.textContent}
                     thinkingContent={row.thinkingContent}

@@ -1,5 +1,5 @@
 import React from "react";
-import type { SubagentDiscoverySnapshot } from "@langchain/react";
+import type { AnyStream, SubagentDiscoverySnapshot } from "@langchain/react";
 import { ChatMessage, type ChatMessageType } from "@/app/studio/_components/chat/chat-message";
 import type { MessageUsage } from "@/app/studio/_lib/message-rows";
 import { SubagentCard } from "@/app/studio/_components/chat/subagent-card";
@@ -36,6 +36,8 @@ function areUsageEqual(prev?: MessageUsage, next?: MessageUsage): boolean {
 }
 
 interface MessageWithSubagentsProps {
+  chatStream?: AnyStream;
+  stream?: AnyStream;
   messageType: ChatMessageType;
   textContent: string;
   thinkingContent?: string;
@@ -51,6 +53,8 @@ interface MessageWithSubagentsProps {
 }
 
 export const MessageWithSubagents = React.memo(function MessageWithSubagents({
+  chatStream,
+  stream,
   messageType,
   textContent,
   thinkingContent = "",
@@ -62,6 +66,7 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
   subagents = [],
   renderMarkdown = false,
 }: MessageWithSubagentsProps) {
+  const resolvedStream = chatStream ?? stream;
   const visibleToolCalls = React.useMemo(
     () => getVisibleToolCalls(toolCalls, subagents.length),
     [toolCalls, subagents.length],
@@ -88,11 +93,12 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
         forcePanelShell={messageType === "ai" && subagents.length > 0}
         renderMarkdown={renderMarkdown}
       >
-        {messageType === "ai" && subagents.length > 0 ? (
+        {resolvedStream && messageType === "ai" && subagents.length > 0 ? (
           <div className="flex flex-col gap-2">
             {subagentEntries.map(({ subagent, status }) => (
               <SubagentCard
                 key={subagent.id}
+                stream={resolvedStream}
                 subagent={subagent}
                 status={status}
                 parentIsStreaming={isStreaming}
@@ -104,6 +110,9 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
     </div>
   );
 }, (prevProps, nextProps) =>
+  prevProps.chatStream === nextProps.chatStream
+  && prevProps.stream === nextProps.stream
+  &&
   prevProps.messageType === nextProps.messageType
   && prevProps.textContent === nextProps.textContent
   && prevProps.thinkingContent === nextProps.thinkingContent
