@@ -17,7 +17,7 @@ import {
   SUPPORT_EMAIL,
   absoluteSiteUrl,
 } from "@/app/lib/site";
-import ThemeProvider from "@/app/components/ThemeProvider";
+import ThemeProvider from "@/app/components/theme-provider";
 import "./globals.css";
 
 const geistSans = Geist({

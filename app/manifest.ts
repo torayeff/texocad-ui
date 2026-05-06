@@ -38,12 +38,6 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Open TexoCAD Studio",
         url: "/studio",
       },
-      {
-        name: "Browse Showcase",
-        short_name: "Showcase",
-        description: "Explore generated CAD examples",
-        url: "/",
-      },
     ],
   };
 }

@@ -1,4 +1,4 @@
-import { LegalDocument, LegalSection } from "@/app/components/LegalDocument";
+import { LegalDocument, LegalSection } from "@/app/components/legal-document";
 import {
   LEGAL_ENTITY_ADDRESS,
   LEGAL_ENTITY_NAME,

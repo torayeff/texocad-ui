@@ -11,21 +11,21 @@ import { useAssistantTimer } from "@/app/studio/_hooks/use-assistant-timer";
 import { useMessageRows } from "@/app/studio/_hooks/use-message-rows";
 import { getMessageTextContent } from "@/app/studio/_lib/message-content";
 import { DEFAULT_MODEL_ID, MODELS } from "@/app/studio/_lib/models";
-import type { PartEntry } from "@/app/studio/_types/chat";
+import type { DesignRevisionArtifact } from "@/app/studio/_types/chat";
 import { trackMessageSubmitted } from "@/app/lib/analytics";
 
-import { MessageWithSubagents } from "@/app/studio/_components/chat/MessageWithSubagents";
-import { TodoList } from "@/app/studio/_components/chat/TodoList";
-import ThreadHistoryPanel from "@/app/studio/_components/chat/ThreadHistoryPanel";
-import EmptyChatState from "@/app/studio/_components/chat/EmptyChatState";
-import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/ChatInput";
+import { MessageWithSubagents } from "@/app/studio/_components/chat/message-with-subagents";
+import { TodoList } from "@/app/studio/_components/chat/todo-list";
+import ThreadHistoryPanel from "@/app/studio/_components/chat/thread-history-panel";
+import EmptyChatState from "@/app/studio/_components/chat/empty-chat-state";
+import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/chat-input";
 
 export interface ChatProps {
-  onProductEvent: (parts: PartEntry[]) => void;
+  onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onClearViewer: () => void;
 }
 
-export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
+export default function Chat({ onDesignRevisionEvent, onClearViewer }: ChatProps) {
   const {
     client,
     stream,
@@ -37,12 +37,11 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     isBusy,
     error,
     todos,
-    product,
     urlThreadId,
     pathname,
     router,
     handleThreadIdChange,
-  } = useChatStream(onProductEvent);
+  } = useChatStream(onDesignRevisionEvent);
 
   const timer = useAssistantTimer();
   const { sessionClaims } = useAuth();
@@ -64,11 +63,6 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
   const isNearBottomRef = useRef(true);
   const isTickingRef = useRef(false);
   const lastScrollTopRef = useRef(0);
-
-  const onProductEventRef = useRef(onProductEvent);
-  useEffect(() => {
-    onProductEventRef.current = onProductEvent;
-  }, [onProductEvent]);
 
   const onClearViewerRef = useRef(onClearViewer);
   useEffect(() => {
@@ -108,21 +102,6 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     ? "human"
     : messageRows[messageRows.length - 1]?.messageType;
   const shouldShowTodoList = todos.length > 0 && lastMessageType !== "human";
-
-  const wasHydratingRef = useRef(false);
-  const prevProductRef = useRef<PartEntry[] | null>(null);
-
-  useEffect(() => {
-    if (isHydrating) {
-      wasHydratingRef.current = true;
-      return;
-    }
-    if (!wasHydratingRef.current) return;
-    wasHydratingRef.current = false;
-    if (product === prevProductRef.current) return;
-    prevProductRef.current = product;
-    onProductEventRef.current(product);
-  }, [isHydrating, product]);
 
   useEffect(() => {
     if (isNearBottomRef.current) {
@@ -186,12 +165,8 @@ export default function Chat({ onProductEvent, onClearViewer }: ChatProps) {
     stream.submit(
       { messages: [{ type: "human", content: trimmed }] },
       {
-        streamSubgraphs: true,
         metadata,
-        optimisticValues: (prev) => ({
-          ...prev,
-          todos: [],
-        }),
+        command: { update: { todos: [] } },
       },
     );
 

@@ -1,21 +1,36 @@
 import { useMemo, useCallback, useRef, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
+import type { AssembledToolCall } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
 import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
+import { designRevisionsFromMessages } from "@/app/studio/_lib/design-artifacts";
 import type { StreamAccessors } from "@/app/studio/_hooks/use-message-rows";
 import type {
   TexocadGraphState,
-  CustomProductEvent,
-  PartEntry,
+  DesignRevisionArtifact,
   TodoItem,
 } from "@/app/studio/_types/chat";
+import type { StreamToolCall } from "@/app/studio/_components/chat/tool-call-card";
+
+function toStreamToolCalls(toolCalls: AssembledToolCall[]): StreamToolCall[] {
+  return toolCalls.map((toolCall) => ({
+    id: toolCall.callId,
+    state: "pending",
+    call: {
+      id: toolCall.callId,
+      name: toolCall.name,
+      args: typeof toolCall.input === "object" && toolCall.input !== null
+        ? toolCall.input as Record<string, unknown>
+        : {},
+    },
+  }));
+}
 
 const EMPTY_TODOS: TodoItem[] = [];
-const EMPTY_PRODUCT: PartEntry[] = [];
 
-export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
+export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionArtifact) => void) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,10 +38,10 @@ export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
-  const onProductEventRef = useRef(onProductEvent);
+  const onDesignRevisionEventRef = useRef(onDesignRevisionEvent);
   useEffect(() => {
-    onProductEventRef.current = onProductEvent;
-  }, [onProductEvent]);
+    onDesignRevisionEventRef.current = onDesignRevisionEvent;
+  }, [onDesignRevisionEvent]);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
@@ -49,15 +64,7 @@ export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
     client,
     assistantId: ASSISTANT_ID,
     threadId: isAuthReady ? (urlThreadId ?? undefined) : undefined,
-    fetchStateHistory: true,
-    filterSubagentMessages: true,
     onThreadId: (id: string) => handleThreadIdChange(id),
-    onCustomEvent: (data: unknown) => {
-      const event = data as CustomProductEvent;
-      if (event.type === "product" && Array.isArray(event.parts)) {
-        onProductEventRef.current?.(event.parts);
-      }
-    },
   }), [
     client,
     handleThreadIdChange,
@@ -70,23 +77,22 @@ export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
   const { messages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
   const todos: TodoItem[] = Array.isArray(values.todos) ? values.todos : EMPTY_TODOS;
-  const product: PartEntry[] = useMemo(
-    () => Array.isArray(values.product) ? values.product : EMPTY_PRODUCT,
-    [values.product],
+  const designRevisions = useMemo(
+    () => designRevisionsFromMessages(messages),
+    [messages],
   );
+  const latestRevision = designRevisions.at(-1) ?? null;
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
-  const raw = stream as unknown as Record<string, unknown>;
+  useEffect(() => {
+    if (latestRevision) {
+      onDesignRevisionEventRef.current?.(latestRevision);
+    }
+  }, [latestRevision]);
+
   const streamAccessors: StreamAccessors = {
-    getToolCalls: typeof raw.getToolCalls === "function"
-      ? raw.getToolCalls as StreamAccessors["getToolCalls"]
-      : undefined,
-    getSubagentsByMessage: typeof raw.getSubagentsByMessage === "function"
-      ? raw.getSubagentsByMessage as StreamAccessors["getSubagentsByMessage"]
-      : undefined,
-    subagents: raw.subagents instanceof Map
-      ? raw.subagents as StreamAccessors["subagents"]
-      : undefined,
+    getToolCalls: () => toStreamToolCalls(stream.toolCalls),
+    subagents: [...stream.subagents.values()],
   };
 
   return {
@@ -100,7 +106,8 @@ export function useChatStream(onProductEvent?: (parts: PartEntry[]) => void) {
     isBusy,
     error,
     todos,
-    product,
+    designRevisions,
+    latestRevision,
     urlThreadId,
     pathname,
     router,

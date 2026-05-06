@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect } from "react";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import type { BaseMessage } from "@langchain/core/messages";
-import type { ClassSubagentStreamInterface } from "@langchain/react";
+import type { SubagentDiscoverySnapshot } from "@langchain/react";
 
 import { getMessageTextContent, getReasoningContent } from "@/app/studio/_lib/message-content";
 import {
@@ -13,13 +13,12 @@ import {
   getToolCallsSignature,
 } from "@/app/studio/_lib/message-rows";
 import type { MessageRow } from "@/app/studio/_lib/message-rows";
-import type { StreamToolCall } from "@/app/studio/_components/chat/ToolCallCard";
+import type { StreamToolCall } from "@/app/studio/_components/chat/tool-call-card";
 import type { useAssistantTimer } from "@/app/studio/_hooks/use-assistant-timer";
 
 export interface StreamAccessors {
   getToolCalls?: (message: BaseMessage) => StreamToolCall[];
-  getSubagentsByMessage?: (messageId: string) => ClassSubagentStreamInterface[];
-  subagents?: Map<string, ClassSubagentStreamInterface>;
+  subagents?: SubagentDiscoverySnapshot[];
 }
 
 export function useMessageRows({
@@ -113,23 +112,14 @@ export function useMessageRows({
       }
 
       let subagents = EMPTY_SUBAGENTS;
-      if (message.id && accessors.getSubagentsByMessage) {
-        const nextSubagents = accessors.getSubagentsByMessage(message.id);
-        if (nextSubagents.length > 0) subagents = nextSubagents;
-      }
-
-      if (subagents === EMPTY_SUBAGENTS && accessors.subagents instanceof Map && accessors.subagents.size > 0) {
+      if (accessors.subagents && accessors.subagents.length > 0) {
         const taskCallIds = new Set(
           toolCalls
             .filter((toolCall) => toolCall.call.name === "task")
             .map((toolCall) => toolCall.call.id ?? toolCall.id),
         );
-        if (taskCallIds.size > 0) {
-          const matchingSubagents = [...accessors.subagents.values()].filter(
-            (subagent) => taskCallIds.has(subagent.id),
-          );
-          if (matchingSubagents.length > 0) subagents = matchingSubagents;
-        }
+        const nextSubagents = accessors.subagents.filter((subagent) => taskCallIds.has(subagent.id));
+        if (nextSubagents.length > 0) subagents = nextSubagents;
       }
 
       rows.push({

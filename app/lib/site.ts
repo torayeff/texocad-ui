@@ -41,7 +41,6 @@ export const SITE_ROUTES = {
   pricing: "/pricing",
   privacy: "/privacy",
   terms: "/terms",
-  showcaseItemBase: "/showcase/item",
   llms: "/llms.txt",
   manifest: "/manifest.webmanifest",
   sitemap: "/sitemap.xml",
@@ -49,12 +48,4 @@ export const SITE_ROUTES = {
 
 export function absoluteSiteUrl(path: string = SITE_ROUTES.home) {
   return new URL(path, SITE_URL).toString();
-}
-
-export function getShowcaseItemPath(threadId: string) {
-  return `${SITE_ROUTES.showcaseItemBase}?id=${encodeURIComponent(threadId)}`;
-}
-
-export function getShowcaseImagePath(threadId: string) {
-  return `/showcase/images/${threadId}.jpg`;
 }

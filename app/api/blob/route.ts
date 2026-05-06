@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import {
@@ -7,11 +8,10 @@ import {
 } from "@azure/storage-blob";
 import { ulid } from "ulidx";
 
-import { getAllShowcaseItems } from "@/app/showcase/_lib/showcase";
-import { LANGGRAPH_API_URL } from "@/app/studio/_lib/langgraph-config";
-
 const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING ?? "";
-const containerName = process.env.AZURE_STORAGE_CONTAINER ?? "";
+const containerName = process.env.AZURE_STORAGE_CONTAINER
+  ?? process.env.AZURE_STORAGE_CONTAINER_NAME
+  ?? "";
 
 const READ_SAS_EXPIRY_MS = 24 * 60 * 60 * 1000;
 const WRITE_SAS_EXPIRY_MS = 15 * 60 * 1000;
@@ -46,34 +46,36 @@ function signReadSas(blobUrl: string, blobName: string) {
   return NextResponse.json({ sasUrl: `${blobUrl}?${sasToken}` });
 }
 
-async function isShowcaseThread(threadId: string): Promise<boolean> {
-  const items = await getAllShowcaseItems();
-  return items.some((item) => item.thread_id === threadId);
+function blobUrlForName(blobName: string) {
+  const { host } = parseCredentials(connectionString);
+  return `https://${host}/${containerName}/${blobName}`;
 }
 
-async function langgraphThreadIsOwned(
-  threadId: string,
-  bearer: string,
-): Promise<boolean> {
-  try {
-    const response = await fetch(
-      `${LANGGRAPH_API_URL}/threads/${encodeURIComponent(threadId)}`,
-      {
-        headers: { Authorization: bearer },
-        cache: "no-store",
-      },
-    );
-    return response.ok;
-  } catch (err) {
-    console.error("LangGraph thread ownership check failed:", err);
-    return false;
-  }
+function hashUserId(userId: string) {
+  return createHash("sha256").update(userId).digest("hex");
+}
+
+function isAuthorizedUserBlob(blobName: string, userHash: string) {
+  const [root, hash, kind, , marker, , folder] = blobName.split("/");
+  if (root !== "users" || hash !== userHash) return false;
+
+  if (kind === "uploads") return blobName.split("/").length > 3;
+  if (kind === "threads") return blobName.split("/").length > 4;
+  if (kind !== "designs") return false;
+
+  const parts = blobName.split("/");
+  return (
+    parts.length >= 8 &&
+    marker === "revisions" &&
+    (folder === "exports" || folder === "source")
+  );
 }
 
 export async function GET(request: NextRequest) {
   const blobUrl = request.nextUrl.searchParams.get("url");
-  if (!blobUrl) {
-    return NextResponse.json({ error: "Missing url parameter" }, { status: 400 });
+  const blobNameParam = request.nextUrl.searchParams.get("blobName");
+  if (!blobUrl && !blobNameParam) {
+    return NextResponse.json({ error: "Missing url or blobName parameter" }, { status: 400 });
   }
 
   if (!connectionString || !containerName) {
@@ -81,50 +83,44 @@ export async function GET(request: NextRequest) {
   }
 
   let blobName: string;
-  try {
-    const { host } = parseCredentials(connectionString);
-    const parsed = new URL(blobUrl);
-    if (parsed.host !== host) {
+  let resolvedBlobUrl: string;
+  if (blobNameParam) {
+    blobName = blobNameParam.replace(/^\/+/, "");
+    resolvedBlobUrl = blobUrlForName(blobName);
+  } else {
+    const storageUrl = blobUrl;
+    if (!storageUrl) {
+      return NextResponse.json({ error: "Missing url parameter" }, { status: 400 });
+    }
+    try {
+      const { host } = parseCredentials(connectionString);
+      const parsed = new URL(storageUrl);
+      if (parsed.host !== host) {
+        return NextResponse.json({ error: "Invalid storage URL" }, { status: 400 });
+      }
+      const pathParts = parsed.pathname.split("/").filter(Boolean);
+      if (pathParts.length < 2 || pathParts[0] !== containerName) {
+        return NextResponse.json({ error: "Invalid container" }, { status: 400 });
+      }
+      blobName = pathParts.slice(1).join("/");
+      resolvedBlobUrl = storageUrl;
+    } catch (err) {
+      console.error("Failed to parse blob URL:", err);
       return NextResponse.json({ error: "Invalid storage URL" }, { status: 400 });
     }
-    const pathParts = parsed.pathname.split("/").filter(Boolean);
-    if (pathParts.length < 2 || pathParts[0] !== containerName) {
-      return NextResponse.json({ error: "Invalid container" }, { status: 400 });
-    }
-    blobName = pathParts.slice(1).join("/");
-  } catch (err) {
-    console.error("Failed to parse blob URL:", err);
-    return NextResponse.json({ error: "Invalid storage URL" }, { status: 400 });
   }
 
-  const [kind, id, ...rest] = blobName.split("/");
-  const isThreadBlob = kind === "threads" && !!id && rest.length > 0;
-  const isUploadBlob = kind === "uploads" && !!id && rest.length > 0;
-
-  if (isThreadBlob && (await isShowcaseThread(id))) {
-    return signReadSas(blobUrl, blobName);
-  }
-
-  const { userId, getToken } = await auth();
+  const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (isUploadBlob) {
-    if (id !== userId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } else if (isThreadBlob) {
-    const token = await getToken();
-    if (!token || !(await langgraphThreadIsOwned(id, `Bearer ${token}`))) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } else {
+  if (!isAuthorizedUserBlob(blobName, hashUserId(userId))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
-    return signReadSas(blobUrl, blobName);
+    return signReadSas(resolvedBlobUrl, blobName);
   } catch (err) {
     console.error("Failed to generate SAS URL:", err);
     return NextResponse.json({ error: "Failed to generate signed URL" }, { status: 500 });
@@ -155,7 +151,7 @@ export async function POST(request: NextRequest) {
   const base = dotIdx > 0 ? filename.slice(0, dotIdx) : filename;
   const ext = dotIdx > 0 ? filename.slice(dotIdx) : "";
   const date = new Date().toISOString().slice(0, 10);
-  const blobName = `uploads/${userId}/${date}/${base}_${ulid()}${ext}`;
+  const blobName = `users/${hashUserId(userId)}/uploads/${date}/${base}_${ulid()}${ext}`;
 
   try {
     const { credential, host } = parseCredentials(connectionString);
