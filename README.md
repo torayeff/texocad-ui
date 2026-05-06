@@ -1,7 +1,8 @@
 # TEXOCAD UI
 
 ## TODO
+- [ ] Check bugreport
 - [ ] Download dropdown
 - [ ] Revisions
-- [ ] Security check
 - [ ] Check all UI/UX/buttons/responsiveness
+- [ ] Security check
