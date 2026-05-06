@@ -22,10 +22,11 @@ import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/c
 
 export interface ChatProps {
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
+  onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
   onClearViewer: () => void;
 }
 
-export default function Chat({ onDesignRevisionEvent, onClearViewer }: ChatProps) {
+export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, onClearViewer }: ChatProps) {
   const {
     client,
     stream,
@@ -37,6 +38,7 @@ export default function Chat({ onDesignRevisionEvent, onClearViewer }: ChatProps
     isBusy,
     error,
     todos,
+    designRevisions,
     urlThreadId,
     pathname,
     router,
@@ -68,6 +70,10 @@ export default function Chat({ onDesignRevisionEvent, onClearViewer }: ChatProps
   useEffect(() => {
     onClearViewerRef.current = onClearViewer;
   }, [onClearViewer]);
+
+  useEffect(() => {
+    onDesignRevisionsChange(designRevisions);
+  }, [designRevisions, onDesignRevisionsChange]);
 
   const history = useThreadHistory(client, isAuthReady);
 

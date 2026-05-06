@@ -1,8 +1,10 @@
 import { type ButtonHTMLAttributes, type ReactNode, memo, useMemo, useState } from "react";
-import { Camera, Download, Focus, Layers, Loader2, Puzzle, Rotate3d, Share2, SquareDashed, Trash2 } from "lucide-react";
+import { Camera, Download, Focus, History, Layers, Loader2, Puzzle, Rotate3d, Share2, SquareDashed } from "lucide-react";
 
+import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
 import { type ModelBrowserNode, type ViewPreset, viewLabels, viewPresets } from "@/app/studio/_components/viewer/model-viewer-state";
 import { countModelBrowserNodes, ModelBrowserTree } from "@/app/studio/_components/viewer/ui/model-browser-tree";
+import { RevisionMenu } from "@/app/studio/_components/viewer/ui/revision-menu";
 import {
   activeControlClass,
   actionPopoverClass,
@@ -17,7 +19,6 @@ import {
 interface ViewerControlsProps {
   activeView: ViewPreset | null;
   autoRotate: boolean;
-  canClear: boolean;
   canDownload: boolean;
   canExplode: boolean;
   canDownloadSource: boolean;
@@ -25,15 +26,19 @@ interface ViewerControlsProps {
   explodeAmount: number;
   isDownloading: boolean;
   isDownloadingSource: boolean;
+  isLatestRevisionSelected: boolean;
   isSharing: boolean;
   modelBrowserNodes: ModelBrowserNode[];
+  revisions: ViewerRevisionOption[];
+  activeRevisionKey: string | null;
   selectedBrowserNodeId: string | null;
   visibleBrowserNodeIds: Set<string>;
   wireframe: boolean;
-  onClear: () => void;
   onDownload: () => void;
   onDownloadSource: () => void;
   onFitView: () => void;
+  onSelectLatestRevision: () => void;
+  onSelectRevision: (key: string) => void;
   onSelectBrowserNode: (id: string) => void;
   onExplodeAmountChange: (amount: number) => void;
   onShare: () => void;
@@ -43,7 +48,7 @@ interface ViewerControlsProps {
   onToggleWireframe: () => void;
 }
 
-type OpenPanel = "components" | "download" | "explode" | "views";
+type OpenPanel = "components" | "download" | "explode" | "revisions" | "views";
 
 interface ToolButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "title"> {
   children: ReactNode;
@@ -69,7 +74,6 @@ function ToolButton({ children, className, tooltip, tooltipDisabled = false, ...
 export const ViewerControls = memo(function ViewerControls({
   activeView,
   autoRotate,
-  canClear,
   canDownload,
   canExplode,
   canDownloadSource,
@@ -77,16 +81,20 @@ export const ViewerControls = memo(function ViewerControls({
   explodeAmount,
   isDownloading,
   isDownloadingSource,
+  isLatestRevisionSelected,
   isSharing,
   modelBrowserNodes,
+  revisions,
+  activeRevisionKey,
   selectedBrowserNodeId,
   visibleBrowserNodeIds,
   wireframe,
-  onClear,
   onDownload,
   onDownloadSource,
   onExplodeAmountChange,
   onFitView,
+  onSelectLatestRevision,
+  onSelectRevision,
   onSelectBrowserNode,
   onShare,
   onSetView,
@@ -97,10 +105,15 @@ export const ViewerControls = memo(function ViewerControls({
   const [openPanel, setOpenPanel] = useState<OpenPanel | null>(null);
   const componentCount = useMemo(() => countModelBrowserNodes(modelBrowserNodes), [modelBrowserNodes]);
   const canShowComponents = modelBrowserNodes.length > 0;
+  const canShowRevisions = revisions.length > 0;
+  const activeRevision = activeRevisionKey
+    ? revisions.find((revision) => revision.key === activeRevisionKey) ?? null
+    : null;
   const visibleOpenPanel =
     (openPanel === "components" && !canShowComponents) ||
       (openPanel === "download" && !canDownload && !canDownloadSource) ||
-      (openPanel === "explode" && !canExplode)
+      (openPanel === "explode" && !canExplode) ||
+      (openPanel === "revisions" && !canShowRevisions)
       ? null
       : openPanel;
 
@@ -112,6 +125,7 @@ export const ViewerControls = memo(function ViewerControls({
   const downloadOpen = visibleOpenPanel === "download";
   const explodeOpen = visibleOpenPanel === "explode";
   const componentsOpen = visibleOpenPanel === "components";
+  const revisionsOpen = visibleOpenPanel === "revisions";
 
   return (
     <div className={toolRailClass} aria-label="Viewer controls">
@@ -185,7 +199,7 @@ export const ViewerControls = memo(function ViewerControls({
         </ToolButton>
       ) : null}
 
-      {canClear || canDownload || canDownloadSource || canShare ? (
+      {canDownload || canDownloadSource || canShare || canShowRevisions ? (
         <>
           {canShare ? (
             <ToolButton
@@ -222,9 +236,19 @@ export const ViewerControls = memo(function ViewerControls({
               )}
             </ToolButton>
           ) : null}
-          {canClear ? (
-            <ToolButton type="button" onClick={onClear} tooltip="Clear scene" aria-label="Clear scene" className={toolButtonClass}>
-              <Trash2 size={14} strokeWidth={1.75} />
+          {canShowRevisions ? (
+            <ToolButton
+              type="button"
+              onClick={() => togglePanel("revisions")}
+              tooltip="Revisions"
+              tooltipDisabled={revisionsOpen}
+              aria-label={activeRevision ? `Revisions, viewing revision ${activeRevision.revisionNumber}` : "Revisions"}
+              aria-expanded={revisionsOpen}
+              aria-haspopup="menu"
+              aria-controls="revision-menu"
+              className={cn(toolButtonClass, (revisionsOpen || !isLatestRevisionSelected) && activeControlClass)}
+            >
+              <History size={14} strokeWidth={1.75} />
             </ToolButton>
           ) : null}
         </>
@@ -297,6 +321,17 @@ export const ViewerControls = memo(function ViewerControls({
             </button>
           ) : null}
         </div>
+      ) : null}
+
+      {revisionsOpen ? (
+        <RevisionMenu
+          activeRevisionKey={activeRevisionKey}
+          isLatestRevisionSelected={isLatestRevisionSelected}
+          revisions={revisions}
+          onClose={() => setOpenPanel(null)}
+          onSelectLatestRevision={onSelectLatestRevision}
+          onSelectRevision={onSelectRevision}
+        />
       ) : null}
 
       {componentsOpen ? (

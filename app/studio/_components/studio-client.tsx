@@ -1,12 +1,14 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { Header } from "@/app/components/header";
 import Chat from "@/app/studio/_components/chat/chat";
 import { type ModelSource } from "@/app/studio/_components/viewer/model-viewer-loaders";
+import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
+import { latestDesignRevision } from "@/app/studio/_lib/design-artifacts";
 import type { DesignRevisionArtifact, StoredBlobArtifact } from "@/app/studio/_types/chat";
 
 const GeneratedStepViewer = dynamic(
@@ -24,6 +26,51 @@ function isSourceCode(artifact: StoredBlobArtifact) {
   return filename.endsWith(".py") || artifact.contentType.startsWith("text/x-python");
 }
 
+function revisionKey(revision: DesignRevisionArtifact) {
+  return `${revision.designId}:${revision.revisionNumber}`;
+}
+
+function mergeDesignRevisions(...revisionLists: DesignRevisionArtifact[][]) {
+  const revisionsByKey = new Map<string, DesignRevisionArtifact>();
+  for (const revisions of revisionLists) {
+    for (const revision of revisions) {
+      revisionsByKey.set(revisionKey(revision), revision);
+    }
+  }
+  return Array.from(revisionsByKey.values());
+}
+
+function revisionsMatch(a: DesignRevisionArtifact, b: DesignRevisionArtifact) {
+  return (
+    revisionKey(a) === revisionKey(b) &&
+    a.source.checksum === b.source.checksum &&
+    a.exports.length === b.exports.length &&
+    a.exports.every((artifact, index) => {
+      const otherArtifact = b.exports[index];
+      return otherArtifact !== undefined && artifact.blobName === otherArtifact.blobName && artifact.checksum === otherArtifact.checksum;
+    })
+  );
+}
+
+function revisionListsMatch(a: DesignRevisionArtifact[], b: DesignRevisionArtifact[]) {
+  if (a.length !== b.length) return false;
+  return a.every((revision, index) => revisionsMatch(revision, b[index]));
+}
+
+function revisionOptionsFromArtifacts(revisions: DesignRevisionArtifact[]): ViewerRevisionOption[] {
+  return revisions
+    .map((revision) => {
+      const stepExport = revision.exports.find(isStepExport);
+      return {
+        key: revisionKey(revision),
+        revisionNumber: revision.revisionNumber,
+        filename: stepExport?.filename ?? null,
+        canView: stepExport !== undefined,
+      };
+    })
+    .sort((a, b) => b.revisionNumber - a.revisionNumber);
+}
+
 async function signBlobName(blobName: string): Promise<string | null> {
   const response = await fetch(`/api/blob?blobName=${encodeURIComponent(blobName)}`);
   if (!response.ok) return null;
@@ -31,43 +78,95 @@ async function signBlobName(blobName: string): Promise<string | null> {
   return data.sasUrl ?? null;
 }
 
+interface SignedRevisionSources {
+  key: string;
+  viewerSource: ModelSource | null;
+  sourceCode: ModelSource | null;
+}
+
 export default function StudioClient() {
-  const [viewerSource, setViewerSource] = useState<ModelSource | null>(null);
-  const [sourceCode, setSourceCode] = useState<ModelSource | null>(null);
+  const [signedRevisionSources, setSignedRevisionSources] = useState<SignedRevisionSources | null>(null);
+  const [hydratedDesignRevisions, setHydratedDesignRevisions] = useState<DesignRevisionArtifact[]>([]);
+  const [liveDesignRevisions, setLiveDesignRevisions] = useState<DesignRevisionArtifact[]>([]);
+  const [selectedRevisionKey, setSelectedRevisionKey] = useState<string | null>(null);
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const requestVersionRef = useRef(0);
 
   const handleDesignRevision = useCallback((revision: DesignRevisionArtifact) => {
-    const stepExport = revision.exports.find(isStepExport);
-    const sourceArtifact = isSourceCode(revision.source) ? revision.source : null;
+    setLiveDesignRevisions((currentRevisions) => {
+      const existingRevision = currentRevisions.find((currentRevision) => revisionKey(currentRevision) === revisionKey(revision));
+      if (existingRevision && revisionsMatch(existingRevision, revision)) return currentRevisions;
+
+      const nextRevisions = currentRevisions.filter((currentRevision) => revisionKey(currentRevision) !== revisionKey(revision));
+      nextRevisions.push(revision);
+      return nextRevisions;
+    });
+  }, []);
+
+  const handleDesignRevisionsChange = useCallback((revisions: DesignRevisionArtifact[]) => {
+    setHydratedDesignRevisions((currentRevisions) => (
+      revisionListsMatch(currentRevisions, revisions) ? currentRevisions : revisions
+    ));
+  }, []);
+
+  const handleClearViewer = useCallback(() => {
+    requestVersionRef.current += 1;
+    setSignedRevisionSources(null);
+    setHydratedDesignRevisions([]);
+    setLiveDesignRevisions([]);
+    setSelectedRevisionKey(null);
+  }, []);
+
+  const designRevisions = useMemo(
+    () => mergeDesignRevisions(hydratedDesignRevisions, liveDesignRevisions),
+    [hydratedDesignRevisions, liveDesignRevisions],
+  );
+  const latestRevision = useMemo(() => latestDesignRevision(designRevisions), [designRevisions]);
+  const selectedRevision = useMemo(() => selectedRevisionKey
+    ? designRevisions.find((revision) => revisionKey(revision) === selectedRevisionKey) ?? null
+    : null, [designRevisions, selectedRevisionKey]);
+  const activeRevision = selectedRevision ?? latestRevision;
+  const activeRevisionKey = activeRevision ? revisionKey(activeRevision) : null;
+  const isLatestRevisionSelected = selectedRevisionKey === null || selectedRevision === null;
+  const revisionOptions = useMemo(() => revisionOptionsFromArtifacts(designRevisions), [designRevisions]);
+  const viewerSource = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.viewerSource : null;
+  const sourceCode = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.sourceCode : null;
+
+  const handleSelectLatestRevision = useCallback(() => {
+    setSelectedRevisionKey(null);
+  }, []);
+
+  const handleSelectRevision = useCallback((key: string) => {
+    setSelectedRevisionKey(key);
+  }, []);
+
+  useEffect(() => {
     requestVersionRef.current += 1;
     const snapshotVersion = requestVersionRef.current;
 
-    if (!stepExport) {
-      setViewerSource(null);
-      setSourceCode(null);
-      return;
-    }
+    if (!activeRevision || !activeRevisionKey) return;
+
+    const stepExport = activeRevision.exports.find(isStepExport);
+    const sourceArtifact = isSourceCode(activeRevision.source) ? activeRevision.source : null;
+
+    if (!stepExport) return;
 
     void Promise.all([
       signBlobName(stepExport.blobName),
       sourceArtifact ? signBlobName(sourceArtifact.blobName) : Promise.resolve(null),
     ]).then(([stepSasUrl, sourceSasUrl]) => {
       if (snapshotVersion !== requestVersionRef.current) return;
-      setViewerSource(stepSasUrl ? { kind: "url", url: stepSasUrl, label: stepExport.filename } : null);
-      setSourceCode(sourceArtifact && sourceSasUrl
-        ? { kind: "url", url: sourceSasUrl, label: sourceArtifact.filename }
-        : null);
+      setSignedRevisionSources({
+        key: activeRevisionKey,
+        viewerSource: stepSasUrl ? { kind: "url", url: stepSasUrl, label: stepExport.filename } : null,
+        sourceCode: sourceArtifact && sourceSasUrl
+          ? { kind: "url", url: sourceSasUrl, label: sourceArtifact.filename }
+          : null,
+      });
     });
-  }, []);
-
-  const handleClearViewer = useCallback(() => {
-    requestVersionRef.current += 1;
-    setViewerSource(null);
-    setSourceCode(null);
-  }, []);
+  }, [activeRevision, activeRevisionKey]);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -104,7 +203,15 @@ export default function StudioClient() {
           className="min-h-0 flex-[3] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
           style={viewerPaneStyle}
         >
-          <GeneratedStepViewer source={viewerSource} sourceCode={sourceCode} onClear={handleClearViewer} />
+          <GeneratedStepViewer
+            source={viewerSource}
+            sourceCode={sourceCode}
+            revisions={revisionOptions}
+            activeRevisionKey={activeRevisionKey}
+            isLatestRevisionSelected={isLatestRevisionSelected}
+            onSelectLatestRevision={handleSelectLatestRevision}
+            onSelectRevision={handleSelectRevision}
+          />
         </div>
 
         <div className="relative hidden w-0 md:block" role="presentation">
@@ -120,7 +227,11 @@ export default function StudioClient() {
         </div>
 
         <div className="min-h-0 flex-[2] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
-          <Chat onDesignRevisionEvent={handleDesignRevision} onClearViewer={handleClearViewer} />
+          <Chat
+            onDesignRevisionEvent={handleDesignRevision}
+            onDesignRevisionsChange={handleDesignRevisionsChange}
+            onClearViewer={handleClearViewer}
+          />
         </div>
       </div>
     </main>

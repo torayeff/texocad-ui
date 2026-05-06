@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 
 import { saveSourceModelFile } from "@/app/studio/_components/viewer/model-viewer-actions";
 import { type ModelSource } from "@/app/studio/_components/viewer/model-viewer-loaders";
+import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
 import { loadingIconClass } from "@/app/studio/_components/viewer/ui/styles";
 import { ViewerControls } from "@/app/studio/_components/viewer/ui/viewer-controls";
 import { ViewerGestureHint } from "@/app/studio/_components/viewer/ui/viewer-gesture-hint";
@@ -13,10 +14,22 @@ import { useModelViewerScene } from "@/app/studio/_components/viewer/use-model-v
 interface GeneratedStepViewerProps {
   source: ModelSource | null;
   sourceCode: ModelSource | null;
-  onClear: () => void;
+  revisions: ViewerRevisionOption[];
+  activeRevisionKey: string | null;
+  isLatestRevisionSelected: boolean;
+  onSelectLatestRevision: () => void;
+  onSelectRevision: (key: string) => void;
 }
 
-export default function GeneratedStepViewer({ source, sourceCode, onClear }: GeneratedStepViewerProps) {
+export default function GeneratedStepViewer({
+  source,
+  sourceCode,
+  revisions,
+  activeRevisionKey,
+  isLatestRevisionSelected,
+  onSelectLatestRevision,
+  onSelectRevision,
+}: GeneratedStepViewerProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingSource, setIsDownloadingSource] = useState(false);
   const downloadAbortRef = useRef<AbortController | null>(null);
@@ -139,7 +152,6 @@ export default function GeneratedStepViewer({ source, sourceCode, onClear }: Gen
         <ViewerControls
           activeView={activeView}
           autoRotate={autoRotate}
-          canClear={source !== null}
           canDownload={source !== null}
           canExplode={meshCount !== null && meshCount > 1}
           canDownloadSource={sourceCode !== null}
@@ -147,16 +159,20 @@ export default function GeneratedStepViewer({ source, sourceCode, onClear }: Gen
           explodeAmount={explodeAmount}
           isDownloading={isDownloading}
           isDownloadingSource={isDownloadingSource}
+          isLatestRevisionSelected={isLatestRevisionSelected}
           isSharing={false}
           modelBrowserNodes={modelBrowserNodes}
+          revisions={revisions}
+          activeRevisionKey={activeRevisionKey}
           selectedBrowserNodeId={selectedBrowserNodeId}
           visibleBrowserNodeIds={visibleBrowserNodeIds}
           wireframe={wireframe}
-          onClear={onClear}
           onDownload={handleDownload}
           onDownloadSource={handleSourceDownload}
           onExplodeAmountChange={setExplodeAmount}
           onFitView={fitView}
+          onSelectLatestRevision={onSelectLatestRevision}
+          onSelectRevision={onSelectRevision}
           onSelectBrowserNode={selectBrowserNode}
           onShare={() => undefined}
           onSetView={setActiveView}

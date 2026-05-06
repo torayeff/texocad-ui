@@ -4,7 +4,7 @@ import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_hooks/use-langgraph-auth";
 import { ASSISTANT_ID } from "@/app/studio/_lib/langgraph-config";
-import { designRevisionsFromMessages, isDesignRevisionArtifact } from "@/app/studio/_lib/design-artifacts";
+import { designRevisionsFromMessages, isDesignRevisionArtifact, latestDesignRevision } from "@/app/studio/_lib/design-artifacts";
 import type { StreamAccessors } from "@/app/studio/_hooks/use-message-rows";
 import type {
   TexocadGraphState,
@@ -72,7 +72,7 @@ export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionA
     () => designRevisionsFromMessages(messages),
     [messages],
   );
-  const latestRevision = designRevisions.at(-1) ?? null;
+  const latestRevision = latestDesignRevision(designRevisions);
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
   useEffect(() => {
