@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import {
@@ -6,9 +7,6 @@ import {
   StorageSharedKeyCredential,
 } from "@azure/storage-blob";
 import { ulid } from "ulidx";
-
-import { getAllShowcaseItems } from "@/app/showcase/_lib/showcase";
-import { LANGGRAPH_API_URL } from "@/app/studio-v2/_lib/langgraph-config";
 
 const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING ?? "";
 const containerName = process.env.AZURE_STORAGE_CONTAINER
@@ -53,28 +51,24 @@ function blobUrlForName(blobName: string) {
   return `https://${host}/${containerName}/${blobName}`;
 }
 
-async function isShowcaseThread(threadId: string): Promise<boolean> {
-  const items = await getAllShowcaseItems();
-  return items.some((item) => item.thread_id === threadId);
+function hashUserId(userId: string) {
+  return createHash("sha256").update(userId).digest("hex");
 }
 
-async function langgraphThreadIsOwned(
-  threadId: string,
-  bearer: string,
-): Promise<boolean> {
-  try {
-    const response = await fetch(
-      `${LANGGRAPH_API_URL}/threads/${encodeURIComponent(threadId)}`,
-      {
-        headers: { Authorization: bearer },
-        cache: "no-store",
-      },
-    );
-    return response.ok;
-  } catch (err) {
-    console.error("LangGraph thread ownership check failed:", err);
-    return false;
-  }
+function isAuthorizedUserBlob(blobName: string, userHash: string) {
+  const [root, hash, kind, , marker, , folder] = blobName.split("/");
+  if (root !== "users" || hash !== userHash) return false;
+
+  if (kind === "uploads") return blobName.split("/").length > 3;
+  if (kind === "threads") return blobName.split("/").length > 4;
+  if (kind !== "designs") return false;
+
+  const parts = blobName.split("/");
+  return (
+    parts.length >= 8 &&
+    marker === "revisions" &&
+    (folder === "exports" || folder === "source")
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -116,38 +110,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const [kind, id, ...rest] = blobName.split("/");
-  const isThreadBlob = kind === "threads" && !!id && rest.length > 0;
-  const isUploadBlob = kind === "uploads" && !!id && rest.length > 0;
-  const isDesignBlob = kind === "designs"
-    && !!id
-    && rest.length >= 5
-    && rest[1] === "revisions"
-    && (rest[3] === "exports" || rest[3] === "source");
-
-  if (isThreadBlob && (await isShowcaseThread(id))) {
-    return signReadSas(resolvedBlobUrl, blobName);
-  }
-
-  const { userId, getToken } = await auth();
+  const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (isUploadBlob) {
-    if (id !== userId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } else if (isDesignBlob) {
-    if (id !== userId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } else if (isThreadBlob) {
-    const token = await getToken();
-    if (!token || !(await langgraphThreadIsOwned(id, `Bearer ${token}`))) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } else {
+  if (!isAuthorizedUserBlob(blobName, hashUserId(userId))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -183,7 +151,7 @@ export async function POST(request: NextRequest) {
   const base = dotIdx > 0 ? filename.slice(0, dotIdx) : filename;
   const ext = dotIdx > 0 ? filename.slice(dotIdx) : "";
   const date = new Date().toISOString().slice(0, 10);
-  const blobName = `uploads/${userId}/${date}/${base}_${ulid()}${ext}`;
+  const blobName = `users/${hashUserId(userId)}/uploads/${date}/${base}_${ulid()}${ext}`;
 
   try {
     const { credential, host } = parseCredentials(connectionString);

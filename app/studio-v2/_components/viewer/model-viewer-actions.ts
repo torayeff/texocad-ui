@@ -17,6 +17,10 @@ export function downloadNameFromSource(source: ModelSource) {
     return source.file.name || "model";
   }
 
+  if (source.label) {
+    return source.label;
+  }
+
   try {
     const pathname = new URL(source.url, window.location.href).pathname;
     const fileName = pathname.slice(pathname.lastIndexOf("/") + 1);

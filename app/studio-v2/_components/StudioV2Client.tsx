@@ -19,6 +19,11 @@ function isStepExport(artifact: StoredBlobArtifact) {
   return filename.endsWith(".step") || filename.endsWith(".stp") || artifact.contentType === "application/step";
 }
 
+function isSourceCode(artifact: StoredBlobArtifact) {
+  const filename = artifact.filename.toLowerCase();
+  return filename.endsWith(".py") || artifact.contentType.startsWith("text/x-python");
+}
+
 async function signBlobName(blobName: string): Promise<string | null> {
   const response = await fetch(`/api/blob-v2?blobName=${encodeURIComponent(blobName)}`);
   if (!response.ok) return null;
@@ -28,6 +33,7 @@ async function signBlobName(blobName: string): Promise<string | null> {
 
 export default function StudioV2Client() {
   const [viewerSource, setViewerSource] = useState<ModelSource | null>(null);
+  const [sourceCode, setSourceCode] = useState<ModelSource | null>(null);
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -35,23 +41,32 @@ export default function StudioV2Client() {
 
   const handleDesignRevision = useCallback((revision: DesignRevisionArtifact) => {
     const stepExport = revision.exports.find(isStepExport);
+    const sourceArtifact = isSourceCode(revision.source) ? revision.source : null;
     requestVersionRef.current += 1;
     const snapshotVersion = requestVersionRef.current;
 
     if (!stepExport) {
       setViewerSource(null);
+      setSourceCode(null);
       return;
     }
 
-    void signBlobName(stepExport.blobName).then((sasUrl) => {
+    void Promise.all([
+      signBlobName(stepExport.blobName),
+      sourceArtifact ? signBlobName(sourceArtifact.blobName) : Promise.resolve(null),
+    ]).then(([stepSasUrl, sourceSasUrl]) => {
       if (snapshotVersion !== requestVersionRef.current) return;
-      setViewerSource(sasUrl ? { kind: "url", url: sasUrl, label: stepExport.filename } : null);
+      setViewerSource(stepSasUrl ? { kind: "url", url: stepSasUrl, label: stepExport.filename } : null);
+      setSourceCode(sourceArtifact && sourceSasUrl
+        ? { kind: "url", url: sourceSasUrl, label: sourceArtifact.filename }
+        : null);
     });
   }, []);
 
   const handleClearViewer = useCallback(() => {
     requestVersionRef.current += 1;
     setViewerSource(null);
+    setSourceCode(null);
   }, []);
 
   useEffect(() => {
@@ -89,7 +104,7 @@ export default function StudioV2Client() {
           className="min-h-0 flex-[3] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
           style={viewerPaneStyle}
         >
-          <GeneratedStepViewer source={viewerSource} onClear={handleClearViewer} />
+          <GeneratedStepViewer source={viewerSource} sourceCode={sourceCode} onClear={handleClearViewer} />
         </div>
 
         <div className="relative hidden w-0 md:block" role="presentation">

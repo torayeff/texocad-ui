@@ -20,9 +20,11 @@ interface ViewerControlsProps {
   canClear: boolean;
   canDownload: boolean;
   canExplode: boolean;
+  canDownloadSource: boolean;
   canShare: boolean;
   explodeAmount: number;
   isDownloading: boolean;
+  isDownloadingSource: boolean;
   isSharing: boolean;
   modelBrowserNodes: ModelBrowserNode[];
   selectedBrowserNodeId: string | null;
@@ -30,6 +32,7 @@ interface ViewerControlsProps {
   wireframe: boolean;
   onClear: () => void;
   onDownload: () => void;
+  onDownloadSource: () => void;
   onFitView: () => void;
   onSelectBrowserNode: (id: string) => void;
   onExplodeAmountChange: (amount: number) => void;
@@ -40,7 +43,7 @@ interface ViewerControlsProps {
   onToggleWireframe: () => void;
 }
 
-type OpenPanel = "components" | "explode" | "views";
+type OpenPanel = "components" | "download" | "explode" | "views";
 
 interface ToolButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "title"> {
   children: ReactNode;
@@ -69,9 +72,11 @@ export const ViewerControls = memo(function ViewerControls({
   canClear,
   canDownload,
   canExplode,
+  canDownloadSource,
   canShare,
   explodeAmount,
   isDownloading,
+  isDownloadingSource,
   isSharing,
   modelBrowserNodes,
   selectedBrowserNodeId,
@@ -79,6 +84,7 @@ export const ViewerControls = memo(function ViewerControls({
   wireframe,
   onClear,
   onDownload,
+  onDownloadSource,
   onExplodeAmountChange,
   onFitView,
   onSelectBrowserNode,
@@ -92,13 +98,18 @@ export const ViewerControls = memo(function ViewerControls({
   const componentCount = useMemo(() => countModelBrowserNodes(modelBrowserNodes), [modelBrowserNodes]);
   const canShowComponents = modelBrowserNodes.length > 0;
   const visibleOpenPanel =
-    (openPanel === "components" && !canShowComponents) || (openPanel === "explode" && !canExplode) ? null : openPanel;
+    (openPanel === "components" && !canShowComponents) ||
+      (openPanel === "download" && !canDownload && !canDownloadSource) ||
+      (openPanel === "explode" && !canExplode)
+      ? null
+      : openPanel;
 
   const togglePanel = (panel: OpenPanel) => {
     setOpenPanel((currentPanel) => (currentPanel === panel ? null : panel));
   };
 
   const viewMenuOpen = visibleOpenPanel === "views";
+  const downloadOpen = visibleOpenPanel === "download";
   const explodeOpen = visibleOpenPanel === "explode";
   const componentsOpen = visibleOpenPanel === "components";
 
@@ -174,7 +185,7 @@ export const ViewerControls = memo(function ViewerControls({
         </ToolButton>
       ) : null}
 
-      {canClear || canDownload || canShare ? (
+      {canClear || canDownload || canDownloadSource || canShare ? (
         <>
           {canShare ? (
             <ToolButton
@@ -192,16 +203,19 @@ export const ViewerControls = memo(function ViewerControls({
               )}
             </ToolButton>
           ) : null}
-          {canDownload ? (
+          {canDownload || canDownloadSource ? (
             <ToolButton
               type="button"
-              onClick={onDownload}
-              disabled={isDownloading}
-              tooltip="Download model"
-              aria-label="Download model"
-              className={toolButtonClass}
+              onClick={() => togglePanel("download")}
+              tooltip="Download"
+              tooltipDisabled={downloadOpen}
+              aria-label="Download"
+              aria-expanded={downloadOpen}
+              aria-haspopup="menu"
+              aria-controls="download-menu"
+              className={cn(toolButtonClass, downloadOpen && activeControlClass)}
             >
-              {isDownloading ? (
+              {isDownloading || isDownloadingSource ? (
                 <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
               ) : (
                 <Download size={14} strokeWidth={1.75} />
@@ -242,6 +256,46 @@ export const ViewerControls = memo(function ViewerControls({
               {viewLabels[view]}
             </button>
           ))}
+        </div>
+      ) : null}
+
+      {downloadOpen ? (
+        <div
+          className={cn(actionPopoverClass, "right-0 top-[calc(100%+0.5rem)] w-40 p-1")}
+          id="download-menu"
+          role="menu"
+          aria-label="Download files"
+        >
+          {canDownload ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onDownload();
+                setOpenPanel(null);
+              }}
+              disabled={isDownloading}
+              className={cn(presetButtonClass, "flex w-full items-center justify-between text-left")}
+            >
+              <span>STEP File</span>
+              {isDownloading ? <Loader2 size={13} strokeWidth={1.75} className={loadingIconClass} /> : null}
+            </button>
+          ) : null}
+          {canDownloadSource ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onDownloadSource();
+                setOpenPanel(null);
+              }}
+              disabled={isDownloadingSource}
+              className={cn(presetButtonClass, "flex w-full items-center justify-between text-left")}
+            >
+              <span>Source code</span>
+              {isDownloadingSource ? <Loader2 size={13} strokeWidth={1.75} className={loadingIconClass} /> : null}
+            </button>
+          ) : null}
         </div>
       ) : null}
 
