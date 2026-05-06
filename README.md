@@ -1,6 +1,7 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] STEP file viewer
-- [ ] Measurement tool
-- [ ] Share and replay
+- [ ] Download dropdown
+- [ ] Revisions
+- [ ] Security check
+- [ ] Check all UI/UX/buttons/responsiveness
