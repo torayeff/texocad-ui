@@ -8,7 +8,7 @@ Both bugs are OpenAI-specific (Responses API). Gemini models are unaffected.
 
 | Bug | Package | Issue | Status |
 |---|---|---|---|
-| `contentBlocks` drops reasoning blocks | `@langchain/core@1.1.32` | [langchainjs#10421](https://github.com/langchain-ai/langchainjs/issues/10421) | Open |
-| `getSubagentsByMessage` returns `[]` | `@langchain/langgraph-sdk@1.7.2` | [langgraphjs#2187](https://github.com/langchain-ai/langgraphjs/issues/2187) | Open |
+| `contentBlocks` drops reasoning blocks | `@langchain/core@1.1.44` | [langchainjs#10421](https://github.com/langchain-ai/langchainjs/issues/10421) | Open |
+| `getSubagentsByMessage` returns `[]` | `@langchain/langgraph-sdk@1.8.10` | [langgraphjs#2187](https://github.com/langchain-ai/langgraphjs/issues/2187) | Fixed upstream |
 
-**Workarounds applied in this codebase:** See `app/studio/_lib/message-content.ts` and `app/studio/_components/chat/MessageWithSubagents.tsx`.
+**Workaround still applied in this codebase:** See `app/studio/_lib/message-content.ts`.

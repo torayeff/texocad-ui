@@ -19,7 +19,6 @@ import type { useAssistantTimer } from "@/app/studio/_hooks/use-assistant-timer"
 export interface StreamAccessors {
   getToolCalls?: (message: BaseMessage) => StreamToolCall[];
   getSubagentsByMessage?: (messageId: string) => ClassSubagentStreamInterface[];
-  subagents?: Map<string, ClassSubagentStreamInterface>;
 }
 
 export function useMessageRows({
@@ -116,20 +115,6 @@ export function useMessageRows({
       if (message.id && accessors.getSubagentsByMessage) {
         const nextSubagents = accessors.getSubagentsByMessage(message.id);
         if (nextSubagents.length > 0) subagents = nextSubagents;
-      }
-
-      if (subagents === EMPTY_SUBAGENTS && accessors.subagents instanceof Map && accessors.subagents.size > 0) {
-        const taskCallIds = new Set(
-          toolCalls
-            .filter((toolCall) => toolCall.call.name === "task")
-            .map((toolCall) => toolCall.call.id ?? toolCall.id),
-        );
-        if (taskCallIds.size > 0) {
-          const matchingSubagents = [...accessors.subagents.values()].filter(
-            (subagent) => taskCallIds.has(subagent.id),
-          );
-          if (matchingSubagents.length > 0) subagents = matchingSubagents;
-        }
       }
 
       rows.push({

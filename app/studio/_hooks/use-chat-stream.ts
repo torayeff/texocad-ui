@@ -89,9 +89,6 @@ export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionA
     getSubagentsByMessage: typeof raw.getSubagentsByMessage === "function"
       ? raw.getSubagentsByMessage as StreamAccessors["getSubagentsByMessage"]
       : undefined,
-    subagents: raw.subagents instanceof Map
-      ? raw.subagents as StreamAccessors["subagents"]
-      : undefined,
   };
 
   return {
