@@ -1,4 +1,4 @@
-import { type MutableRefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
@@ -26,10 +26,10 @@ export interface ViewerRuntime {
 }
 
 interface UseThreeRendererOptions {
-  activeViewRef: MutableRefObject<ViewPreset>;
-  autoRotateRef: MutableRefObject<boolean>;
-  fitDistanceRef: MutableRefObject<number>;
-  modelGroupRef: MutableRefObject<THREE.Group | null>;
+  activeViewRef: RefObject<ViewPreset>;
+  autoRotateRef: RefObject<boolean>;
+  fitDistanceRef: RefObject<number>;
+  modelGroupRef: RefObject<THREE.Group | null>;
   onBeforeDispose: () => void;
   onControlsStart: () => void;
 }
