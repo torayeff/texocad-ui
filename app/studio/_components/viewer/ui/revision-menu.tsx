@@ -3,9 +3,9 @@ import { Check } from "lucide-react";
 import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
 import {
   activeControlClass,
-  actionPopoverClass,
   cn,
-  presetButtonClass,
+  controlMenuItemClass,
+  controlMenuPopoverClass,
 } from "@/app/studio/_components/viewer/ui/styles";
 
 interface RevisionMenuProps {
@@ -29,7 +29,7 @@ export function RevisionMenu({
 
   return (
     <div
-      className={cn(actionPopoverClass, "left-1/2 top-[calc(100%+0.5rem)] max-h-80 w-56 -translate-x-1/2 overflow-y-auto p-1")}
+      className={cn(controlMenuPopoverClass, "max-h-80 overflow-y-auto")}
       id="revision-menu"
       role="menu"
       aria-label="Revisions"
@@ -57,8 +57,8 @@ export function RevisionMenu({
             }}
             disabled={!revision.canView}
             className={cn(
-              presetButtonClass,
-              "flex w-full items-center justify-between gap-3 text-left disabled:opacity-55",
+              controlMenuItemClass,
+              "disabled:opacity-55",
               isSelected && activeControlClass,
             )}
           >

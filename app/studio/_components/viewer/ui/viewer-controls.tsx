@@ -7,10 +7,12 @@ import { countModelBrowserNodes, ModelBrowserTree } from "@/app/studio/_componen
 import { RevisionMenu } from "@/app/studio/_components/viewer/ui/revision-menu";
 import {
   activeControlClass,
-  actionPopoverClass,
   cn,
+  controlFloatingPanelClass,
+  controlMenuItemClass,
+  controlMenuPopoverClass,
+  controlPanelPopoverClass,
   loadingIconClass,
-  presetButtonClass,
   toolButtonClass,
   toolRailClass,
   toolTooltipClass,
@@ -256,7 +258,7 @@ export const ViewerControls = memo(function ViewerControls({
 
       {viewMenuOpen ? (
         <div
-          className={cn(actionPopoverClass, "left-0 top-[calc(100%+0.5rem)] w-32 p-1")}
+          className={controlMenuPopoverClass}
           id="view-presets-menu"
           role="menu"
           aria-label="Camera views"
@@ -271,11 +273,7 @@ export const ViewerControls = memo(function ViewerControls({
                 onSetView(view);
                 setOpenPanel(null);
               }}
-              className={cn(
-                presetButtonClass,
-                "flex w-full items-center justify-between text-left",
-                activeView === view && activeControlClass,
-              )}
+              className={cn(controlMenuItemClass, activeView === view && activeControlClass)}
             >
               {viewLabels[view]}
             </button>
@@ -285,7 +283,7 @@ export const ViewerControls = memo(function ViewerControls({
 
       {downloadOpen ? (
         <div
-          className={cn(actionPopoverClass, "right-0 top-[calc(100%+0.5rem)] w-40 p-1")}
+          className={controlMenuPopoverClass}
           id="download-menu"
           role="menu"
           aria-label="Download files"
@@ -299,7 +297,7 @@ export const ViewerControls = memo(function ViewerControls({
                 setOpenPanel(null);
               }}
               disabled={isDownloading}
-              className={cn(presetButtonClass, "flex w-full items-center justify-between text-left")}
+              className={controlMenuItemClass}
             >
               <span>STEP File</span>
               {isDownloading ? <Loader2 size={13} strokeWidth={1.75} className={loadingIconClass} /> : null}
@@ -314,7 +312,7 @@ export const ViewerControls = memo(function ViewerControls({
                 setOpenPanel(null);
               }}
               disabled={isDownloadingSource}
-              className={cn(presetButtonClass, "flex w-full items-center justify-between text-left")}
+              className={controlMenuItemClass}
             >
               <span>Source code</span>
               {isDownloadingSource ? <Loader2 size={13} strokeWidth={1.75} className={loadingIconClass} /> : null}
@@ -337,7 +335,7 @@ export const ViewerControls = memo(function ViewerControls({
       {componentsOpen ? (
         <ModelBrowserTree
           id="model-components-menu"
-          className="absolute left-1/2 top-[calc(100%+0.5rem)] z-20 -translate-x-1/2"
+          className={controlFloatingPanelClass}
           nodes={modelBrowserNodes}
           onSelectNode={onSelectBrowserNode}
           onToggleNodeVisibility={onToggleBrowserNodeVisibility}
@@ -348,10 +346,7 @@ export const ViewerControls = memo(function ViewerControls({
 
       {explodeOpen ? (
         <div
-          className={cn(
-            actionPopoverClass,
-            "left-1/2 top-[calc(100%+0.5rem)] w-[min(13rem,calc(100vw-1.5rem))] -translate-x-1/2 gap-2 p-2.5",
-          )}
+          className={controlPanelPopoverClass}
           id="explode-slider"
           aria-label="Exploded view controls"
         >

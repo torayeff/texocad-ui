@@ -47,7 +47,30 @@ export const toolTooltipClass = cn(
 
 export const actionPopoverClass = cn(
   viewerGlassClass,
-  "absolute z-20 grid gap-1 rounded-[var(--viewer-control-radius)] p-1 text-foreground",
+  "absolute z-20 grid gap-1 rounded-[var(--viewer-control-radius)] text-foreground",
+);
+
+const controlPopoverAnchorClass =
+  "left-1/2 top-[calc(100%+0.5rem)] w-[min(15rem,calc(100vw-1.5rem))] -translate-x-1/2";
+
+export const controlMenuPopoverClass = cn(
+  actionPopoverClass,
+  controlPopoverAnchorClass,
+  "p-1",
+);
+
+export const controlPanelPopoverClass = cn(
+  actionPopoverClass,
+  controlPopoverAnchorClass,
+  "gap-2 p-2.5",
+);
+
+export const controlFloatingPanelClass =
+  "absolute left-1/2 top-[calc(100%+0.5rem)] z-20 -translate-x-1/2";
+
+export const controlMenuItemClass = cn(
+  presetButtonClass,
+  "flex min-h-8 w-full items-center justify-between gap-3 text-left",
 );
 
 export const loadPanelClass = cn(
