@@ -4,6 +4,7 @@ import { Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_hooks/use-file-upload";
 import type { UploadedFile } from "@/app/studio/_hooks/use-file-upload";
 import ModelPicker from "@/app/studio/_components/chat/model-picker";
+import { cn, toolTooltipClass } from "@/app/studio/_components/viewer/ui/styles";
 
 export interface ChatInputHandle {
   setPrompt: (text: string) => void;
@@ -17,6 +18,32 @@ interface ChatInputProps {
   stopGeneration: () => void;
   model: string;
   onModelChange: (modelId: string) => void;
+}
+
+const composerButtonClass =
+  "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50";
+
+interface ComposerIconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+  tooltip: string;
+}
+
+const composerTooltipClass = cn(
+  toolTooltipClass,
+  "bottom-[calc(100%+0.375rem)] top-auto group-hover/composer:opacity-100 group-focus-within/composer:opacity-100",
+);
+
+function ComposerIconButton({ children, className, tooltip, ...buttonProps }: ComposerIconButtonProps) {
+  return (
+    <span className="group/composer relative inline-grid">
+      <button {...buttonProps} aria-label={buttonProps["aria-label"] ?? tooltip} className={className}>
+        {children}
+      </button>
+      <span role="tooltip" className={composerTooltipClass}>
+        {tooltip}
+      </span>
+    </span>
+  );
 }
 
 const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
@@ -162,16 +189,16 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
 
           <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-1">
-              <button
+              <ComposerIconButton
                 type="button"
                 disabled={isUploading}
                 onClick={triggerFileSelect}
                 aria-label="Attach file"
-                title="Attach file"
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                tooltip="Attach file"
+                className={composerButtonClass}
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
-              </button>
+              </ComposerIconButton>
               {isVip && (
                 <ModelPicker
                   value={model}
@@ -183,27 +210,27 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
 
             <div className="flex items-center pr-1">
               {isLoading ? (
-                <button
+                <ComposerIconButton
                   onClick={stopGeneration}
                   aria-label="Stop generation"
-                  title="Stop generation"
+                  tooltip="Stop generation"
                   className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-foreground text-background transition-colors hover:bg-foreground/90"
                 >
                   <Square size={14} fill="currentColor" />
-                </button>
+                </ComposerIconButton>
               ) : (
-                <button
+                <ComposerIconButton
                   onClick={sendMessage}
                   disabled={!hasContent || isBusy}
                   aria-label="Send message"
-                  title="Send message"
+                  tooltip="Send message"
                   className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] transition-colors ${hasContent
                     ? "bg-foreground text-background hover:bg-foreground/90"
                     : "bg-muted text-muted-foreground"
                     } disabled:cursor-not-allowed`}
                 >
                   <ArrowUp size={16} />
-                </button>
+                </ComposerIconButton>
               )}
             </div>
           </div>

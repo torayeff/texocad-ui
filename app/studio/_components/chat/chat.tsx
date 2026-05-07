@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
-import { ArrowDown, CirclePlus, FileClock, Loader2 } from "lucide-react";
+import { ArrowDown, FileClock, Loader2, MessageSquarePlus } from "lucide-react";
 
 import { useThreadHistory } from "@/app/studio/_hooks/use-thread-history";
 import { useChatStream } from "@/app/studio/_hooks/use-chat-stream";
@@ -19,13 +19,7 @@ import { TodoList } from "@/app/studio/_components/chat/todo-list";
 import ThreadHistoryPanel from "@/app/studio/_components/chat/thread-history-panel";
 import EmptyChatState from "@/app/studio/_components/chat/empty-chat-state";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/chat-input";
-import {
-  activeControlClass,
-  cn,
-  toolButtonClass,
-  toolRailClass,
-  toolTooltipClass,
-} from "@/app/studio/_components/viewer/ui/styles";
+import { activeControlClass, cn, toolButtonClass, toolTooltipClass } from "@/app/studio/_components/viewer/ui/styles";
 
 export interface ChatProps {
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
@@ -33,24 +27,26 @@ export interface ChatProps {
   onClearViewer: () => void;
 }
 
-interface ChatActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+const chatHeaderClass =
+  "relative z-20 flex h-11 shrink-0 items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-4 py-1.5 text-foreground shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12]";
+
+interface ChatHeaderActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   tooltip: string;
 }
 
-const chatActionRailClass =
-  cn(toolRailClass, "left-auto right-3 translate-x-0");
+const chatHeaderTooltipClass = cn(
+  toolTooltipClass,
+  "left-auto right-0 translate-x-0 group-hover/chat-header:opacity-100 group-focus-within/chat-header:opacity-100",
+);
 
-const chatActionTooltipClass =
-  cn(toolTooltipClass, "left-auto right-0 translate-x-0 group-hover/action:opacity-100 group-focus-within/action:opacity-100");
-
-function ChatActionButton({ children, className, tooltip, ...buttonProps }: ChatActionButtonProps) {
+function ChatHeaderActionButton({ children, className, tooltip, ...buttonProps }: ChatHeaderActionButtonProps) {
   return (
-    <span className="group/action relative inline-grid">
+    <span className="group/chat-header relative inline-grid">
       <button {...buttonProps} aria-label={buttonProps["aria-label"] ?? tooltip} className={className}>
         {children}
       </button>
-      <span role="tooltip" className={chatActionTooltipClass}>
+      <span role="tooltip" className={chatHeaderTooltipClass}>
         {tooltip}
       </span>
     </span>
@@ -287,26 +283,33 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
       ) : null}
 
       <div className="relative flex-1 min-h-0 overflow-hidden">
-        <div className={chatActionRailClass} aria-label="Conversation actions">
-          <ChatActionButton
-            type="button"
-            onClick={handleNewChat}
-            tooltip="New chat"
-            aria-label="New chat"
-            className={toolButtonClass}
-          >
-            <CirclePlus size={14} strokeWidth={1.75} />
-          </ChatActionButton>
-          <ChatActionButton
-            type="button"
-            onClick={toggleHistory}
-            tooltip={historyOpen ? "Close history" : "History"}
-            aria-label={historyOpen ? "Close history" : "Open history"}
-            aria-pressed={historyOpen}
-            className={cn(toolButtonClass, historyOpen && activeControlClass)}
-          >
-            <FileClock size={14} strokeWidth={1.75} />
-          </ChatActionButton>
+        <div className={chatHeaderClass}>
+          <div className="flex min-w-0 items-center px-1">
+            <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
+              TexoCAD AI
+            </span>
+          </div>
+          <div className="flex items-center gap-0.5">
+            <ChatHeaderActionButton
+              type="button"
+              onClick={handleNewChat}
+              aria-label="New chat"
+              tooltip="New chat"
+              className={toolButtonClass}
+            >
+              <MessageSquarePlus size={14} strokeWidth={1.75} />
+            </ChatHeaderActionButton>
+            <ChatHeaderActionButton
+              type="button"
+              onClick={toggleHistory}
+              aria-label={historyOpen ? "Close history" : "Open history"}
+              aria-pressed={historyOpen}
+              tooltip={historyOpen ? "Close history" : "History"}
+              className={cn(toolButtonClass, historyOpen && activeControlClass)}
+            >
+              <FileClock size={14} strokeWidth={1.75} />
+            </ChatHeaderActionButton>
+          </div>
         </div>
 
         {historyOpen ? (
@@ -324,7 +327,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             <div
               ref={messagesContainerRef}
               onScroll={handleScroll}
-              className="h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pb-40 pt-28"
+              className="h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pb-40 pt-6"
             >
               <div
                 className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-start" : ""}`}
