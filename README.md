@@ -1,5 +1,6 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] Design new main page
+- [ ] Design main page
+- [ ] Header on studio page?
 - [ ] Desing Gallery

@@ -12,7 +12,7 @@ export function ThemeHeroImage() {
 
   return (
     <Image
-      src={isDark ? "/images/hero-image-dark.jpg" : "/images/hero-image-light.jpg"}
+      src={isDark ? "/images/hero-image-dark.png" : "/images/hero-image-light.jpg"}
       alt="Sketch to CAD to product workflow"
       width={1024}
       height={421}
