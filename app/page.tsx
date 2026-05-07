@@ -1,59 +1,17 @@
 import type { Metadata } from "next";
-import {
-  MessageSquare,
-  Image as ImageIcon,
-  Box,
-  Zap,
-  FileDown,
-  RefreshCcw,
-  Terminal,
-  Play,
-  Cog,
-} from "lucide-react";
 import Link from "next/link";
 
-import { Header } from "@/app/components/header";
-import { Footer } from "@/app/components/footer";
+import { ThemeHeroImage } from "@/app/components/theme-hero-image";
+import { ThemeLogo } from "@/app/components/theme-logo";
+import { ThemeToggle } from "@/app/components/theme-toggle";
 import {
   SITE_DESCRIPTION,
   SITE_ROUTES,
   SITE_TITLE,
   SITE_URL,
+  SUPPORT_EMAIL,
   absoluteSiteUrl,
 } from "@/app/lib/site";
-
-const FEATURES = [
-  {
-    title: "Natural language",
-    description: "Describe the part you want in natural language.",
-    icon: MessageSquare,
-  },
-  {
-    title: "Visual inputs",
-    description: "Guide the model with sketches or drawings.",
-    icon: ImageIcon,
-  },
-  {
-    title: "Parametric output",
-    description: "Get editable BREP CAD, not static geometry.",
-    icon: Box,
-  },
-  {
-    title: "Rapid prototyping",
-    description: "Move from rough ideas to editable prototype geometry quickly.",
-    icon: Zap,
-  },
-  {
-    title: "Universal export",
-    description: "Export STEP or STL for downstream workflows.",
-    icon: FileDown,
-  },
-  {
-    title: "Iterative design",
-    description: "Refine the design with natural-language edits.",
-    icon: RefreshCcw,
-  },
-];
 
 export const metadata: Metadata = {
   title: {
@@ -86,90 +44,95 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="min-h-dvh md:h-dvh flex flex-col text-foreground bg-background">
-        <Header />
+      <main className="flex min-h-dvh flex-col bg-background text-foreground">
+        <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 text-sm sm:px-10 lg:px-12">
+          <Link
+            href={SITE_ROUTES.home}
+            className="flex items-center gap-2 text-xl font-semibold tracking-tight"
+            aria-label="TexoCAD home"
+          >
+            <ThemeLogo alt="" width={22} height={22} priority />
+            <span>TexoCAD</span>
+          </Link>
 
-        <div className="flex-1 flex flex-col md:overflow-hidden min-h-0">
-          <section className="flex-1 flex flex-col relative min-h-[500px] md:min-h-0">
-            <div
-              className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to right, var(--foreground) 1px, transparent 1px), linear-gradient(to bottom, var(--foreground) 1px, transparent 1px)",
-                backgroundSize: "40px 40px",
-                backgroundPosition: "center center",
-              }}
-            />
+          <nav
+            className="flex items-center gap-5 text-[13px] font-medium text-foreground/70 sm:gap-8"
+            aria-label="Primary navigation"
+          >
+            <Link
+              href={SITE_ROUTES.studio}
+              className="transition-colors hover:text-foreground"
+            >
+              Studio
+            </Link>
+            <Link
+              href={SITE_ROUTES.pricing}
+              className="transition-colors hover:text-foreground"
+            >
+              Pricing
+            </Link>
+            <Link
+              href="https://viewer.texocad.ai"
+              className="transition-colors hover:text-foreground"
+            >
+              Viewer
+            </Link>
+            <ThemeToggle />
+          </nav>
+        </header>
 
-            <div className="flex-1 flex flex-col p-6 sm:p-10 lg:p-16 z-10 md:overflow-y-auto">
-              <div className="w-full max-w-3xl mx-auto flex flex-col justify-center flex-1 py-12 md:py-0 min-h-full">
-                <div className="mb-8">
-                  <div className="inline-flex items-center gap-2 rounded border border-border bg-muted/50 px-3 py-1 text-xs font-mono text-muted-foreground mb-6">
-                    <Terminal size={12} />
-                    <span>Agentic Text-to-CAD</span>
-                  </div>
+        <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-12 px-6 py-12 sm:px-10 lg:grid-cols-[0.72fr_1fr] lg:px-12 lg:py-16">
+          <div className="max-w-xl">
+            <h1 className="text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
+              Build products from text.
+            </h1>
+            <p className="mt-5 text-lg leading-7 text-muted-foreground sm:text-xl">
+              Concept to CAD to product.
+            </p>
 
-                  <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl leading-[1.05] mb-4">
-                    Unlock physical product building
-                  </h1>
-                  <p className="max-w-2xl text-base text-muted-foreground sm:text-lg leading-relaxed">
-                    For builders of physical products, TexoCAD turns ideas,
-                    requirements, and sketches into editable CAD with natural
-                    language, enabling rapid prototyping and fast iteration.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 mb-10">
-                  <Link
-                    href="/studio"
-                    className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-foreground/90 transition-colors"
-                  >
-                    <Cog size={16} strokeWidth={2} />
-                    Start Building
-                  </Link>
-
-                  <a
-                    href="https://www.youtube.com/watch?v=EIbIrcWQtNw"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Play size={15} strokeWidth={1.5} />
-                    Watch Demo
-                  </a>
-                </div>
-
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                  {FEATURES.map((feature) => {
-                    const Icon = feature.icon;
-                    return (
-                      <div
-                        key={feature.title}
-                        className="flex items-start gap-2.5"
-                      >
-                        <Icon
-                          size={15}
-                          strokeWidth={1.5}
-                          className="mt-0.5 shrink-0 text-muted-foreground"
-                        />
-                        <div>
-                          <div className="text-sm font-medium text-foreground">
-                            {feature.title}
-                          </div>
-                          <div className="text-[13px] leading-snug text-muted-foreground">
-                            {feature.description}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            <div className="mt-9 flex flex-wrap items-center gap-4">
+              <Link
+                href={SITE_ROUTES.studio}
+                className="rounded-xl bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+              >
+                Start Building
+              </Link>
+              <a
+                href="https://www.youtube.com/watch?v=EIbIrcWQtNw"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                Watch Demo
+              </a>
             </div>
-          </section>
+          </div>
 
-        </div>
-        <Footer />
+          <div className="relative">
+            <ThemeHeroImage />
+          </div>
+        </section>
+
+        <footer className="mx-auto flex w-full max-w-7xl justify-end gap-6 px-6 pb-8 text-xs font-normal text-foreground/35 sm:px-10 lg:px-12">
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="transition-colors hover:text-foreground/60"
+          >
+            Support
+          </a>
+          <Link
+            href={SITE_ROUTES.privacy}
+            className="transition-colors hover:text-foreground/60"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href={SITE_ROUTES.terms}
+            className="transition-colors hover:text-foreground/60"
+          >
+            Terms & Conditions
+          </Link>
+        </footer>
       </main>
     </>
   );
