@@ -11,10 +11,10 @@ import { useMounted } from "@/app/hooks/use-mounted";
 import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
 
 const headerGlassClass =
-  "relative z-10 flex h-12 shrink-0 select-none items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-4 text-sm shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] md:px-8";
+  "relative z-10 flex h-12 shrink-0 select-none items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-3 text-sm shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] md:px-8";
 
 const mobileMenuClass =
-  "absolute left-0 top-12 flex w-full flex-col gap-4 border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-6 py-4 shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] md:hidden";
+  "absolute left-0 top-12 flex w-full flex-col gap-2 border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-4 py-3 shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] md:hidden";
 
 const headerLinkClass =
   "rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors duration-150 ease-in-out hover:bg-muted hover:text-foreground";
@@ -54,7 +54,7 @@ export function Header() {
 
   return (
     <header className={`${headerGlassClass} ${isMobileMenuOpen ? "z-50" : ""}`}>
-      <div className="flex items-center gap-4 md:gap-8">
+      <div className="flex min-w-0 items-center gap-2 md:gap-8">
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -68,7 +68,7 @@ export function Header() {
           href="/"
           aria-label="TexoCAD"
           onClick={closeMobileMenu}
-          className="flex items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2 py-1 transition-colors duration-150 ease-in-out hover:bg-muted"
+          className="flex min-w-0 items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-1.5 py-1 transition-colors duration-150 ease-in-out hover:bg-muted md:px-2"
         >
           <Image
             src={isDark ? "/logo/logo-light.png" : "/logo/logo-dark.png"}
@@ -77,9 +77,9 @@ export function Header() {
             height={20}
             priority
           />
-          <span className="font-medium tracking-tight">TexoCAD</span>
+          <span className="truncate font-medium tracking-tight">TexoCAD</span>
         </Link>
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-2">
           <Link
             href={SITE_ROUTES.studio}
             className={headerLinkClass}
@@ -101,11 +101,11 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex shrink-0 items-center gap-2 md:gap-5">
         {isSignedIn && !hasAccess && (
           <Link
             href={SITE_ROUTES.pricing}
-            className="rounded-md bg-foreground px-4 py-1.5 text-[13px] font-medium text-background hover:bg-foreground/90 transition-colors"
+            className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-foreground px-2.5 py-1.5 text-[13px] font-medium text-background transition-colors hover:bg-foreground/90 md:px-4"
           >
             Upgrade
           </Link>

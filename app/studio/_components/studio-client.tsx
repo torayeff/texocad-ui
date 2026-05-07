@@ -200,7 +200,7 @@ export default function StudioClient() {
 
       <div ref={contentRef} className="relative flex min-h-0 flex-1 flex-col md:flex-row">
         <div
-          className="min-h-0 flex-[3] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
+          className="min-h-0 flex-[2] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
           style={viewerPaneStyle}
         >
           <GeneratedStepViewer
@@ -226,7 +226,7 @@ export default function StudioClient() {
           />
         </div>
 
-        <div className="min-h-0 flex-[2] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
+        <div className="min-h-0 flex-[3] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
           <Chat
             onDesignRevisionEvent={handleDesignRevision}
             onDesignRevisionsChange={handleDesignRevisionsChange}

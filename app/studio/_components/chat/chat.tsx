@@ -28,7 +28,7 @@ export interface ChatProps {
 }
 
 const chatHeaderClass =
-  "relative z-20 flex h-11 shrink-0 items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-4 py-1.5 text-foreground shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12]";
+  "relative z-20 flex h-11 shrink-0 items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-7 py-1.5 text-foreground shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12]";
 
 interface ChatHeaderActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
@@ -266,7 +266,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
         <p className="text-muted-foreground">Thread not found</p>
         <button
           onClick={() => router.replace(pathname)}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+          className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-4 py-2 text-sm font-medium text-muted-foreground shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors hover:bg-muted hover:text-foreground"
         >
           Start a new conversation
         </button>
@@ -284,7 +284,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
 
       <div className="relative flex-1 min-h-0 overflow-hidden">
         <div className={chatHeaderClass}>
-          <div className="flex min-w-0 items-center px-1">
+          <div className="flex min-w-0 items-center">
             <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
               TexoCAD AI
             </span>
@@ -327,10 +327,10 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             <div
               ref={messagesContainerRef}
               onScroll={handleScroll}
-              className="h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pb-40 pt-6"
+              className={`h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pt-6 ${isEmpty && !isHydrating ? "pb-6" : "pb-40"}`}
             >
               <div
-                className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-start" : ""}`}
+                className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full" : ""}`}
               >
                 {isEmpty && !isHydrating && (
                   <EmptyChatState

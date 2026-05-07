@@ -58,7 +58,7 @@ export default function EmptyChatState({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl justify-center px-4 py-2 sm:px-6 sm:py-3">
+    <div className="mx-auto flex w-full max-w-2xl justify-center px-4 pb-2 pt-4 sm:min-h-[calc(100dvh-20rem)] sm:items-center sm:px-6 sm:py-3">
       <div className="flex w-full flex-col items-center px-2 py-1 text-center sm:px-4 sm:py-2">
         <div className="max-w-xl space-y-2">
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
