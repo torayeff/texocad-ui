@@ -1,6 +1,5 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] Check mobile UI on deployment
-- [ ] Design new page
+- [ ] Design new main page
 - [ ] Desing Gallery

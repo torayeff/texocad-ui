@@ -134,13 +134,13 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   );
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 p-4">
+    <div className="shrink-0 p-4">
       <div
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`pointer-events-auto relative rounded-3xl border bg-[var(--viewer-glass-background)] px-2 py-2 shadow-[0_12px_40px_rgb(0_0_0_/_0.10)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors focus-within:border-border/80 focus-within:ring-1 focus-within:ring-border/40 ${isDragging
+        className={`relative rounded-3xl border bg-[var(--viewer-glass-background)] px-2 py-2 shadow-[0_12px_40px_rgb(0_0_0_/_0.10)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors focus-within:border-border/80 focus-within:ring-1 focus-within:ring-border/40 ${isDragging
           ? "border-dashed border-primary/60 bg-primary/5"
           : "border-[color-mix(in_srgb,var(--border)_58%,transparent)]"
           }`}
@@ -181,9 +181,10 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
             disabled={isBusy}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            onBlur={() => window.scrollTo(0, 0)}
             placeholder="Describe a part..."
             rows={1}
-            className="w-full resize-none overflow-y-auto bg-transparent px-2 pt-3 text-[15px] text-foreground placeholder:text-muted-foreground outline-none max-h-[200px]"
+            className="w-full resize-none overflow-y-auto bg-transparent px-2 pt-3 text-base text-foreground placeholder:text-muted-foreground outline-none max-h-[200px] md:text-[15px]"
             style={{ minHeight: "24px" }}
           />
 

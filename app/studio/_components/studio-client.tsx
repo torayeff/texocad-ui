@@ -195,7 +195,7 @@ export default function StudioClient() {
   } as CSSProperties;
 
   return (
-    <main className="flex h-screen flex-col bg-background">
+    <main className="fixed left-0 top-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
       <Header />
 
       <div ref={contentRef} className="relative flex min-h-0 flex-1 flex-col md:flex-row">

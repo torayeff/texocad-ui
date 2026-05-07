@@ -282,7 +282,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
         </div>
       ) : null}
 
-      <div className="relative flex-1 min-h-0 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className={chatHeaderClass}>
           <div className="flex min-w-0 items-center">
             <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
@@ -323,11 +323,13 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             onLoadMore={history.loadMore}
           />
         ) : (
-          <>
+          <div
+            className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
+          >
             <div
               ref={messagesContainerRef}
               onScroll={handleScroll}
-              className={`h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pt-6 ${isEmpty && !isHydrating ? "pb-6" : "pb-40"}`}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-on-hover px-4 pb-6 pt-6"
             >
               <div
                 className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full" : ""}`}
@@ -390,12 +392,12 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
               <button
                 onClick={scrollToBottom}
                 aria-label="Scroll to bottom"
-                className="absolute bottom-36 right-4 z-30 flex h-8 w-8 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] text-muted-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors hover:bg-muted hover:text-foreground"
+                className="absolute bottom-4 right-4 z-30 flex h-8 w-8 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] text-muted-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors hover:bg-muted hover:text-foreground"
               >
                 <ArrowDown size={16} />
               </button>
             )}
-          </>
+          </div>
         )}
         <ChatInput
           ref={chatInputRef}
