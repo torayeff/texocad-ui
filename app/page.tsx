@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 
 import { ThemeHeroImage } from "@/app/components/theme-hero-image";
@@ -46,17 +47,39 @@ export default function Home() {
       />
       <main className="flex min-h-dvh flex-col bg-background text-foreground">
         <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 text-sm sm:px-10 lg:px-12">
-          <Link
-            href={SITE_ROUTES.home}
-            className="flex items-center gap-2 text-xl font-semibold tracking-tight"
-            aria-label="TexoCAD home"
-          >
-            <ThemeLogo alt="" width={22} height={22} priority />
-            <span>TexoCAD</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <details className="relative sm:hidden">
+              <summary
+                className="grid size-[1.875rem] list-none place-items-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] text-muted-foreground [&::-webkit-details-marker]:hidden"
+                aria-label="Open navigation menu"
+              >
+                <Menu size={18} strokeWidth={2} />
+              </summary>
+              <div className="absolute left-0 top-10 z-20 flex min-w-36 flex-col gap-1 rounded-xl border border-border bg-background p-2 text-[13px] font-medium text-foreground/70 shadow-[0_8px_30px_rgb(0_0_0_/_0.08)]">
+                <Link href={SITE_ROUTES.studio} className="px-3 py-2">
+                  Studio
+                </Link>
+                <Link href={SITE_ROUTES.pricing} className="px-3 py-2">
+                  Pricing
+                </Link>
+                <Link href="https://viewer.texocad.ai" className="px-3 py-2">
+                  Viewer
+                </Link>
+              </div>
+            </details>
+
+            <Link
+              href={SITE_ROUTES.home}
+              className="flex items-center gap-2 text-xl font-semibold tracking-tight"
+              aria-label="TexoCAD home"
+            >
+              <ThemeLogo alt="" width={22} height={22} priority />
+              <span>TexoCAD</span>
+            </Link>
+          </div>
 
           <nav
-            className="flex items-center gap-5 text-[13px] font-medium text-foreground/70 sm:gap-8"
+            className="hidden items-center gap-8 text-[13px] font-medium text-foreground/70 sm:flex"
             aria-label="Primary navigation"
           >
             <Link
@@ -79,6 +102,10 @@ export default function Home() {
             </Link>
             <ThemeToggle />
           </nav>
+
+          <div className="sm:hidden">
+            <ThemeToggle />
+          </div>
         </header>
 
         <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-12 px-6 py-12 sm:px-10 lg:grid-cols-[0.72fr_1fr] lg:px-12 lg:py-16">
@@ -113,7 +140,7 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="mx-auto flex w-full max-w-7xl justify-end gap-6 px-6 pb-8 text-xs font-normal text-foreground/35 sm:px-10 lg:px-12">
+        <footer className="mx-auto flex w-full max-w-7xl justify-center gap-6 px-6 pb-8 text-xs font-normal text-foreground/35 sm:justify-end sm:px-10 lg:px-12">
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
             className="transition-colors hover:text-foreground/60"
