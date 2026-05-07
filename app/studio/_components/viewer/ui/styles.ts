@@ -63,12 +63,3 @@ export const inputClass =
 
 export const hintClass =
   "pointer-events-none absolute bottom-[calc(1.625rem+env(safe-area-inset-bottom))] left-3 right-3 z-10 flex select-none items-center justify-center gap-[0.35rem] whitespace-normal text-center text-[0.625rem] text-[color-mix(in_srgb,var(--muted-foreground)_60%,transparent)] sm:bottom-7 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:gap-3 sm:whitespace-nowrap";
-
-export const legalNoticeClass =
-  "pointer-events-none absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-3 right-3 z-10 flex select-none items-center justify-center gap-[0.35rem] whitespace-nowrap text-center text-[0.625rem] text-[color-mix(in_srgb,var(--muted-foreground)_60%,transparent)] sm:bottom-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2";
-
-export const modalBackdropClass =
-  "absolute inset-0 z-20 grid place-items-center bg-black/[0.24] p-4 backdrop-blur-[4px]";
-
-export const modalPanelClass =
-  "grid rounded-[1.375rem] border border-[color-mix(in_srgb,var(--border)_54%,transparent)] bg-[color-mix(in_srgb,var(--viewer-modal-background)_88%,var(--card))] p-[1.125rem] shadow-[0_24px_70px_rgb(0_0_0_/_0.18)]";

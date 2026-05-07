@@ -268,6 +268,29 @@ export default function TermsPage() {
           services that we do not control, including their uptime, security, data
           handling, or compatibility with your workflow.
         </p>
+        <p>
+          TexoCAD Studio uses <strong>occt-import-js</strong>, a
+          JavaScript/WebAssembly interface for Open CASCADE Technology, to read
+          STEP files in the browser. The library is licensed under GNU LGPL v2.1
+          and is served as a separate WebAssembly asset.
+        </p>
+        <ul>
+          <li>
+            <a href="/licenses/occt-import-js-lgpl-2.1.txt">
+              occt-import-js LGPL v2.1 license
+            </a>
+          </li>
+          <li>
+            <a href="/licenses/opencascade-technology-lgpl-2.1.txt">
+              Open CASCADE Technology license
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/kovacsv/occt-import-js">
+              occt-import-js source repository
+            </a>
+          </li>
+        </ul>
       </LegalSection>
 
       <LegalSection
