@@ -138,7 +138,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                 <button
                   type="button"
                   onClick={() => removeAttachment(a.url)}
-                  className="ml-0.5 rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                  className="ml-0.5 rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <X size={12} />
                 </button>
@@ -168,7 +168,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                 onClick={triggerFileSelect}
                 aria-label="Attach file"
                 title="Attach file"
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
               </button>
@@ -187,7 +187,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                   onClick={stopGeneration}
                   aria-label="Stop generation"
                   title="Stop generation"
-                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:opacity-90"
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-foreground text-background transition-colors hover:bg-foreground/90"
                 >
                   <Square size={14} fill="currentColor" />
                 </button>
@@ -197,8 +197,8 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                   disabled={!hasContent || isBusy}
                   aria-label="Send message"
                   title="Send message"
-                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors ${hasContent
-                    ? "bg-foreground text-background hover:opacity-90"
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] transition-colors ${hasContent
+                    ? "bg-foreground text-background hover:bg-foreground/90"
                     : "bg-muted text-muted-foreground"
                     } disabled:cursor-not-allowed`}
                 >

@@ -387,7 +387,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
               <button
                 onClick={scrollToBottom}
                 aria-label="Scroll to bottom"
-                className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90 transition-opacity"
+                className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-accent text-accent-foreground shadow-md transition-colors hover:bg-accent/90"
               >
                 <ArrowDown size={16} />
               </button>

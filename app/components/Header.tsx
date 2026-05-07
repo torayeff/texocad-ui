@@ -10,6 +10,21 @@ import { useTheme } from "next-themes";
 import { useMounted } from "@/app/hooks/use-mounted";
 import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
 
+const headerGlassClass =
+  "relative z-10 flex h-12 shrink-0 select-none items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-4 text-sm shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] md:px-8";
+
+const mobileMenuClass =
+  "absolute left-0 top-12 flex w-full flex-col gap-4 border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-6 py-4 shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] md:hidden";
+
+const headerLinkClass =
+  "rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors duration-150 ease-in-out hover:bg-muted hover:text-foreground";
+
+const headerIconButtonClass =
+  "grid size-[1.875rem] place-items-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] border-0 bg-transparent p-0 text-muted-foreground transition-colors duration-150 ease-in-out hover:bg-muted hover:text-foreground disabled:opacity-50";
+
+const mobileHeaderLinkClass =
+  "rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-in-out hover:bg-muted hover:text-foreground";
+
 export function Header() {
   const { isSignedIn, has, sessionClaims } = useAuth();
   const clerk = useClerk();
@@ -38,12 +53,12 @@ export function Header() {
   };
 
   return (
-    <header className={`h-12 shrink-0 border-b border-border px-4 md:px-8 flex items-center justify-between text-sm select-none relative bg-background ${isMobileMenuOpen ? 'z-50' : 'z-0'}`}>
+    <header className={`${headerGlassClass} ${isMobileMenuOpen ? "z-50" : ""}`}>
       <div className="flex items-center gap-4 md:gap-8">
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
+          className={`${headerIconButtonClass} md:hidden`}
           aria-label="Toggle menu"
         >
           {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -53,7 +68,7 @@ export function Header() {
           href="/"
           aria-label="TexoCAD"
           onClick={closeMobileMenu}
-          className="transition-opacity hover:opacity-80 flex items-center gap-2"
+          className="flex items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2 py-1 transition-colors duration-150 ease-in-out hover:bg-muted"
         >
           <Image
             src={isDark ? "/logo/logo-light.png" : "/logo/logo-dark.png"}
@@ -67,19 +82,19 @@ export function Header() {
         <div className="hidden md:flex items-center gap-6">
           <Link
             href={SITE_ROUTES.studio}
-            className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className={headerLinkClass}
           >
             Studio
           </Link>
           <Link
             href="https://viewer.texocad.ai"
-            className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className={headerLinkClass}
           >
             Viewer
           </Link>
           <Link
             href={SITE_ROUTES.pricing}
-            className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className={headerLinkClass}
           >
             Pricing
           </Link>
@@ -101,7 +116,7 @@ export function Header() {
           <button
             type="button"
             onClick={handleSignIn}
-            className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className={headerLinkClass}
           >
             Sign In
           </button>
@@ -111,31 +126,31 @@ export function Header() {
           onClick={handleThemeToggle}
           disabled={!mounted}
           aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+          className={headerIconButtonClass}
         >
           <ThemeIcon size={16} strokeWidth={2} />
         </button>
       </div>
 
       {isMobileMenuOpen && (
-        <div className="absolute top-12 left-0 w-full border-b border-border bg-background px-6 py-4 flex flex-col gap-4 md:hidden shadow-sm">
+        <div className={mobileMenuClass}>
           <Link
             href={SITE_ROUTES.studio}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className={mobileHeaderLinkClass}
             onClick={closeMobileMenu}
           >
             Studio
           </Link>
           <Link
             href="https://viewer.texocad.ai"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className={mobileHeaderLinkClass}
             onClick={closeMobileMenu}
           >
             Viewer
           </Link>
           <Link
             href={SITE_ROUTES.pricing}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className={mobileHeaderLinkClass}
             onClick={closeMobileMenu}
           >
             Pricing

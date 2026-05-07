@@ -79,9 +79,9 @@ export default function ThreadHistoryPanel({
                 onBlur={() => {
                   if (confirmingId === thread.threadId) setConfirmingId(null);
                 }}
-                className={`group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors focus-visible:bg-muted/60 focus-visible:outline-none ${thread.threadId === activeThreadId
-                  ? "bg-muted/70 text-foreground"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                className={`group flex w-full cursor-pointer items-center gap-3 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-3 py-3 text-left text-sm transition-colors focus-visible:bg-muted focus-visible:outline-none ${thread.threadId === activeThreadId
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
               >
                 <div className="min-w-0 flex-1">
@@ -101,7 +101,7 @@ export default function ThreadHistoryPanel({
                         onDeleteThread(thread.threadId);
                         setConfirmingId(null);
                       }}
-                      className="rounded-md bg-error/10 px-2.5 py-1 text-[10px] font-medium text-error transition-colors hover:bg-error/15"
+                      className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-error/10 px-2.5 py-1 text-[10px] font-medium text-error transition-colors hover:bg-error/15"
                     >
                       Delete
                     </button>
@@ -110,7 +110,7 @@ export default function ThreadHistoryPanel({
                         e.stopPropagation();
                         setConfirmingId(null);
                       }}
-                      className="rounded-md px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                       Cancel
                     </button>
@@ -119,7 +119,7 @@ export default function ThreadHistoryPanel({
                   <button
                     onClick={(e) => handleDelete(e, thread.threadId)}
                     aria-label="Delete thread"
-                    className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-[opacity,color,background-color] group-hover:opacity-100 hover:bg-error/10 hover:text-error focus:opacity-100"
+                    className="shrink-0 rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-1.5 text-muted-foreground opacity-0 transition-[opacity,color,background-color] group-hover:opacity-100 hover:bg-error/10 hover:text-error focus:opacity-100"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -139,7 +139,7 @@ export default function ThreadHistoryPanel({
         {hasMore && !isLoading && (
           <button
             onClick={onLoadMore}
-            className="mt-4 rounded-xl px-3 py-2.5 text-center text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="mt-4 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-3 py-2.5 text-center text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             Load more
           </button>

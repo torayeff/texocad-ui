@@ -79,7 +79,7 @@ export default function EmptyChatState({
               <button
                 key={example.label}
                 onClick={() => onExamplePrompt(example.prompt)}
-                className="rounded-md border border-border/40 bg-muted/30 px-2.5 py-1.5 text-xs font-medium text-foreground transition-[background-color,border-color,color] hover:border-border/70 hover:bg-muted/50 hover:text-foreground"
+                className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-border/40 bg-transparent px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-[background-color,border-color,color] hover:border-border/70 hover:bg-muted hover:text-foreground"
               >
                 {example.label}
               </button>
