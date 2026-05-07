@@ -114,7 +114,7 @@ export default function Home() {
               Build products from text.
             </h1>
             <p className="mt-5 text-lg leading-7 text-muted-foreground sm:text-xl">
-              Concept to CAD to product.
+              Describe what you want to make and turn it into editable CAD with AI.
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
