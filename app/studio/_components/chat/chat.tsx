@@ -324,7 +324,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             <div
               ref={messagesContainerRef}
               onScroll={handleScroll}
-              className="h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pb-6 pt-16"
+              className="h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pb-40 pt-28"
             >
               <div
                 className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-start" : ""}`}
@@ -387,24 +387,23 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
               <button
                 onClick={scrollToBottom}
                 aria-label="Scroll to bottom"
-                className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-accent text-accent-foreground shadow-md transition-colors hover:bg-accent/90"
+                className="absolute bottom-36 right-4 z-30 flex h-8 w-8 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] text-muted-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors hover:bg-muted hover:text-foreground"
               >
                 <ArrowDown size={16} />
               </button>
             )}
           </>
         )}
+        <ChatInput
+          ref={chatInputRef}
+          isLoading={isLoading}
+          isBusy={isBusy}
+          onSubmit={sendMessage}
+          stopGeneration={() => stream.stop()}
+          model={selectedModel}
+          onModelChange={handleModelChange}
+        />
       </div>
-
-      <ChatInput
-        ref={chatInputRef}
-        isLoading={isLoading}
-        isBusy={isBusy}
-        onSubmit={sendMessage}
-        stopGeneration={() => stream.stop()}
-        model={selectedModel}
-        onModelChange={handleModelChange}
-      />
     </div>
   );
 }

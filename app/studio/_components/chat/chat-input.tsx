@@ -107,15 +107,15 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   );
 
   return (
-    <div className="sticky bottom-0 z-10 p-4 bg-background">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 p-4">
       <div
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative rounded-3xl border bg-muted/20 px-2 py-2 transition-colors focus-within:border-border/80 focus-within:bg-background focus-within:ring-1 focus-within:ring-border/40 ${isDragging
+        className={`pointer-events-auto relative rounded-3xl border bg-[var(--viewer-glass-background)] px-2 py-2 shadow-[0_12px_40px_rgb(0_0_0_/_0.10)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors focus-within:border-border/80 focus-within:ring-1 focus-within:ring-border/40 ${isDragging
           ? "border-dashed border-primary/60 bg-primary/5"
-          : "border-border"
+          : "border-[color-mix(in_srgb,var(--border)_58%,transparent)]"
           }`}
       >
         <input

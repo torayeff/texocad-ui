@@ -34,7 +34,7 @@ export const presetButtonClass =
 
 export const toolRailClass = cn(
   viewerGlassClass,
-  "absolute left-1/2 top-3 z-20 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-0.5 rounded-[var(--viewer-control-radius)] p-1 sm:flex-nowrap",
+  "absolute left-1/2 top-5 z-20 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-0.5 rounded-[var(--viewer-control-radius)] p-1 sm:flex-nowrap",
 );
 
 export const toolButtonClass =
