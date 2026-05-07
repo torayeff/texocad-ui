@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
-import { ArrowDown, CirclePlus, History, Loader2 } from "lucide-react";
+import { ArrowDown, CirclePlus, FileClock, Loader2 } from "lucide-react";
 
 import { useThreadHistory } from "@/app/studio/_hooks/use-thread-history";
 import { useChatStream } from "@/app/studio/_hooks/use-chat-stream";
@@ -19,11 +19,42 @@ import { TodoList } from "@/app/studio/_components/chat/todo-list";
 import ThreadHistoryPanel from "@/app/studio/_components/chat/thread-history-panel";
 import EmptyChatState from "@/app/studio/_components/chat/empty-chat-state";
 import ChatInput, { type ChatInputHandle } from "@/app/studio/_components/chat/chat-input";
+import {
+  activeControlClass,
+  cn,
+  toolButtonClass,
+  toolRailClass,
+  toolTooltipClass,
+} from "@/app/studio/_components/viewer/ui/styles";
 
 export interface ChatProps {
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
   onClearViewer: () => void;
+}
+
+interface ChatActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+  tooltip: string;
+}
+
+const chatActionRailClass =
+  cn(toolRailClass, "left-auto right-3 translate-x-0");
+
+const chatActionTooltipClass =
+  cn(toolTooltipClass, "left-auto right-0 translate-x-0 group-hover/action:opacity-100 group-focus-within/action:opacity-100");
+
+function ChatActionButton({ children, className, tooltip, ...buttonProps }: ChatActionButtonProps) {
+  return (
+    <span className="group/action relative inline-grid">
+      <button {...buttonProps} aria-label={buttonProps["aria-label"] ?? tooltip} className={className}>
+        {children}
+      </button>
+      <span role="tooltip" className={chatActionTooltipClass}>
+        {tooltip}
+      </span>
+    </span>
+  );
 }
 
 export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, onClearViewer }: ChatProps) {
@@ -255,33 +286,29 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
         </div>
       ) : null}
 
-      <div className="flex shrink-0 items-center justify-between gap-0 px-4 py-3">
-        <span />
-        <div className="flex items-center gap-0">
-          <button
+      <div className="relative flex-1 min-h-0 overflow-hidden">
+        <div className={chatActionRailClass} aria-label="Conversation actions">
+          <ChatActionButton
+            type="button"
             onClick={handleNewChat}
-            title="New chat"
+            tooltip="New chat"
             aria-label="New chat"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted/70 hover:text-muted-foreground"
+            className={toolButtonClass}
           >
-            <CirclePlus size={18} />
-          </button>
-          <button
+            <CirclePlus size={14} strokeWidth={1.75} />
+          </ChatActionButton>
+          <ChatActionButton
+            type="button"
             onClick={toggleHistory}
-            title={historyOpen ? "Close history" : "History"}
+            tooltip={historyOpen ? "Close history" : "History"}
             aria-label={historyOpen ? "Close history" : "Open history"}
             aria-pressed={historyOpen}
-            className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${historyOpen
-              ? "bg-muted/70 text-muted-foreground"
-              : "text-muted-foreground/70 hover:bg-muted/70 hover:text-muted-foreground"
-              }`}
+            className={cn(toolButtonClass, historyOpen && activeControlClass)}
           >
-            <History size={16} />
-          </button>
+            <FileClock size={14} strokeWidth={1.75} />
+          </ChatActionButton>
         </div>
-      </div>
 
-      <div className="relative flex-1 min-h-0 overflow-hidden">
         {historyOpen ? (
           <ThreadHistoryPanel
             threads={history.threads}
@@ -297,7 +324,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             <div
               ref={messagesContainerRef}
               onScroll={handleScroll}
-              className="h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pt-2 pb-6"
+              className="h-full min-h-0 overflow-y-auto scroll-on-hover px-4 pb-6 pt-16"
             >
               <div
                 className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-start" : ""}`}

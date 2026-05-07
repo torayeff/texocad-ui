@@ -50,7 +50,7 @@ export default function ThreadHistoryPanel({
   }, [activeThreadId, onSelectThread]);
 
   return (
-    <div className="h-full overflow-y-auto scroll-on-hover px-4 pb-6 pt-3">
+    <div className="h-full overflow-y-auto scroll-on-hover px-4 pb-6 pt-16">
       <div className="mx-auto flex w-full max-w-3xl flex-col">
         <div className="px-3 pb-3">
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
