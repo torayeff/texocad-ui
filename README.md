@@ -1,6 +1,6 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] Check all UI/UX/buttons/responsiveness
-- [ ] Refresh at every message
-- [ ] Security check
+- [ ] Check mobile UI on deployment
+- [ ] Design new page
+- [ ] Desing Gallery
