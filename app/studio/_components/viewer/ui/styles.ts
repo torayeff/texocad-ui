@@ -34,7 +34,7 @@ export const presetButtonClass =
 
 export const toolRailClass = cn(
   viewerGlassClass,
-  "absolute left-1/2 top-[calc(3.75rem+env(safe-area-inset-top))] z-20 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-0.5 rounded-[var(--viewer-control-radius)] p-1 sm:top-3 sm:flex-nowrap",
+  "absolute left-1/2 top-3 z-20 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-0.5 rounded-[var(--viewer-control-radius)] p-1 sm:flex-nowrap",
 );
 
 export const toolButtonClass =
@@ -62,4 +62,4 @@ export const inputClass =
   "h-[2.625rem] w-full min-w-0 rounded-[0.8125rem] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[var(--viewer-field-background)] px-[0.8rem] py-[0.675rem] text-sm text-foreground outline-none transition-[border-color,box-shadow] duration-150 ease-in-out focus:border-accent focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_18%,transparent)]";
 
 export const hintClass =
-  "pointer-events-none absolute bottom-[calc(1.625rem+env(safe-area-inset-bottom))] left-3 right-3 z-10 flex select-none items-center justify-center gap-[0.35rem] whitespace-normal text-center text-[0.625rem] text-[color-mix(in_srgb,var(--muted-foreground)_60%,transparent)] sm:bottom-7 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:gap-3 sm:whitespace-nowrap";
+  "pointer-events-none absolute bottom-7 left-3 right-3 z-10 flex select-none items-center justify-center gap-[0.35rem] whitespace-normal text-center text-[0.625rem] text-[color-mix(in_srgb,var(--muted-foreground)_60%,transparent)] sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:gap-3 sm:whitespace-nowrap";
