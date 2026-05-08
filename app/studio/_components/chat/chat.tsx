@@ -195,22 +195,15 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
     });
     setPendingHumanMessage(new HumanMessage(trimmed));
 
-    let threadId = urlThreadId;
-    if (!threadId && userId) {
-      const thread = await client.threads.create({
-        metadata: { owner: userId },
-      });
-      threadId = thread.thread_id;
-      handleThreadIdChange(threadId);
-    }
-
-    const metadata = isVip ? { model: selectedModel } : undefined;
+    const metadata = {
+      ...(userId ? { owner: userId } : {}),
+      ...(isVip ? { model: selectedModel } : {}),
+    };
     stream.submit(
       { messages: [{ type: "human", content: trimmed }] },
       {
         streamSubgraphs: true,
-        metadata,
-        threadId: threadId ?? undefined,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         optimisticValues: (prev) => ({
           ...prev,
           todos: [],
@@ -222,7 +215,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
     requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-  }, [isBusy, isVip, selectedModel, stream, urlThreadId, userId, client, handleThreadIdChange]);
+  }, [isBusy, isVip, selectedModel, stream, userId]);
 
   const handleExamplePrompt = useCallback((prompt: string) => {
     if (chatInputRef.current) {
