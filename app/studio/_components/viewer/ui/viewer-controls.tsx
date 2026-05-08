@@ -1,4 +1,15 @@
-import { type ButtonHTMLAttributes, type ReactNode, memo, useMemo, useState } from "react";
+import {
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  type ReactNode,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Camera, Download, Focus, History, Layers, Loader2, Move3d, MoveDiagonal, Puzzle, RefreshCcwDot, Rotate3d, Share2, SquareDashed, Undo2 } from "lucide-react";
 
 import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
@@ -62,6 +73,15 @@ interface ToolButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   tooltipDisabled?: boolean;
 }
 
+interface FloatingPanelPosition {
+  left: number;
+  top: number;
+}
+
+const floatingPanelGap = 8;
+const viewportPadding = 12;
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 function ToolButton({ children, className, tooltip, tooltipDisabled = false, ...buttonProps }: ToolButtonProps) {
   return (
     <span className="group/tooltip relative inline-grid">
@@ -113,6 +133,10 @@ export const ViewerControls = memo(function ViewerControls({
   onToggleWireframe,
 }: ViewerControlsProps) {
   const [openPanel, setOpenPanel] = useState<OpenPanel | null>(null);
+  const [panelPosition, setPanelPosition] = useState<FloatingPanelPosition | null>(null);
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const componentCount = useMemo(() => countModelBrowserNodes(modelBrowserNodes), [modelBrowserNodes]);
   const canShowComponents = modelBrowserNodes.length > 0;
   const canShowRevisions = revisions.length > 0;
@@ -127,8 +151,11 @@ export const ViewerControls = memo(function ViewerControls({
       ? null
       : openPanel;
 
-  const togglePanel = (panel: OpenPanel) => {
-    setOpenPanel((currentPanel) => (currentPanel === panel ? null : panel));
+  const togglePanel = (panel: OpenPanel, trigger: HTMLButtonElement) => {
+    const nextPanel = openPanel === panel ? null : panel;
+    activeTriggerRef.current = nextPanel ? trigger : null;
+    setPanelPosition(null);
+    setOpenPanel(nextPanel);
   };
 
   const viewMenuOpen = visibleOpenPanel === "views";
@@ -138,11 +165,105 @@ export const ViewerControls = memo(function ViewerControls({
   const revisionsOpen = visibleOpenPanel === "revisions";
   const transformOpen = visibleOpenPanel === "transform";
 
+  const updateOpenPanelPosition = useCallback(() => {
+    if (!visibleOpenPanel || typeof window === "undefined") {
+      return;
+    }
+
+    const rail = railRef.current;
+    const trigger = activeTriggerRef.current;
+    const panel = panelRef.current;
+
+    if (!rail || !trigger || !panel) {
+      return;
+    }
+
+    const railRect = rail.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    const preferredViewportLeft = triggerRect.left + triggerRect.width / 2 - panelRect.width / 2;
+    const maxViewportLeft = Math.max(viewportPadding, window.innerWidth - viewportPadding - panelRect.width);
+    const viewportLeft = Math.min(Math.max(preferredViewportLeft, viewportPadding), maxViewportLeft);
+    const preferredViewportTop = railRect.bottom + floatingPanelGap;
+    const maxViewportTop = Math.max(viewportPadding, window.innerHeight - viewportPadding - panelRect.height);
+    const viewportTop = Math.min(Math.max(preferredViewportTop, viewportPadding), maxViewportTop);
+    const nextPosition = {
+      left: viewportLeft - railRect.left,
+      top: viewportTop - railRect.top,
+    };
+
+    setPanelPosition((currentPosition) => {
+      if (
+        currentPosition &&
+        Math.abs(currentPosition.left - nextPosition.left) < 0.5 &&
+        Math.abs(currentPosition.top - nextPosition.top) < 0.5
+      ) {
+        return currentPosition;
+      }
+
+      return nextPosition;
+    });
+  }, [visibleOpenPanel]);
+
+  useIsomorphicLayoutEffect(() => {
+    updateOpenPanelPosition();
+  }, [
+    activeRevisionKey,
+    canDownload,
+    canDownloadSource,
+    componentCount,
+    explodeAmount,
+    hasTransforms,
+    isLatestRevisionSelected,
+    revisions.length,
+    transformMode,
+    updateOpenPanelPosition,
+  ]);
+
+  useEffect(() => {
+    if (!visibleOpenPanel || typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener("resize", updateOpenPanelPosition);
+    window.addEventListener("scroll", updateOpenPanelPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateOpenPanelPosition);
+      window.removeEventListener("scroll", updateOpenPanelPosition, true);
+    };
+  }, [updateOpenPanelPosition, visibleOpenPanel]);
+
+  useEffect(() => {
+    if (!visibleOpenPanel || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const trigger = activeTriggerRef.current;
+    const panel = panelRef.current;
+
+    if (!trigger || !panel) {
+      return;
+    }
+
+    const observer = new ResizeObserver(updateOpenPanelPosition);
+    observer.observe(trigger);
+    observer.observe(panel);
+
+    return () => observer.disconnect();
+  }, [updateOpenPanelPosition, visibleOpenPanel]);
+
+  const panelStyle: CSSProperties = {
+    left: panelPosition?.left ?? 0,
+    top: panelPosition?.top ?? 0,
+    visibility: panelPosition ? "visible" : "hidden",
+  };
+
   return (
-    <div className={toolRailClass} aria-label="Viewer controls">
+    <div ref={railRef} className={toolRailClass} aria-label="Viewer controls">
       <ToolButton
         type="button"
-        onClick={() => togglePanel("views")}
+        onClick={(event) => togglePanel("views", event.currentTarget)}
         tooltip="Camera views"
         tooltipDisabled={viewMenuOpen}
         aria-label={activeView ? `Camera views, current view ${viewLabels[activeView]}` : "Camera views"}
@@ -157,7 +278,7 @@ export const ViewerControls = memo(function ViewerControls({
       {canShowComponents ? (
         <ToolButton
           type="button"
-          onClick={() => togglePanel("components")}
+          onClick={(event) => togglePanel("components", event.currentTarget)}
           tooltip="Model components"
           tooltipDisabled={componentsOpen}
           aria-label={`Model components, ${componentCount} total`}
@@ -196,7 +317,7 @@ export const ViewerControls = memo(function ViewerControls({
 
       <ToolButton
         type="button"
-        onClick={() => togglePanel("transform")}
+        onClick={(event) => togglePanel("transform", event.currentTarget)}
         tooltip="Transform"
         tooltipDisabled={transformOpen}
         aria-label="Transform object"
@@ -211,7 +332,7 @@ export const ViewerControls = memo(function ViewerControls({
       {canExplode ? (
         <ToolButton
           type="button"
-          onClick={() => togglePanel("explode")}
+          onClick={(event) => togglePanel("explode", event.currentTarget)}
           tooltip="Explode model"
           tooltipDisabled={explodeOpen}
           aria-label="Explode model"
@@ -245,7 +366,7 @@ export const ViewerControls = memo(function ViewerControls({
           {canDownload || canDownloadSource ? (
             <ToolButton
               type="button"
-              onClick={() => togglePanel("download")}
+              onClick={(event) => togglePanel("download", event.currentTarget)}
               tooltip="Download"
               tooltipDisabled={downloadOpen}
               aria-label="Download"
@@ -264,7 +385,7 @@ export const ViewerControls = memo(function ViewerControls({
           {canShowRevisions ? (
             <ToolButton
               type="button"
-              onClick={() => togglePanel("revisions")}
+              onClick={(event) => togglePanel("revisions", event.currentTarget)}
               tooltip="Revisions"
               tooltipDisabled={revisionsOpen}
               aria-label={activeRevision ? `Revisions, viewing revision ${activeRevision.revisionNumber}` : "Revisions"}
@@ -281,7 +402,9 @@ export const ViewerControls = memo(function ViewerControls({
 
       {viewMenuOpen ? (
         <div
-          className={controlMenuPopoverClass}
+          ref={panelRef}
+          className={cn(controlMenuPopoverClass, "!w-32")}
+          style={panelStyle}
           id="view-presets-menu"
           role="menu"
           aria-label="Camera views"
@@ -306,7 +429,9 @@ export const ViewerControls = memo(function ViewerControls({
 
       {downloadOpen ? (
         <div
+          ref={panelRef}
           className={controlMenuPopoverClass}
+          style={panelStyle}
           id="download-menu"
           role="menu"
           aria-label="Download files"
@@ -346,9 +471,11 @@ export const ViewerControls = memo(function ViewerControls({
 
       {revisionsOpen ? (
         <RevisionMenu
+          ref={panelRef}
           activeRevisionKey={activeRevisionKey}
           isLatestRevisionSelected={isLatestRevisionSelected}
           revisions={revisions}
+          style={panelStyle}
           onClose={() => setOpenPanel(null)}
           onSelectLatestRevision={onSelectLatestRevision}
           onSelectRevision={onSelectRevision}
@@ -356,20 +483,23 @@ export const ViewerControls = memo(function ViewerControls({
       ) : null}
 
       {componentsOpen ? (
-        <ModelBrowserTree
-          id="model-components-menu"
-          className={controlFloatingPanelClass}
-          nodes={modelBrowserNodes}
-          onSelectNode={onSelectBrowserNode}
-          onToggleNodeVisibility={onToggleBrowserNodeVisibility}
-          selectedNodeId={selectedBrowserNodeId}
-          visibleNodeIds={visibleBrowserNodeIds}
-        />
+        <div ref={panelRef} className={controlFloatingPanelClass} style={panelStyle}>
+          <ModelBrowserTree
+            id="model-components-menu"
+            nodes={modelBrowserNodes}
+            onSelectNode={onSelectBrowserNode}
+            onToggleNodeVisibility={onToggleBrowserNodeVisibility}
+            selectedNodeId={selectedBrowserNodeId}
+            visibleNodeIds={visibleBrowserNodeIds}
+          />
+        </div>
       ) : null}
 
       {explodeOpen ? (
         <div
+          ref={panelRef}
           className={controlPanelPopoverClass}
+          style={panelStyle}
           id="explode-slider"
           aria-label="Exploded view controls"
         >
@@ -394,7 +524,9 @@ export const ViewerControls = memo(function ViewerControls({
 
       {transformOpen ? (
         <div
-          className={controlMenuPopoverClass}
+          ref={panelRef}
+          className={cn(controlMenuPopoverClass, "!w-32")}
+          style={panelStyle}
           id="transform-menu"
           role="menu"
           aria-label="Transform controls"
@@ -407,7 +539,7 @@ export const ViewerControls = memo(function ViewerControls({
               onSetTransformMode(transformMode === "translate" ? null : "translate");
               setOpenPanel(null);
             }}
-            className={cn(controlMenuItemClass, transformMode === "translate" && activeControlClass)}
+            className={cn(controlMenuItemClass, "justify-start gap-2", transformMode === "translate" && activeControlClass)}
           >
             <MoveDiagonal size={12} strokeWidth={1.75} />
             Move
@@ -420,7 +552,7 @@ export const ViewerControls = memo(function ViewerControls({
               onSetTransformMode(transformMode === "rotate" ? null : "rotate");
               setOpenPanel(null);
             }}
-            className={cn(controlMenuItemClass, transformMode === "rotate" && activeControlClass)}
+            className={cn(controlMenuItemClass, "justify-start gap-2", transformMode === "rotate" && activeControlClass)}
           >
             <Rotate3d size={12} strokeWidth={1.75} />
             Rotate
@@ -433,7 +565,7 @@ export const ViewerControls = memo(function ViewerControls({
                 onResetTransforms();
                 setOpenPanel(null);
               }}
-              className={controlMenuItemClass}
+              className={cn(controlMenuItemClass, "justify-start gap-2")}
             >
               <Undo2 size={12} strokeWidth={1.75} />
               Reset

@@ -13,6 +13,7 @@ import {
 
 const triadCameraDistance = 100;
 const triadFrustum = 40;
+const triadTopOffset = 68;
 const triadViewportSize = 116;
 const mobileTriadViewportSize = 70;
 const mobileViewportBreakpoint = 640;
@@ -115,7 +116,7 @@ function renderAxisTriad(
   const targetSize = isMobileViewport ? mobileTriadViewportSize : triadViewportSize;
   const size = Math.min(targetSize, Math.max(72, width - 24), Math.max(72, height - 24));
   const x = 0;
-  const y = 0;
+  const y = Math.max(0, height - size - triadTopOffset);
 
   triad.quaternion.copy(viewerCamera.quaternion).invert();
   triad.position.set(0, 0, 0);

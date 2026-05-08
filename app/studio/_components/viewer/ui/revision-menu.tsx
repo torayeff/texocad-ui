@@ -1,3 +1,4 @@
+import { type CSSProperties, forwardRef } from "react";
 import { Check } from "lucide-react";
 
 import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
@@ -12,24 +13,28 @@ interface RevisionMenuProps {
   activeRevisionKey: string | null;
   isLatestRevisionSelected: boolean;
   revisions: ViewerRevisionOption[];
+  style?: CSSProperties;
   onSelectLatestRevision: () => void;
   onSelectRevision: (key: string) => void;
   onClose: () => void;
 }
 
-export function RevisionMenu({
+export const RevisionMenu = forwardRef<HTMLDivElement, RevisionMenuProps>(function RevisionMenu({
   activeRevisionKey,
   isLatestRevisionSelected,
   revisions,
+  style,
   onSelectLatestRevision,
   onSelectRevision,
   onClose,
-}: RevisionMenuProps) {
+}, ref) {
   const latestRevisionKey = revisions[0]?.key ?? null;
 
   return (
     <div
+      ref={ref}
       className={cn(controlMenuPopoverClass, "max-h-80 overflow-y-auto")}
+      style={style}
       id="revision-menu"
       role="menu"
       aria-label="Revisions"
@@ -76,4 +81,4 @@ export function RevisionMenu({
       })}
     </div>
   );
-}
+});

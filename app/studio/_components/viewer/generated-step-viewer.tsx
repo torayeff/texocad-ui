@@ -124,7 +124,7 @@ export default function GeneratedStepViewer({
 
   return (
     <section
-      className="relative size-full overflow-hidden bg-[var(--viewer-background,var(--muted))] text-foreground"
+      className="relative size-full overflow-visible bg-[var(--viewer-background,var(--muted))] text-foreground md:overflow-hidden"
       aria-label="Generated STEP viewer"
     >
       <div ref={containerRef} className="absolute inset-0 cursor-grab [&_canvas]:block [&_canvas]:size-full" />

@@ -1,4 +1,4 @@
-import { type Dispatch, type MutableRefObject, type SetStateAction, useEffect } from "react";
+import { type Dispatch, type RefObject, type SetStateAction, useEffect } from "react";
 import * as THREE from "three";
 
 import { buildModel, getSourceBuffer, sourceFormat, type ModelFormat, type ModelSource } from "@/app/studio/_components/viewer/model-viewer-loaders";
@@ -9,17 +9,17 @@ import { visibleMeshes } from "@/app/studio/_components/viewer/model-viewer-pick
 import { configureCadRenderer, configureRendererForFormat, type ViewerRuntime } from "@/app/studio/_components/viewer/use-three-renderer";
 
 interface UseModelLoadingOptions {
-  activeViewRef: MutableRefObject<ViewPreset>;
-  allPickableMeshesRef: MutableRefObject<THREE.Mesh[]>;
-  browserNodeEntriesRef: MutableRefObject<Map<string, BrowserNodeEntry>>;
+  activeViewRef: RefObject<ViewPreset>;
+  allPickableMeshesRef: RefObject<THREE.Mesh[]>;
+  browserNodeEntriesRef: RefObject<Map<string, BrowserNodeEntry>>;
   clearBrowserSelectionHighlight: () => void;
   clearCurrentModel: (scene?: THREE.Scene) => void;
-  fitDistanceRef: MutableRefObject<number>;
+  fitDistanceRef: RefObject<number>;
   initializeExplode: (model: THREE.Group, format: ModelFormat) => void;
-  modelGroupRef: MutableRefObject<THREE.Group | null>;
-  pickableMeshesRef: MutableRefObject<THREE.Mesh[]>;
-  runtimeRef: MutableRefObject<ViewerRuntime | null>;
-  selectedBrowserNodeIdRef: MutableRefObject<string | null>;
+  modelGroupRef: RefObject<THREE.Group | null>;
+  pickableMeshesRef: RefObject<THREE.Mesh[]>;
+  runtimeRef: RefObject<ViewerRuntime | null>;
+  selectedBrowserNodeIdRef: RefObject<string | null>;
   setLoadProgress: Dispatch<SetStateAction<LoadProgress | null>>;
   setLoadState: Dispatch<SetStateAction<LoadState>>;
   setMeshCount: Dispatch<SetStateAction<number | null>>;
@@ -28,7 +28,7 @@ interface UseModelLoadingOptions {
   setStatus: Dispatch<SetStateAction<string>>;
   setVisibleBrowserNodeIds: Dispatch<SetStateAction<Set<string>>>;
   source: ModelSource | null;
-  wireframeRef: MutableRefObject<boolean>;
+  wireframeRef: RefObject<boolean>;
 }
 
 export function useModelLoading({

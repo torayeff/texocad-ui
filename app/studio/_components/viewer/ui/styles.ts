@@ -34,7 +34,7 @@ export const presetButtonClass =
 
 export const toolRailClass = cn(
   viewerGlassClass,
-  "absolute left-1/2 top-5 z-20 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-0.5 rounded-[var(--viewer-control-radius)] p-1 sm:flex-nowrap",
+  "absolute left-1/2 top-5 z-40 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-0.5 rounded-[var(--viewer-control-radius)] p-1 sm:flex-nowrap",
 );
 
 export const toolButtonClass =
@@ -42,16 +42,16 @@ export const toolButtonClass =
 
 export const toolTooltipClass = cn(
   viewerGlassClass,
-  "pointer-events-none absolute left-1/2 top-[calc(100%+0.375rem)] z-30 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-[0.6875rem] font-medium text-foreground opacity-0 shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] group-hover/tooltip:opacity-100",
+  "pointer-events-none absolute left-1/2 top-[calc(100%+0.375rem)] z-50 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-[0.6875rem] font-medium text-foreground opacity-0 shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] group-hover/tooltip:opacity-100",
 );
 
 export const actionPopoverClass = cn(
   viewerGlassClass,
-  "absolute z-20 grid gap-1 rounded-[var(--viewer-control-radius)] text-foreground",
+  "absolute z-50 grid gap-1 rounded-[var(--viewer-control-radius)] text-foreground",
 );
 
 const controlPopoverAnchorClass =
-  "left-1/2 top-[calc(100%+0.5rem)] w-[min(15rem,calc(100vw-1.5rem))] -translate-x-1/2";
+  "w-[min(15rem,calc(100vw-1.5rem))]";
 
 export const controlMenuPopoverClass = cn(
   actionPopoverClass,
@@ -66,7 +66,7 @@ export const controlPanelPopoverClass = cn(
 );
 
 export const controlFloatingPanelClass =
-  "absolute left-1/2 top-[calc(100%+0.5rem)] z-20 -translate-x-1/2";
+  "absolute z-50";
 
 export const controlMenuItemClass = cn(
   presetButtonClass,
