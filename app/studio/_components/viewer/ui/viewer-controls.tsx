@@ -1,5 +1,5 @@
 import { type ButtonHTMLAttributes, type ReactNode, memo, useMemo, useState } from "react";
-import { Camera, Download, Focus, History, Layers, Loader2, Move3d, Puzzle, RefreshCcwDot, Rotate3d, Share2, SquareDashed, Undo2 } from "lucide-react";
+import { Camera, Download, Focus, History, Layers, Loader2, Move3d, MoveDiagonal, Puzzle, RefreshCcwDot, Rotate3d, Share2, SquareDashed, Undo2 } from "lucide-react";
 
 import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
 import { type ModelBrowserNode, type TransformMode, type ViewPreset, viewLabels, viewPresets } from "@/app/studio/_components/viewer/model-viewer-state";
@@ -54,7 +54,7 @@ interface ViewerControlsProps {
   onToggleWireframe: () => void;
 }
 
-type OpenPanel = "components" | "download" | "explode" | "revisions" | "views";
+type OpenPanel = "components" | "download" | "explode" | "revisions" | "transform" | "views";
 
 interface ToolButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "title"> {
   children: ReactNode;
@@ -136,6 +136,7 @@ export const ViewerControls = memo(function ViewerControls({
   const explodeOpen = visibleOpenPanel === "explode";
   const componentsOpen = visibleOpenPanel === "components";
   const revisionsOpen = visibleOpenPanel === "revisions";
+  const transformOpen = visibleOpenPanel === "transform";
 
   return (
     <div className={toolRailClass} aria-label="Viewer controls">
@@ -195,36 +196,17 @@ export const ViewerControls = memo(function ViewerControls({
 
       <ToolButton
         type="button"
-        onClick={() => onSetTransformMode(transformMode === "translate" ? null : "translate")}
-        tooltip="Move (G)"
-        aria-label="Move object"
-        aria-pressed={transformMode === "translate"}
-        className={cn(toolButtonClass, transformMode === "translate" && activeControlClass)}
+        onClick={() => togglePanel("transform")}
+        tooltip="Transform"
+        tooltipDisabled={transformOpen}
+        aria-label="Transform object"
+        aria-expanded={transformOpen}
+        aria-haspopup="menu"
+        aria-controls="transform-menu"
+        className={cn(toolButtonClass, (transformOpen || transformMode !== null) && activeControlClass)}
       >
         <Move3d size={14} strokeWidth={1.75} />
       </ToolButton>
-      <ToolButton
-        type="button"
-        onClick={() => onSetTransformMode(transformMode === "rotate" ? null : "rotate")}
-        tooltip="Rotate (R)"
-        aria-label="Rotate object"
-        aria-pressed={transformMode === "rotate"}
-        className={cn(toolButtonClass, transformMode === "rotate" && activeControlClass)}
-      >
-        <Rotate3d size={14} strokeWidth={1.75} />
-      </ToolButton>
-
-      {hasTransforms ? (
-        <ToolButton
-          type="button"
-          onClick={onResetTransforms}
-          tooltip="Reset transforms"
-          aria-label="Reset transforms"
-          className={toolButtonClass}
-        >
-          <Undo2 size={14} strokeWidth={1.75} />
-        </ToolButton>
-      ) : null}
 
       {canExplode ? (
         <ToolButton
@@ -407,6 +389,56 @@ export const ViewerControls = memo(function ViewerControls({
             aria-label="Explode amount"
             className="h-1.5 w-full cursor-pointer accent-foreground"
           />
+        </div>
+      ) : null}
+
+      {transformOpen ? (
+        <div
+          className={controlMenuPopoverClass}
+          id="transform-menu"
+          role="menu"
+          aria-label="Transform controls"
+        >
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={transformMode === "translate"}
+            onClick={() => {
+              onSetTransformMode(transformMode === "translate" ? null : "translate");
+              setOpenPanel(null);
+            }}
+            className={cn(controlMenuItemClass, transformMode === "translate" && activeControlClass)}
+          >
+            <MoveDiagonal size={12} strokeWidth={1.75} />
+            Move
+          </button>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={transformMode === "rotate"}
+            onClick={() => {
+              onSetTransformMode(transformMode === "rotate" ? null : "rotate");
+              setOpenPanel(null);
+            }}
+            className={cn(controlMenuItemClass, transformMode === "rotate" && activeControlClass)}
+          >
+            <Rotate3d size={12} strokeWidth={1.75} />
+            Rotate
+          </button>
+          {hasTransforms ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onResetTransforms();
+                setOpenPanel(null);
+              }}
+              className={controlMenuItemClass}
+            >
+              <Undo2 size={12} strokeWidth={1.75} />
+              Reset
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>
