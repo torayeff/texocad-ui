@@ -297,7 +297,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
         <div className={chatHeaderClass}>
           <div className="flex min-w-0 items-center">
             <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
-              AI CAD Engineer
+              {historyOpen ? "Chat History" : "AI CAD Engineer"}
             </span>
           </div>
           <div className="flex items-center gap-0.5">
@@ -410,15 +410,17 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             )}
           </div>
         )}
-        <ChatInput
-          ref={chatInputRef}
-          isLoading={isLoading}
-          isBusy={isBusy}
-          onSubmit={sendMessage}
-          stopGeneration={() => stream.stop()}
-          model={selectedModel}
-          onModelChange={handleModelChange}
-        />
+        {historyOpen ? null : (
+          <ChatInput
+            ref={chatInputRef}
+            isLoading={isLoading}
+            isBusy={isBusy}
+            onSubmit={sendMessage}
+            stopGeneration={() => stream.stop()}
+            model={selectedModel}
+            onModelChange={handleModelChange}
+          />
+        )}
       </div>
     </div>
   );
