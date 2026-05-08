@@ -250,13 +250,10 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
   }, [timer, history, urlThreadId, handleThreadIdChange]);
 
   const handleNewChat = useCallback(() => {
-    setHistoryOpen(false);
-    setPendingHumanMessage(null);
-    timer.reset();
-    setDraftConversationKey((key) => key + 1);
-    handleThreadIdChange(null);
-    onClearViewerRef.current();
-  }, [timer, handleThreadIdChange]);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("thread_id");
+    window.open(nextUrl.toString(), "_blank", "noopener,noreferrer");
+  }, []);
 
   const toggleHistory = useCallback(() => {
     setHistoryOpen((v) => {
