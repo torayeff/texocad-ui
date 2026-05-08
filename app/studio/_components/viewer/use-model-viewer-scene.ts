@@ -16,6 +16,7 @@ import {
 import { attachModelPicking, collectStandardMaterials, type HighlightState, visibleMeshes } from "@/app/studio/_components/viewer/model-viewer-picking";
 import { useModelLoading } from "@/app/studio/_components/viewer/use-model-loading";
 import { useThreeRenderer } from "@/app/studio/_components/viewer/use-three-renderer";
+import { useTransformControls } from "@/app/studio/_components/viewer/use-transform-controls";
 
 interface ModelViewerSceneOptions {
   source: ModelSource | null;
@@ -158,6 +159,49 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
     wireframeRef,
   });
 
+  const handleTransformSelect = useCallback((nodeId: string | null) => {
+    if (nodeId === null) {
+      clearBrowserSelectionHighlight();
+      selectedBrowserNodeIdRef.current = null;
+      setSelectedBrowserNodeId(null);
+      return;
+    }
+
+    const entry = browserNodeEntriesRef.current.get(nodeId);
+    if (!entry) return;
+
+    clearBrowserSelectionHighlight();
+    selectedBrowserNodeIdRef.current = nodeId;
+    setSelectedBrowserNodeId(nodeId);
+
+    const materials = collectStandardMaterials(entry.meshes);
+    selectedHighlightsRef.current = materials.map((material) => ({
+      material,
+      color: material.color.clone(),
+      emissive: material.emissive.clone(),
+    }));
+
+    for (const material of materials) {
+      material.color.copy(browserSelectionColor);
+      material.emissive.copy(browserSelectionEmissive);
+    }
+  }, [clearBrowserSelectionHighlight]);
+
+  const {
+    detachTransform,
+    hasTransforms,
+    resetTransforms,
+    selectTransformNode,
+    selectedTransformNodeId,
+    setTransformMode,
+    transformMode,
+  } = useTransformControls({
+    browserNodeEntriesRef,
+    modelGroupRef,
+    onSelectNode: handleTransformSelect,
+    runtimeRef,
+  });
+
   const applyBrowserSelectionHighlight = useCallback(
     (entry: BrowserNodeEntry) => {
       clearBrowserSelectionHighlight();
@@ -181,20 +225,23 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
     (id: string) => {
       if (selectedBrowserNodeIdRef.current === id) {
         clearBrowserSelection();
+        selectTransformNode(null);
         return;
       }
 
       const entry = browserNodeEntriesRef.current.get(id);
       if (!entry) {
         clearBrowserSelection();
+        selectTransformNode(null);
         return;
       }
 
       selectedBrowserNodeIdRef.current = id;
       setSelectedBrowserNodeId(id);
       applyBrowserSelectionHighlight(entry);
+      selectTransformNode(id);
     },
-    [applyBrowserSelectionHighlight, clearBrowserSelection],
+    [applyBrowserSelectionHighlight, clearBrowserSelection, selectTransformNode],
   );
 
   const toggleBrowserNodeVisibility = useCallback(
@@ -249,7 +296,8 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
     explodeAmountRef.current = nextAmount;
     setExplodeAmountState(nextAmount);
     applyExplodeAmount(explodeAssemblyRef.current, nextAmount);
-  }, []);
+    detachTransform();
+  }, [detachTransform]);
 
   const fitView = useCallback(() => {
     const runtime = runtimeRef.current;
@@ -291,29 +339,39 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
       if (runtime) {
         runtime.controls.autoRotate = next;
       }
+      if (next) {
+        setTransformMode(null);
+      }
       return next;
     });
-  }, [runtimeRef]);
+  }, [runtimeRef, setTransformMode]);
 
   return {
     activeView,
     autoRotate,
     containerRef,
     clearBrowserSelection,
+    detachTransform,
     explodeAmount,
     fitView,
+    hasTransforms,
     loadProgress,
     loadState,
     meshCount,
     modelBrowserNodes,
+    resetTransforms,
     selectBrowserNode,
     selectedBrowserNodeId,
+    selectedTransformNodeId,
+    selectTransformNode,
     setActiveView,
     setExplodeAmount,
+    setTransformMode,
     status,
     toggleAutoRotate,
     toggleBrowserNodeVisibility,
     toggleWireframe,
+    transformMode,
     visibleBrowserNodeIds,
     wireframe,
   };

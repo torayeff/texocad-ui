@@ -18,6 +18,10 @@ export const ViewerGestureHint = memo(function ViewerGestureHint({ showGestures 
       <span>Scroll to zoom</span>
       <span className="opacity-50">·</span>
       <span>Middle/right-drag to pan</span>
+      <span className="opacity-50">·</span>
+      <span>Click to select</span>
+      <span className="opacity-50">·</span>
+      <span>Shift-click for assembly</span>
     </div>
   );
 });

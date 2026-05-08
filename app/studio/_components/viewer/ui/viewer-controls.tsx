@@ -1,8 +1,8 @@
 import { type ButtonHTMLAttributes, type ReactNode, memo, useMemo, useState } from "react";
-import { Camera, Download, Focus, History, Layers, Loader2, Puzzle, Rotate3d, Share2, SquareDashed } from "lucide-react";
+import { Camera, Download, Focus, History, Layers, Loader2, Move3d, Puzzle, RefreshCcwDot, Rotate3d, Share2, SquareDashed, Undo2 } from "lucide-react";
 
 import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
-import { type ModelBrowserNode, type ViewPreset, viewLabels, viewPresets } from "@/app/studio/_components/viewer/model-viewer-state";
+import { type ModelBrowserNode, type TransformMode, type ViewPreset, viewLabels, viewPresets } from "@/app/studio/_components/viewer/model-viewer-state";
 import { countModelBrowserNodes, ModelBrowserTree } from "@/app/studio/_components/viewer/ui/model-browser-tree";
 import { RevisionMenu } from "@/app/studio/_components/viewer/ui/revision-menu";
 import {
@@ -26,6 +26,7 @@ interface ViewerControlsProps {
   canDownloadSource: boolean;
   canShare: boolean;
   explodeAmount: number;
+  hasTransforms: boolean;
   isDownloading: boolean;
   isDownloadingSource: boolean;
   isLatestRevisionSelected: boolean;
@@ -34,15 +35,18 @@ interface ViewerControlsProps {
   revisions: ViewerRevisionOption[];
   activeRevisionKey: string | null;
   selectedBrowserNodeId: string | null;
+  transformMode: TransformMode;
   visibleBrowserNodeIds: Set<string>;
   wireframe: boolean;
   onDownload: () => void;
   onDownloadSource: () => void;
   onFitView: () => void;
+  onResetTransforms: () => void;
   onSelectLatestRevision: () => void;
   onSelectRevision: (key: string) => void;
   onSelectBrowserNode: (id: string) => void;
   onExplodeAmountChange: (amount: number) => void;
+  onSetTransformMode: (mode: TransformMode) => void;
   onShare: () => void;
   onSetView: (view: ViewPreset) => void;
   onToggleBrowserNodeVisibility: (id: string) => void;
@@ -81,6 +85,7 @@ export const ViewerControls = memo(function ViewerControls({
   canDownloadSource,
   canShare,
   explodeAmount,
+  hasTransforms,
   isDownloading,
   isDownloadingSource,
   isLatestRevisionSelected,
@@ -89,15 +94,18 @@ export const ViewerControls = memo(function ViewerControls({
   revisions,
   activeRevisionKey,
   selectedBrowserNodeId,
+  transformMode,
   visibleBrowserNodeIds,
   wireframe,
   onDownload,
   onDownloadSource,
   onExplodeAmountChange,
   onFitView,
+  onResetTransforms,
   onSelectLatestRevision,
   onSelectRevision,
   onSelectBrowserNode,
+  onSetTransformMode,
   onShare,
   onSetView,
   onToggleBrowserNodeVisibility,
@@ -182,8 +190,41 @@ export const ViewerControls = memo(function ViewerControls({
         aria-pressed={autoRotate}
         className={cn(toolButtonClass, autoRotate && activeControlClass)}
       >
+        <RefreshCcwDot size={14} strokeWidth={1.75} />
+      </ToolButton>
+
+      <ToolButton
+        type="button"
+        onClick={() => onSetTransformMode(transformMode === "translate" ? null : "translate")}
+        tooltip="Move (G)"
+        aria-label="Move object"
+        aria-pressed={transformMode === "translate"}
+        className={cn(toolButtonClass, transformMode === "translate" && activeControlClass)}
+      >
+        <Move3d size={14} strokeWidth={1.75} />
+      </ToolButton>
+      <ToolButton
+        type="button"
+        onClick={() => onSetTransformMode(transformMode === "rotate" ? null : "rotate")}
+        tooltip="Rotate (R)"
+        aria-label="Rotate object"
+        aria-pressed={transformMode === "rotate"}
+        className={cn(toolButtonClass, transformMode === "rotate" && activeControlClass)}
+      >
         <Rotate3d size={14} strokeWidth={1.75} />
       </ToolButton>
+
+      {hasTransforms ? (
+        <ToolButton
+          type="button"
+          onClick={onResetTransforms}
+          tooltip="Reset transforms"
+          aria-label="Reset transforms"
+          className={toolButtonClass}
+        >
+          <Undo2 size={14} strokeWidth={1.75} />
+        </ToolButton>
+      ) : null}
 
       {canExplode ? (
         <ToolButton

@@ -40,17 +40,21 @@ export default function GeneratedStepViewer({
     containerRef,
     explodeAmount,
     fitView,
+    hasTransforms,
     loadState,
     status,
     meshCount,
     modelBrowserNodes,
+    resetTransforms,
     selectBrowserNode,
     selectedBrowserNodeId,
     setActiveView,
     setExplodeAmount,
+    setTransformMode,
     toggleAutoRotate,
     toggleBrowserNodeVisibility,
     toggleWireframe,
+    transformMode,
     visibleBrowserNodeIds,
     wireframe,
   } = useModelViewerScene({ source });
@@ -157,6 +161,7 @@ export default function GeneratedStepViewer({
           canDownloadSource={sourceCode !== null}
           canShare={false}
           explodeAmount={explodeAmount}
+          hasTransforms={hasTransforms}
           isDownloading={isDownloading}
           isDownloadingSource={isDownloadingSource}
           isLatestRevisionSelected={isLatestRevisionSelected}
@@ -165,15 +170,18 @@ export default function GeneratedStepViewer({
           revisions={revisions}
           activeRevisionKey={activeRevisionKey}
           selectedBrowserNodeId={selectedBrowserNodeId}
+          transformMode={transformMode}
           visibleBrowserNodeIds={visibleBrowserNodeIds}
           wireframe={wireframe}
           onDownload={handleDownload}
           onDownloadSource={handleSourceDownload}
           onExplodeAmountChange={setExplodeAmount}
           onFitView={fitView}
+          onResetTransforms={resetTransforms}
           onSelectLatestRevision={onSelectLatestRevision}
           onSelectRevision={onSelectRevision}
           onSelectBrowserNode={selectBrowserNode}
+          onSetTransformMode={setTransformMode}
           onShare={() => undefined}
           onSetView={setActiveView}
           onToggleAutoRotate={toggleAutoRotate}

@@ -1,4 +1,5 @@
 export type LoadState = "idle" | "loading" | "ready" | "error";
+export type TransformMode = "translate" | "rotate" | null;
 export type ViewPreset = "iso" | "front" | "back" | "top" | "bottom" | "left" | "right";
 
 export interface LoadProgress {
