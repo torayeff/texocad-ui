@@ -113,8 +113,13 @@ export function useTransformControls({
 
     if (selectedNodeIdRef.current) {
       attachToObject(selectedNodeIdRef.current);
+    } else if (modelGroupRef.current) {
+      selectedNodeIdRef.current = "__model__";
+      setSelectedTransformNodeId("__model__");
+      onSelectNodeCallback("__model__");
+      attachToObject("__model__");
     }
-  }, [attachToObject, detach]);
+  }, [attachToObject, detach, modelGroupRef, onSelectNodeCallback]);
 
   const selectNode = useCallback((nodeId: string | null) => {
     if (nodeId === null) {
