@@ -62,7 +62,6 @@ export function useThreadHistory(client: Client, isReady: boolean) {
       const results = await client.threads.search({
         limit: PAGE_SIZE,
         offset,
-        status: "idle",
       });
 
       if (id !== fetchIdRef.current) return;

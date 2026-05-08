@@ -73,7 +73,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
   } = useChatStream(onDesignRevisionEvent);
 
   const timer = useAssistantTimer();
-  const { sessionClaims } = useAuth();
+  const { sessionClaims, userId } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [pendingHumanMessage, setPendingHumanMessage] = useState<HumanMessage | null>(null);
@@ -186,7 +186,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const sendMessage = useCallback((content: string) => {
+  const sendMessage = useCallback(async (content: string) => {
     if (isBusy) return;
     const trimmed = content.trim();
     if (!trimmed) return;
@@ -194,12 +194,23 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
       hasAttachments: trimmed.includes("Attachments:"),
     });
     setPendingHumanMessage(new HumanMessage(trimmed));
+
+    let threadId = urlThreadId;
+    if (!threadId && userId) {
+      const thread = await client.threads.create({
+        metadata: { owner: userId },
+      });
+      threadId = thread.thread_id;
+      handleThreadIdChange(threadId);
+    }
+
     const metadata = isVip ? { model: selectedModel } : undefined;
     stream.submit(
       { messages: [{ type: "human", content: trimmed }] },
       {
         streamSubgraphs: true,
         metadata,
+        threadId: threadId ?? undefined,
         optimisticValues: (prev) => ({
           ...prev,
           todos: [],
@@ -211,7 +222,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
     requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-  }, [isBusy, isVip, selectedModel, stream]);
+  }, [isBusy, isVip, selectedModel, stream, urlThreadId, userId, client, handleThreadIdChange]);
 
   const handleExamplePrompt = useCallback((prompt: string) => {
     if (chatInputRef.current) {
