@@ -1,6 +1,7 @@
 # TEXOCAD UI
 
 ## TODO
-- [ ] Share button
+- [ ] Screenshot button
+- [ ] Measurement tool
 - [ ] Interrupts and running after closing window
 - [ ] Desing Gallery

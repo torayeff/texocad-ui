@@ -40,6 +40,7 @@ export const SITE_ROUTES = {
   studio: "/studio",
   pricing: "/pricing",
   privacy: "/privacy",
+  viewer: "/viewer",
   terms: "/terms",
   llms: "/llms.txt",
   manifest: "/manifest.webmanifest",

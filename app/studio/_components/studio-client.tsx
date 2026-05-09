@@ -133,6 +133,7 @@ export default function StudioClient() {
   const revisionOptions = useMemo(() => revisionOptionsFromArtifacts(designRevisions), [designRevisions]);
   const viewerSource = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.viewerSource : null;
   const sourceCode = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.sourceCode : null;
+  const activeStepExport = activeRevision?.exports.find(isStepExport) ?? null;
 
   const handleSelectLatestRevision = useCallback(() => {
     setSelectedRevisionKey(null);
@@ -206,6 +207,11 @@ export default function StudioClient() {
           <GeneratedStepViewer
             source={viewerSource}
             sourceCode={sourceCode}
+            shareRevision={activeRevision && activeStepExport ? {
+              designId: activeRevision.designId,
+              revisionNumber: activeRevision.revisionNumber,
+              exportArtifact: activeStepExport,
+            } : null}
             revisions={revisionOptions}
             activeRevisionKey={activeRevisionKey}
             isLatestRevisionSelected={isLatestRevisionSelected}
