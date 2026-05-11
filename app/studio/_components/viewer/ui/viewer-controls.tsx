@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Camera, Download, Focus, History, Layers, Loader2, Move3d, MoveDiagonal, Puzzle, RefreshCcwDot, Rotate3d, Share2, SquareDashed, Undo2 } from "lucide-react";
+import { Camera, Download, Fullscreen, History, Layers, Loader2, Move3d, MoveDiagonal, Puzzle, RefreshCcwDot, Rotate3d, Share2, SquareDashed, Undo2 } from "lucide-react";
 
 import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
 import { type ModelBrowserNode, type TransformMode, type ViewPreset, viewLabels, viewPresets } from "@/app/studio/_components/viewer/model-viewer-state";
@@ -292,7 +292,7 @@ export const ViewerControls = memo(function ViewerControls({
       ) : null}
 
       <ToolButton type="button" onClick={onFitView} tooltip="Fit view" aria-label="Fit view" className={toolButtonClass}>
-        <Focus size={14} strokeWidth={1.75} />
+        <Fullscreen size={14} strokeWidth={1.75} />
       </ToolButton>
       <ToolButton
         type="button"
