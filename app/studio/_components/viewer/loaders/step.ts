@@ -1,6 +1,5 @@
 import * as THREE from "three";
 
-import { assertGeometryBudget, shouldCreateEdgeOverlay } from "@/app/studio/_components/viewer/geometry-budget";
 import {
   type BuildModelOptions,
   type BuiltModel,
@@ -45,11 +44,10 @@ function buildMesh(occtMesh: StepMeshData): BuiltStepMesh {
   const materials: THREE.MeshStandardMaterial[] = [defaultMaterial];
   const edges = new THREE.Group();
   const triangleCount = indices.length / 3;
-  const createEdges = shouldCreateEdgeOverlay(triangleCount);
-  const edgeMaterial = createEdges ? createEdgeMaterial() : null;
+  const edgeMaterial = createEdgeMaterial();
 
-  const faces = createEdges ? occtMesh.brep_faces ?? [] : [];
-  if (faces.length > 0 && edgeMaterial) {
+  const faces = occtMesh.brep_faces ?? [];
+  if (faces.length > 0) {
     let triangleIndex = 0;
     let faceIndex = 0;
 
@@ -84,7 +82,7 @@ function buildMesh(occtMesh: StepMeshData): BuiltStepMesh {
 
       triangleIndex = lastTriangle;
     }
-  } else if (edgeMaterial) {
+  } else {
     const edgeGeometry = new THREE.EdgesGeometry(geometry, 25);
     edges.add(new THREE.LineSegments(edgeGeometry, edgeMaterial));
   }
@@ -136,16 +134,6 @@ async function parseStepMeshes(buffer: ArrayBuffer, signal?: AbortSignal) {
 export async function buildStepModel(buffer: ArrayBuffer, options: BuildModelOptions = {}): Promise<BuiltModel> {
   const meshes = await parseStepMeshes(buffer, options.signal);
   throwIfAborted(options.signal);
-
-  const totals = meshes.reduce(
-    (sum, mesh) => {
-      sum.vertices += flattenNumericArray(mesh.attributes.position.array).length / 3;
-      sum.triangles += flattenNumericArray(mesh.index.array).length / 3;
-      return sum;
-    },
-    { triangles: 0, vertices: 0 },
-  );
-  assertGeometryBudget(meshes.length, totals.vertices, totals.triangles);
 
   const group = new THREE.Group();
   for (const resultMesh of meshes) {

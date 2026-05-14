@@ -1,9 +1,6 @@
-import { assertSourceByteLength } from "@/app/studio/_components/viewer/geometry-budget";
 import { type ModelFormat, type ModelSource } from "@/app/studio/_components/viewer/model-loader-types";
 
 type SourceBufferProgress = (percent: number) => void;
-
-const MAX_MODEL_BYTES = 100 * 1024 * 1024;
 
 function assertNever(value: never, message: string): never {
   throw new Error(`${message}: ${String(value)}`);
@@ -27,8 +24,6 @@ function sourceName(source: ModelSource) {
 }
 
 function readFileBuffer(file: File, onProgress?: SourceBufferProgress, signal?: AbortSignal) {
-  assertSourceByteLength(file.size);
-
   return new Promise<ArrayBuffer>((resolve, reject) => {
     const reader = new FileReader();
     const cleanup = () => {
@@ -51,12 +46,7 @@ function readFileBuffer(file: File, onProgress?: SourceBufferProgress, signal?: 
     reader.addEventListener("load", () => {
       if (reader.result instanceof ArrayBuffer) {
         cleanup();
-        try {
-          assertSourceByteLength(reader.result.byteLength);
-          resolve(reader.result);
-        } catch (error) {
-          reject(error);
-        }
+        resolve(reader.result);
         return;
       }
 
@@ -79,17 +69,10 @@ function readFileBuffer(file: File, onProgress?: SourceBufferProgress, signal?: 
 function fetchUrlBuffer(url: string, onProgress?: SourceBufferProgress, signal?: AbortSignal) {
   return new Promise<ArrayBuffer>((resolve, reject) => {
     const request = new XMLHttpRequest();
-    let rejectedAsTooLarge = false;
     const cleanup = () => {
       signal?.removeEventListener("abort", abort);
     };
     const abort = () => {
-      request.abort();
-    };
-    const rejectTooLarge = () => {
-      rejectedAsTooLarge = true;
-      cleanup();
-      reject(new Error("Model files must be 100 MB or smaller."));
       request.abort();
     };
 
@@ -101,11 +84,6 @@ function fetchUrlBuffer(url: string, onProgress?: SourceBufferProgress, signal?:
     request.open("GET", url);
     request.responseType = "arraybuffer";
     request.addEventListener("progress", (event) => {
-      if (event.loaded > MAX_MODEL_BYTES || event.total > MAX_MODEL_BYTES) {
-        rejectTooLarge();
-        return;
-      }
-
       if (event.lengthComputable && event.total > 0) {
         onProgress?.(Math.round((event.loaded / event.total) * 100));
       }
@@ -113,12 +91,7 @@ function fetchUrlBuffer(url: string, onProgress?: SourceBufferProgress, signal?:
     request.addEventListener("load", () => {
       if (request.status >= 200 && request.status < 300 && request.response instanceof ArrayBuffer) {
         cleanup();
-        try {
-          assertSourceByteLength(request.response.byteLength);
-          resolve(request.response);
-        } catch (error) {
-          reject(error);
-        }
+        resolve(request.response);
         return;
       }
 
@@ -131,9 +104,7 @@ function fetchUrlBuffer(url: string, onProgress?: SourceBufferProgress, signal?:
     });
     request.addEventListener("abort", () => {
       cleanup();
-      if (!rejectedAsTooLarge) {
-        reject(new Error("Model download was canceled."));
-      }
+      reject(new Error("Model download was canceled."));
     });
     signal?.addEventListener("abort", abort, { once: true });
     request.send();
