@@ -5,9 +5,7 @@ import { AIPanel } from "@/app/studio/_features/chat/_components/ai-panel";
 import { ToolCallCard } from "@/app/studio/_features/chat/_components/tool-call-card";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_features/chat/_components/inline-blocks";
 import type { MessageUsage } from "@/app/studio/_features/chat/_lib/message-rows";
-import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
-
-export type ChatMessageType = "human" | "ai";
+import type { ChatMessageType, StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 
 interface ChatMessageProps {
   messageType: ChatMessageType;

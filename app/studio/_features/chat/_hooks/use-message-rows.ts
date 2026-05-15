@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useRef, useEffect } from "react";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import type { BaseMessage } from "@langchain/core/messages";
@@ -12,14 +14,7 @@ import {
   getToolCallsSignature,
 } from "@/app/studio/_features/chat/_lib/message-rows";
 import type { MessageRow } from "@/app/studio/_features/chat/_lib/message-rows";
-import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
-import type { SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
-import type { useAssistantTimer } from "@/app/studio/_features/chat/_hooks/use-assistant-timer";
-
-export interface StreamAccessors {
-  getToolCalls?: (message: BaseMessage) => StreamToolCall[];
-  getSubagentsByMessage?: (messageId: string) => SubagentStream[];
-}
+import type { AssistantTimer, StreamAccessors } from "@/app/studio/_features/chat/_types/chat";
 
 export function useMessageRows({
   messages,
@@ -34,7 +29,7 @@ export function useMessageRows({
   conversationScope: string;
   shouldRenderPendingHumanMessage: boolean;
   streamAccessors: StreamAccessors;
-  timer: ReturnType<typeof useAssistantTimer>;
+  timer: AssistantTimer;
 }): { messageRows: MessageRow[]; activeAssistantRowKey: string | null } {
   const prevActiveRowKeyRef = useRef<string | null>(null);
   const prevIsLoadingRef = useRef(false);

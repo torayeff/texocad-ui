@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { CircleCheck, CircleDashed, CircleX, ChevronDown, Wrench } from "lucide-react";
 

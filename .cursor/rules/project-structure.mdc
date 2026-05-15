@@ -63,8 +63,7 @@ This repo uses root `app/`. A `src/` directory belongs only in an intentional wh
 ## File Size And Extraction
 
 - Normal source files should stay around 150-250 lines when practical.
-- Files above 500 lines should have a clear reason to remain together or a meaningful split point, such as a component, hook, parser, state machine, data mapper, or domain helper.
-- Files above 700 lines should be generated, data-table-like, or a tightly cohesive complex module.
+- Files above 300 lines should have a clear reason to remain together or a meaningful split point, such as a component, hook, parser, state machine, data mapper, or domain helper.
 - Extracted code should have a clear responsibility, a useful name, or real reuse. Five-line extraction without a stronger reason is noise.
 - React components should focus on rendering and interaction. Reusable stateful behavior belongs in hooks, and pure logic belongs in `_lib`.
 

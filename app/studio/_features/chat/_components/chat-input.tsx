@@ -1,14 +1,15 @@
+"use client";
+
 import React, { useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_features/chat/_hooks/use-file-upload";
-import type { UploadedFile } from "@/app/studio/_features/chat/_hooks/use-file-upload";
 import ModelPicker from "@/app/studio/_features/chat/_components/model-picker";
 import {
   composerButtonClass,
   composerTooltipClass,
 } from "@/app/studio/_features/chat/_lib/chat-styles";
-import type { ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
+import type { ChatInputHandle, UploadedFile } from "@/app/studio/_features/chat/_types/chat";
 
 interface ChatInputProps {
   isBusy: boolean;

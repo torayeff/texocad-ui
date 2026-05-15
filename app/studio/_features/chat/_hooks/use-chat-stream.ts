@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useCallback, useRef, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
@@ -5,7 +7,7 @@ import { useStream } from "@langchain/react";
 import { useLanggraphAuth } from "@/app/studio/_features/chat/_hooks/use-langgraph-auth";
 import { ASSISTANT_ID } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import { designRevisionsFromMessages, isDesignRevisionArtifact, latestDesignRevision } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
-import type { StreamAccessors } from "@/app/studio/_features/chat/_hooks/use-message-rows";
+import type { StreamAccessors } from "@/app/studio/_features/chat/_types/chat";
 import type { DesignRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type {
   TexocadGraphState,

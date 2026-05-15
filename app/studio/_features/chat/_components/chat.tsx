@@ -23,7 +23,7 @@ import ThreadHistoryPanel from "@/app/studio/_features/chat/_components/thread-h
 import EmptyChatState from "@/app/studio/_features/chat/_components/empty-chat-state";
 import ChatInput from "@/app/studio/_features/chat/_components/chat-input";
 
-export interface ChatProps {
+interface ChatProps {
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
   onClearViewer: () => void;

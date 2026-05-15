@@ -1,9 +1,12 @@
+"use client";
+
 import { type RefObject, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 import type { ModelFormat, ViewPreset } from "@/app/types/model-viewer";
+import type { ViewerRuntime } from "@/app/components/model-viewer/_types/viewer-runtime";
 import { createAxisTriad } from "@/app/components/model-viewer/_lib/axis-triad";
 import { setCameraView } from "@/app/components/model-viewer/_lib/camera-view";
 import { disposeObject } from "@/app/components/model-viewer/_lib/three-materials";
@@ -14,14 +17,6 @@ const triadTopOffset = 68;
 const triadViewportSize = 116;
 const mobileTriadViewportSize = 70;
 const mobileViewportBreakpoint = 640;
-
-export interface ViewerRuntime {
-  camera: THREE.PerspectiveCamera;
-  controls: OrbitControls;
-  environmentMap: THREE.Texture;
-  renderer: THREE.WebGLRenderer;
-  scene: THREE.Scene;
-}
 
 interface UseThreeRendererOptions {
   activeViewRef: RefObject<ViewPreset>;

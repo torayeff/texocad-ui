@@ -1,3 +1,5 @@
+"use client";
+
 import { type Dispatch, type RefObject, type SetStateAction, useEffect } from "react";
 import * as THREE from "three";
 
@@ -9,7 +11,8 @@ import type { LoadProgress, LoadState, ModelBrowserNode, ModelFormat, ModelSourc
 import { fitCameraToObject } from "@/app/components/model-viewer/_lib/camera-view";
 import { applyWireframe, collectPickableMeshes, disposeObject } from "@/app/components/model-viewer/_lib/three-materials";
 import { visibleMeshes } from "@/app/components/model-viewer/_lib/model-viewer-picking";
-import { configureCadRenderer, configureRendererForFormat, type ViewerRuntime } from "@/app/components/model-viewer/_hooks/use-three-renderer";
+import { configureCadRenderer, configureRendererForFormat } from "@/app/components/model-viewer/_hooks/use-three-renderer";
+import type { ViewerRuntime } from "@/app/components/model-viewer/_types/viewer-runtime";
 
 interface UseModelLoadingOptions {
   activeViewRef: RefObject<ViewPreset>;

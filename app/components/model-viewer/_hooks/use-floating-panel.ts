@@ -1,3 +1,5 @@
+"use client";
+
 import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 interface FloatingPanelPosition {

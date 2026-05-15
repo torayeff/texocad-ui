@@ -1,10 +1,12 @@
+"use client";
+
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 
 import { type BrowserNodeEntry } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
 import type { TransformMode } from "@/app/types/model-viewer";
-import { type ViewerRuntime } from "@/app/components/model-viewer/_hooks/use-three-renderer";
+import type { ViewerRuntime } from "@/app/components/model-viewer/_types/viewer-runtime";
 
 interface OriginalTransform {
   position: THREE.Vector3;

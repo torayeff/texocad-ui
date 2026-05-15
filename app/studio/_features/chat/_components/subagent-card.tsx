@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import type { AIMessageChunk } from "@langchain/core/messages";

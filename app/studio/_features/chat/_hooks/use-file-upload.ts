@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import type { UploadedFile } from "@/app/studio/_features/chat/_types/chat";
 
 const ACCEPTED_TYPES =
   ".txt,.md,.pdf,.png,.jpg,.jpeg,.webp,.svg";
@@ -20,11 +21,6 @@ function isAcceptedFile(file: File): boolean {
 
 function sanitizeFilename(name: string): string {
   return name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
-}
-
-export interface UploadedFile {
-  url: string;
-  filename: string;
 }
 
 async function uploadToAzure(file: File): Promise<UploadedFile> {

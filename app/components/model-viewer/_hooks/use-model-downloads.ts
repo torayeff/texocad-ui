@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { saveSourceModelFile } from "@/app/components/model-viewer/_lib/model-viewer-actions";

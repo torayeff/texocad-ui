@@ -1,8 +1,10 @@
+"use client";
+
 import React from "react";
-import { ChatMessage, type ChatMessageType } from "@/app/studio/_features/chat/_components/chat-message";
+import { ChatMessage } from "@/app/studio/_features/chat/_components/chat-message";
 import type { MessageUsage } from "@/app/studio/_features/chat/_lib/message-rows";
 import { SubagentCard } from "@/app/studio/_features/chat/_components/subagent-card";
-import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
+import type { ChatMessageType, StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 import type { SubagentStatus, SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
 
 function getVisibleToolCalls(

@@ -1,8 +1,17 @@
 import type { Message } from "@langchain/langgraph-sdk";
+import type { BaseMessage } from "@langchain/core/messages";
+import type { SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
 
 export interface ChatInputHandle {
   focus: () => void;
   setPrompt: (prompt: string) => void;
+}
+
+export type ChatMessageType = "human" | "ai";
+
+export interface UploadedFile {
+  url: string;
+  filename: string;
 }
 
 export interface GeomExportEntry {
@@ -49,4 +58,17 @@ export interface ThreadSummary {
   threadId: string;
   title: string;
   updatedAt: Date;
+}
+
+export interface StreamAccessors {
+  getToolCalls?: (message: BaseMessage) => StreamToolCall[];
+  getSubagentsByMessage?: (messageId: string) => SubagentStream[];
+}
+
+export interface AssistantTimer {
+  finalize: (rowKey: string) => void;
+  getStartedAtMs: (rowKey: string) => number | undefined;
+  markStart: (rowKey: string) => void;
+  reset: () => void;
+  runtimeSecondsByRow: Record<string, number>;
 }

@@ -1,6 +1,9 @@
-import { useRef, useCallback, useState } from "react";
+"use client";
 
-export function useAssistantTimer() {
+import { useRef, useCallback, useState } from "react";
+import type { AssistantTimer } from "@/app/studio/_features/chat/_types/chat";
+
+export function useAssistantTimer(): AssistantTimer {
   const startTimesRef = useRef(new Map<string, number>());
   const [runtimeSecondsByRow, setRuntimeSecondsByRow] = useState<Record<string, number>>({});
 

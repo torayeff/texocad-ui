@@ -4,7 +4,7 @@ import type { LoadState } from "@/app/types/model-viewer";
 import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
 import { cn } from "@/app/lib/cn";
 
-export interface StatusContentProps {
+interface StatusContentProps {
   loadState: LoadState;
   status: string;
 }
