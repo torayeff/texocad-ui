@@ -1,13 +1,16 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { AzureNamedKeyCredential, RestError, TableClient } from "@azure/data-tables";
 import {
   BlobSASPermissions,
   BlobServiceClient,
   generateBlobSASQueryParameters,
-  StorageSharedKeyCredential,
 } from "@azure/storage-blob";
 
 import { absoluteSiteUrl } from "@/app/lib/site";
+import {
+  hashUserId,
+  publicStorageConfig,
+} from "@/app/lib/server/storage-auth";
 
 export interface ShareModelInput {
   designId: string;
@@ -57,41 +60,6 @@ const STEP_CONTENT_TYPE = "application/step";
 const SLUG_SAFE_CHARS = /[^a-z0-9-]+/g;
 const TABLE_KEY_UNSAFE_CHARS = /[/\\#?\n\r\t]/g;
 
-function parseStorageConnectionString(connectionString: string) {
-  const account = connectionString.match(/AccountName=([^;]+)/)?.[1];
-  const key = connectionString.match(/AccountKey=([^;]+)/)?.[1];
-  const suffix = connectionString.match(/EndpointSuffix=([^;]+)/)?.[1] ?? "core.windows.net";
-  if (!account || !key) {
-    throw new Error("Cannot parse Azure storage account credentials.");
-  }
-
-  return {
-    account,
-    key,
-    blobHost: `${account}.blob.${suffix}`,
-    tableUrl: `https://${account}.table.${suffix}`,
-  };
-}
-
-function storageConfig() {
-  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING ?? "";
-  const privateContainerName = process.env.AZURE_STORAGE_CONTAINER
-    ?? process.env.AZURE_STORAGE_CONTAINER_NAME
-    ?? "";
-  const publicContainerName = process.env.AZURE_STORAGE_PUBLIC_CONTAINER ?? "";
-
-  if (!connectionString || !privateContainerName || !publicContainerName) {
-    throw new Error("Azure storage is not configured.");
-  }
-
-  return {
-    ...parseStorageConnectionString(connectionString),
-    connectionString,
-    privateContainerName,
-    publicContainerName,
-  };
-}
-
 function safeTableKey(value: string) {
   return value.trim().replace(TABLE_KEY_UNSAFE_CHARS, "_");
 }
@@ -131,27 +99,26 @@ function sharedModelBlobName(slug: string, filename: string) {
 }
 
 function publicBlobUrl(blobName: string) {
-  const { blobHost, publicContainerName } = storageConfig();
+  const { blobHost, publicContainerName } = publicStorageConfig();
   return `https://${blobHost}/${publicContainerName}/${blobName}`;
 }
 
 function tableClient() {
-  const { account, key, tableUrl } = storageConfig();
+  const { account, key, tableUrl } = publicStorageConfig();
   return new TableClient(tableUrl, SHARES_TABLE_NAME, new AzureNamedKeyCredential(account, key));
 }
 
 function blobServiceClient() {
-  return BlobServiceClient.fromConnectionString(storageConfig().connectionString);
+  return BlobServiceClient.fromConnectionString(publicStorageConfig().connectionString);
 }
 
 function privateBlobUrl(blobName: string) {
-  const { blobHost, privateContainerName } = storageConfig();
+  const { blobHost, privateContainerName } = publicStorageConfig();
   return `https://${blobHost}/${privateContainerName}/${blobName}`;
 }
 
 function privateReadSasUrl(blobName: string) {
-  const { key, account, privateContainerName } = storageConfig();
-  const credential = new StorageSharedKeyCredential(account, key);
+  const { credential, privateContainerName } = publicStorageConfig();
   const sasToken = generateBlobSASQueryParameters(
     {
       blobName,
@@ -195,26 +162,6 @@ function sharedModelFromShare(entity: ShareEntity): SharedModel {
   };
 }
 
-export function hashUserId(userId: string) {
-  return createHash("sha256").update(userId).digest("hex");
-}
-
-export function isAuthorizedUserBlob(blobName: string, userHash: string) {
-  const [root, hash, kind, , marker, , folder] = blobName.split("/");
-  if (root !== "users" || hash !== userHash) return false;
-
-  if (kind === "uploads") return blobName.split("/").length > 3;
-  if (kind === "threads") return blobName.split("/").length > 4;
-  if (kind !== "designs") return false;
-
-  const parts = blobName.split("/");
-  return (
-    parts.length >= 8 &&
-    marker === "revisions" &&
-    (folder === "exports" || folder === "source")
-  );
-}
-
 export function isStepExport(filename: string, contentType: string) {
   const lowerFilename = filename.toLowerCase();
   return lowerFilename.endsWith(".step") || lowerFilename.endsWith(".stp") || contentType === STEP_CONTENT_TYPE;
@@ -256,7 +203,7 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
   const modelBlobName = sharedModelBlobName(slug, input.exportArtifact.filename);
   const serviceClient = blobServiceClient();
   const publicBlobClient = serviceClient
-    .getContainerClient(storageConfig().publicContainerName)
+    .getContainerClient(publicStorageConfig().publicContainerName)
     .getBlobClient(modelBlobName);
 
   await publicBlobClient.syncCopyFromURL(privateReadSasUrl(privateBlobName));

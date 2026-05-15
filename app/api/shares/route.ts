@@ -4,13 +4,12 @@ import { auth } from "@clerk/nextjs/server";
 import {
   createOrGetSharedModel,
   getSharedModelForRevision,
-  isAuthorizedUserBlob,
   isStepExport,
-  hashUserId,
   validatePrivateBlobName,
   validateShareName,
   type ShareModelInput,
 } from "@/app/lib/server/shared-models";
+import { hashUserId, isAuthorizedUserBlob } from "@/app/lib/server/storage-auth";
 
 export const runtime = "nodejs";
 

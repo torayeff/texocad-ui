@@ -25,7 +25,13 @@ app/
 │   ├── _components/      # Route-private UI
 │   ├── _hooks/           # Route-private React hooks
 │   ├── _lib/             # Route-private logic, helpers, constants
-│   └── _types/           # Route-private types
+│   ├── _types/           # Route-private types
+│   └── _features/        # Route-private feature modules for larger routes
+│       └── <feature>/
+│           ├── _components/
+│           ├── _hooks/
+│           ├── _lib/
+│           └── _types/
 ├── components/           # Shared UI used by multiple routes
 ├── hooks/                # Shared hooks used by multiple routes
 ├── lib/                  # Shared utilities and integrations
@@ -38,7 +44,10 @@ Do not introduce `src/` unless the whole app is intentionally migrated. This rep
 ## Colocation
 
 - Put route-owned code in that route's `_components`, `_hooks`, `_lib`, or `_types` folder.
+- For large routes, group cohesive route-owned areas under `_features/<feature>/{_components,_hooks,_lib,_types}`.
 - Move code to `app/components`, `app/hooks`, `app/lib`, or `app/types` only when it is used by multiple routes or is clearly route-independent.
+- When promoting route-owned code to a shared folder, remove the old route-private copy in the same change unless a temporary shim is explicitly documented.
+- Do not leave duplicate old/new migration directories around. Finish the move, update imports, and delete stale paths before merge.
 - Use private folders (`_folder`) for implementation details inside `app/`.
 - Use route groups (`(group)`) only to organize routes or layouts without changing URLs.
 - Keep API route handlers thin: parse the request, call server logic, and return a response.
@@ -54,8 +63,8 @@ Do not introduce `src/` unless the whole app is intentionally migrated. This rep
 ## File Size And Extraction
 
 - Aim for normal source files around 150-250 lines.
-- Above 300 lines, look for a meaningful split: component, hook, parser, state machine, data mapper, or domain helper.
-- Above 500 lines, split unless the file is generated, a data table, or a tightly cohesive complex module.
+- Above 500 lines, look for a meaningful split: component, hook, parser, state machine, data mapper, or domain helper.
+- Above 700 lines, split unless the file is generated, a data table, or a tightly cohesive complex module.
 - Extract code when it has a clear responsibility, a useful name, or real reuse. Do not extract just to move five lines elsewhere.
 - Keep React components focused on rendering and interaction. Move reusable stateful behavior to hooks and pure logic to `_lib`.
 

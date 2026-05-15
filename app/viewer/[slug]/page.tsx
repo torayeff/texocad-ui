@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/app/components/header";
 import { getSharedModelBySlug } from "@/app/lib/server/shared-models";
 import { SITE_NAME } from "@/app/lib/site";
-import { SharedModelViewer } from "@/app/viewer/[slug]/shared-model-viewer";
+import { SharedModelViewer } from "@/app/viewer/[slug]/_components/shared-model-viewer";
 
 interface ViewerPageProps {
   params: Promise<{

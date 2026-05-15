@@ -5,84 +5,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { Header } from "@/app/components/header";
-import Chat from "@/app/studio/_components/chat/chat";
-import { type ModelSource } from "@/app/studio/_components/viewer/model-viewer-loaders";
-import type { ViewerRevisionOption } from "@/app/studio/_components/viewer/model-viewer-revisions";
-import { latestDesignRevision } from "@/app/studio/_lib/design-artifacts";
-import type { DesignRevisionArtifact, StoredBlobArtifact } from "@/app/studio/_types/chat";
+import type { ShareRevision } from "@/app/components/model-viewer/_types/share-model";
+import Chat from "@/app/studio/_features/chat/_components/chat";
+import { latestDesignRevision } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
+import type { DesignRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
+import {
+  isStepExport,
+  mergeDesignRevisions,
+  revisionKey,
+  revisionListsMatch,
+  revisionOptionsFromArtifacts,
+  revisionsMatch,
+  signedRevisionSources as getSignedRevisionSources,
+  type SignedRevisionSources,
+} from "@/app/studio/_features/design-revisions/_lib/revision-sources";
 
-const GeneratedStepViewer = dynamic(
-  () => import("@/app/studio/_components/viewer/generated-step-viewer"),
+const ModelViewer = dynamic(
+  () => import("@/app/components/model-viewer/model-viewer"),
   { ssr: false },
 );
-
-function isStepExport(artifact: StoredBlobArtifact) {
-  const filename = artifact.filename.toLowerCase();
-  return filename.endsWith(".step") || filename.endsWith(".stp") || artifact.contentType === "application/step";
-}
-
-function isSourceCode(artifact: StoredBlobArtifact) {
-  const filename = artifact.filename.toLowerCase();
-  return filename.endsWith(".py") || artifact.contentType.startsWith("text/x-python");
-}
-
-function revisionKey(revision: DesignRevisionArtifact) {
-  return `${revision.designId}:${revision.revisionNumber}`;
-}
-
-function mergeDesignRevisions(...revisionLists: DesignRevisionArtifact[][]) {
-  const revisionsByKey = new Map<string, DesignRevisionArtifact>();
-  for (const revisions of revisionLists) {
-    for (const revision of revisions) {
-      revisionsByKey.set(revisionKey(revision), revision);
-    }
-  }
-  return Array.from(revisionsByKey.values());
-}
-
-function revisionsMatch(a: DesignRevisionArtifact, b: DesignRevisionArtifact) {
-  return (
-    revisionKey(a) === revisionKey(b) &&
-    a.source.checksum === b.source.checksum &&
-    a.exports.length === b.exports.length &&
-    a.exports.every((artifact, index) => {
-      const otherArtifact = b.exports[index];
-      return otherArtifact !== undefined && artifact.blobName === otherArtifact.blobName && artifact.checksum === otherArtifact.checksum;
-    })
-  );
-}
-
-function revisionListsMatch(a: DesignRevisionArtifact[], b: DesignRevisionArtifact[]) {
-  if (a.length !== b.length) return false;
-  return a.every((revision, index) => revisionsMatch(revision, b[index]));
-}
-
-function revisionOptionsFromArtifacts(revisions: DesignRevisionArtifact[]): ViewerRevisionOption[] {
-  return revisions
-    .map((revision) => {
-      const stepExport = revision.exports.find(isStepExport);
-      return {
-        key: revisionKey(revision),
-        revisionNumber: revision.revisionNumber,
-        filename: stepExport?.filename ?? null,
-        canView: stepExport !== undefined,
-      };
-    })
-    .sort((a, b) => b.revisionNumber - a.revisionNumber);
-}
-
-async function signBlobName(blobName: string): Promise<string | null> {
-  const response = await fetch(`/api/blob?blobName=${encodeURIComponent(blobName)}`);
-  if (!response.ok) return null;
-  const data = (await response.json()) as { sasUrl?: string };
-  return data.sasUrl ?? null;
-}
-
-interface SignedRevisionSources {
-  key: string;
-  viewerSource: ModelSource | null;
-  sourceCode: ModelSource | null;
-}
 
 export default function StudioClient() {
   const [signedRevisionSources, setSignedRevisionSources] = useState<SignedRevisionSources | null>(null);
@@ -149,23 +90,9 @@ export default function StudioClient() {
 
     if (!activeRevision || !activeRevisionKey) return;
 
-    const stepExport = activeRevision.exports.find(isStepExport);
-    const sourceArtifact = isSourceCode(activeRevision.source) ? activeRevision.source : null;
-
-    if (!stepExport) return;
-
-    void Promise.all([
-      signBlobName(stepExport.blobName),
-      sourceArtifact ? signBlobName(sourceArtifact.blobName) : Promise.resolve(null),
-    ]).then(([stepSasUrl, sourceSasUrl]) => {
+    void getSignedRevisionSources(activeRevision, activeRevisionKey).then((sources) => {
       if (snapshotVersion !== requestVersionRef.current) return;
-      setSignedRevisionSources({
-        key: activeRevisionKey,
-        viewerSource: stepSasUrl ? { kind: "url", url: stepSasUrl, label: stepExport.filename } : null,
-        sourceCode: sourceArtifact && sourceSasUrl
-          ? { kind: "url", url: sourceSasUrl, label: sourceArtifact.filename }
-          : null,
-      });
+      setSignedRevisionSources(sources);
     });
   }, [activeRevision, activeRevisionKey]);
 
@@ -194,6 +121,11 @@ export default function StudioClient() {
   const viewerPaneStyle = {
     "--viewer-width": `${splitPct}%`,
   } as CSSProperties;
+  const shareRevision: ShareRevision | null = activeRevision && activeStepExport ? {
+    designId: activeRevision.designId,
+    revisionNumber: activeRevision.revisionNumber,
+    exportArtifact: activeStepExport,
+  } : null;
 
   return (
     <main className="fixed left-0 top-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
@@ -204,19 +136,22 @@ export default function StudioClient() {
           className="min-h-0 flex-[2] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
           style={viewerPaneStyle}
         >
-          <GeneratedStepViewer
+          <ModelViewer
             source={viewerSource}
-            sourceCode={sourceCode}
-            shareRevision={activeRevision && activeStepExport ? {
-              designId: activeRevision.designId,
-              revisionNumber: activeRevision.revisionNumber,
-              exportArtifact: activeStepExport,
-            } : null}
-            revisions={revisionOptions}
-            activeRevisionKey={activeRevisionKey}
-            isLatestRevisionSelected={isLatestRevisionSelected}
-            onSelectLatestRevision={handleSelectLatestRevision}
-            onSelectRevision={handleSelectRevision}
+            downloads={{
+              sourceCode,
+            }}
+            revisions={{
+              activeRevisionKey,
+              isLatestRevisionSelected,
+              onSelectLatestRevision: handleSelectLatestRevision,
+              onSelectRevision: handleSelectRevision,
+              revisions: revisionOptions,
+            }}
+            sharing={{
+              activeRevisionKey,
+              shareRevision,
+            }}
           />
         </div>
 

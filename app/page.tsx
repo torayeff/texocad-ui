@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 
-import { ThemeHeroImage } from "@/app/components/theme-hero-image";
+import { ThemeHeroImage } from "@/app/_components/theme-hero-image";
 import { ThemeLogo } from "@/app/components/theme-logo";
 import { ThemeToggle } from "@/app/components/theme-toggle";
 import {
