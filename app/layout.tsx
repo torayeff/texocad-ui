@@ -80,8 +80,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: absoluteSiteUrl(DEFAULT_OG_IMAGE_PATH),
-        width: 1200,
-        height: 630,
+        width: 2172,
+        height: 724,
         alt: `${SITE_NAME} social preview`,
       },
     ],
