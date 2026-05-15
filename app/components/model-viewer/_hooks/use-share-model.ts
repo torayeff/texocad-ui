@@ -1,7 +1,6 @@
 import { type FormEvent, useCallback, useState } from "react";
 
-import type { ShareRevision } from "@/app/components/model-viewer/_types/share-model";
-import type { ModelSource } from "@/app/types/model-viewer";
+import type { ModelSource, ShareRevision } from "@/app/types/model-viewer";
 
 interface ShareResponse {
   alreadyShared: boolean;

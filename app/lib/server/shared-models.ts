@@ -9,6 +9,7 @@ import {
 import { absoluteSiteUrl } from "@/app/lib/site";
 import {
   hashUserId,
+  isAuthorizedUserBlob,
   publicStorageConfig,
 } from "@/app/lib/server/storage-auth";
 
@@ -23,6 +24,8 @@ export interface ShareModelInput {
     filename: string;
   };
 }
+
+export type ShareRevisionInput = Omit<ShareModelInput, "name">;
 
 export interface SharedModel {
   checksum: string;
@@ -159,6 +162,93 @@ function sharedModelFromShare(entity: ShareEntity): SharedModel {
     revisionNumber: entity.revisionNumber,
     shareUrl: absoluteSiteUrl(`/viewer/${entity.slug}`),
     slug: entity.slug,
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function parseShareExportArtifact(value: Record<string, unknown>) {
+  const { blobName, checksum, contentType, filename } = value;
+
+  if (
+    typeof blobName !== "string" ||
+    typeof checksum !== "string" ||
+    typeof contentType !== "string" ||
+    typeof filename !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    blobName,
+    checksum,
+    contentType,
+    filename,
+  };
+}
+
+export function parseShareInput(value: unknown): ShareModelInput | null {
+  if (!isRecord(value) || !isRecord(value.exportArtifact)) return null;
+
+  const { designId, revisionNumber, name, exportArtifact } = value;
+  const parsedExportArtifact = parseShareExportArtifact(exportArtifact);
+
+  if (
+    typeof designId !== "string" ||
+    typeof revisionNumber !== "number" ||
+    typeof name !== "string" ||
+    !parsedExportArtifact
+  ) {
+    return null;
+  }
+
+  return {
+    designId,
+    revisionNumber,
+    name,
+    exportArtifact: parsedExportArtifact,
+  };
+}
+
+export function parseShareRevisionInput(value: unknown): ShareRevisionInput | null {
+  if (!isRecord(value) || !isRecord(value.exportArtifact)) return null;
+
+  const { designId, revisionNumber, exportArtifact } = value;
+  const parsedExportArtifact = parseShareExportArtifact(exportArtifact);
+
+  if (
+    typeof designId !== "string" ||
+    typeof revisionNumber !== "number" ||
+    !parsedExportArtifact
+  ) {
+    return null;
+  }
+
+  return {
+    designId,
+    revisionNumber,
+    exportArtifact: parsedExportArtifact,
+  };
+}
+
+export function validateShareBlob(userId: string, input: ShareRevisionInput): ShareRevisionInput | null {
+  const blobName = input.exportArtifact.blobName.replace(/^\/+/, "");
+  if (!validatePrivateBlobName(blobName) || !isStepExport(input.exportArtifact.filename, input.exportArtifact.contentType)) {
+    return null;
+  }
+
+  if (!isAuthorizedUserBlob(blobName, hashUserId(userId))) {
+    return null;
+  }
+
+  return {
+    ...input,
+    exportArtifact: {
+      ...input.exportArtifact,
+      blobName,
+    },
   };
 }
 

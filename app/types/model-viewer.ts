@@ -33,3 +33,16 @@ export interface ViewerRevisionOption {
   filename: string | null;
   canView: boolean;
 }
+
+export interface ShareModelArtifact {
+  filename: string;
+  blobName: string;
+  contentType: string;
+  checksum: string;
+}
+
+export interface ShareRevision {
+  designId: string;
+  exportArtifact: ShareModelArtifact;
+  revisionNumber: number;
+}

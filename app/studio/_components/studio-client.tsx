@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { Header } from "@/app/components/header";
-import type { ShareRevision } from "@/app/components/model-viewer/_types/share-model";
+import type { ShareRevision } from "@/app/types/model-viewer";
 import Chat from "@/app/studio/_features/chat/_components/chat";
 import { latestDesignRevision } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
 import type { DesignRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
