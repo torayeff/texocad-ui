@@ -7,10 +7,10 @@ alwaysApply: true
 
 ## Core Principles
 
-- Optimize for files that are easy to open, scan, and change.
-- Keep code close to the route or feature that owns it. Promote code only after real reuse.
-- Prefer small, cohesive modules over large mixed-purpose files, but avoid one-line wrappers and abstract folders.
-- Use framework conventions first. Add project conventions only when they make ownership or boundaries clearer.
+- Files should be easy to open, scan, and change.
+- Route or feature ownership is the default; shared placement is reserved for code with real reuse.
+- Modules should be small and cohesive, without one-line wrappers or abstract folders.
+- Framework conventions come first. Project conventions should clarify ownership or boundaries.
 
 ## App Layout
 
@@ -34,67 +34,68 @@ app/
 │           └── _types/
 ├── components/           # Shared UI used by multiple routes
 ├── hooks/                # Shared hooks used by multiple routes
-├── lib/                  # Shared utilities and integrations
-│   └── server/           # Server-only code
+├── lib/                  # Shared runtime-safe utilities and integrations
+│   └── server/           # Server-only utilities and integrations
 └── types/                # Shared type declarations
 ```
 
-Do not introduce `src/` unless the whole app is intentionally migrated. This repo uses root `app/`.
+This repo uses root `app/`. A `src/` directory belongs only in an intentional whole-app migration.
 
 ## Colocation
 
-- Put route-owned code in that route's `_components`, `_hooks`, `_lib`, or `_types` folder.
-- For large routes, group cohesive route-owned areas under `_features/<feature>/{_components,_hooks,_lib,_types}`.
-- Move code to `app/components`, `app/hooks`, `app/lib`, or `app/types` only when it is used by multiple routes or is clearly route-independent.
-- When promoting route-owned code to a shared folder, remove the old route-private copy in the same change unless a temporary shim is explicitly documented.
-- Do not leave duplicate old/new migration directories around. Finish the move, update imports, and delete stale paths before merge.
-- Use private folders (`_folder`) for implementation details inside `app/`.
-- Use route groups (`(group)`) only to organize routes or layouts without changing URLs.
-- Keep API route handlers thin: parse the request, call server logic, and return a response.
+- Route-owned code belongs in that route's `_components`, `_hooks`, `_lib`, or `_types` folder.
+- Large routes may group cohesive route-owned areas under `_features/<feature>/{_components,_hooks,_lib,_types}`.
+- Shared folders (`app/components`, `app/hooks`, `app/lib`, `app/types`) are for code used by multiple routes or code that is clearly route-independent.
+- Each module should have one canonical owner. Shared code belongs in shared folders, while route-owned copies should exist only as documented temporary shims.
+- Avoid parallel old/new directory trees for the same responsibility. Imports should resolve to the canonical location for that code.
+- Private folders (`_folder`) are for implementation details inside `app/`.
+- Route groups (`(group)`) are only for organizing routes or layouts without changing URLs.
+- API route handlers should stay thin: parse the request, call server logic, and return a response.
 
 ## Naming
 
-- Use `kebab-case` for all filenames, including component files: `chat-message.tsx`, `theme-toggle.tsx`, `model-viewer-state.ts`.
-- Keep Next.js special filenames exact: `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`, `not-found.tsx`.
-- Use `PascalCase` for exported React component names and TypeScript interfaces.
-- Use `camelCase` for functions, variables, and hook names. Hook files should start with `use-`.
-- Name files after the main thing they contain. Avoid vague names like `utils.ts`, `helpers.ts`, or `common.ts` unless the scope is very small.
+- Filenames are `kebab-case`, including component files: `chat-message.tsx`, `theme-toggle.tsx`, `model-viewer-state.ts`.
+- Next.js special filenames stay exact: `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`, `not-found.tsx`.
+- Exported React component names and TypeScript interfaces use `PascalCase`.
+- Functions, variables, and hook names use `camelCase`. Hook filenames start with `use-`.
+- Files are named after the main thing they contain. Vague names like `utils.ts`, `helpers.ts`, or `common.ts` are only acceptable in very small scopes.
 
 ## File Size And Extraction
 
-- Aim for normal source files around 150-250 lines.
-- Above 500 lines, look for a meaningful split: component, hook, parser, state machine, data mapper, or domain helper.
-- Above 700 lines, split unless the file is generated, a data table, or a tightly cohesive complex module.
-- Extract code when it has a clear responsibility, a useful name, or real reuse. Do not extract just to move five lines elsewhere.
-- Keep React components focused on rendering and interaction. Move reusable stateful behavior to hooks and pure logic to `_lib`.
+- Normal source files should stay around 150-250 lines when practical.
+- Files above 500 lines should have a clear reason to remain together or a meaningful split point, such as a component, hook, parser, state machine, data mapper, or domain helper.
+- Files above 700 lines should be generated, data-table-like, or a tightly cohesive complex module.
+- Extracted code should have a clear responsibility, a useful name, or real reuse. Five-line extraction without a stronger reason is noise.
+- React components should focus on rendering and interaction. Reusable stateful behavior belongs in hooks, and pure logic belongs in `_lib`.
 
 ## Imports And Boundaries
 
-- Use the `@/` path alias for imports from the project root.
-- Keep imports at the top of the file. Use `next/dynamic` for intentional client-side code splitting.
-- Do not create barrel files. Import directly from the source module.
-- Do not re-export types through components or hooks. Import types from `_types` or `app/types`.
-- Use `import type` for type-only imports.
+- Imports from the project root use the `@/` path alias.
+- Imports belong at the top of the file. `next/dynamic` is for intentional client-side code splitting.
+- Barrel files are not part of the project structure. Import directly from the source module.
+- Types should not be re-exported through components or hooks. Import types from `_types` or `app/types`.
+- Type-only imports use `import type`.
+- Code in `app/lib` should be safe for both Server and Client Components unless it lives under `app/lib/server`.
 - Code in `app/lib/server` is server-only and must not be imported by Client Components.
 
 ## React And Next.js
 
-- Server Components are the default. Add `"use client"` only for browser APIs, state, effects, event handlers, or client-only libraries.
-- Keep Client Components as small as practical and pass only the data they need.
-- Fetch data on the server when possible. Use `Promise.all` for independent async work.
-- Prefer deriving values during render over syncing state in effects.
-- Use refs for transient values that should not trigger renders.
-- Use functional state updates when the next state depends on the previous state.
-- Memoize only when there is a measured or obvious render cost.
+- Server Components are the default. `"use client"` is for browser APIs, state, effects, event handlers, or client-only libraries.
+- Client Components should be as small as practical and receive only the data they need.
+- Data fetching belongs on the server when possible. Independent async work should use `Promise.all`.
+- Values derived from props or state should usually be computed during render instead of synced in effects.
+- Refs are for transient values that should not trigger renders.
+- State updates that depend on previous state should use functional updates.
+- Memoization should have a measured or obvious render cost.
 
 ## TypeScript And Code Quality
 
 - Strict mode is enabled. Do not weaken types to make errors disappear.
 - Do not use `any`. If a cast is unavoidable, cast to a specific type.
-- Use `import type` for type-only imports.
-- Prefer interfaces for object shapes, type aliases for unions and intersections.
-- Exhaustive switch handling: all discriminated union switches must handle every case or have a `never` default.
-- Prefer early returns over nested conditionals.
-- Use `Map` or `Set` for repeated ID or membership lookups.
-- Avoid narrating comments. Comment non-obvious intent, constraints, or trade-offs.
-- Keep edits focused. Do not rewrite unrelated code while touching a file.
+- Type-only imports use `import type`.
+- Object shapes use interfaces. Unions and intersections use type aliases.
+- Discriminated union switches must handle every case or have a `never` default.
+- Early returns are preferred over nested conditionals.
+- Repeated ID or membership lookups should use `Map` or `Set`.
+- Comments should explain non-obvious intent, constraints, or trade-offs, not narrate the code.
+- Edits should stay focused and avoid rewriting unrelated code.
