@@ -15,9 +15,7 @@ import {
   SquareDashed,
 } from "lucide-react";
 
-import type { ViewerRevisionOption } from "@/app/types/model-viewer";
 import { viewLabels } from "@/app/components/model-viewer/_lib/model-viewer-state";
-import { RevisionMenu } from "@/app/components/model-viewer/_components/revision-menu";
 import {
   activeControlClass,
   loadingIconClass,
@@ -26,52 +24,10 @@ import {
 } from "@/app/components/model-viewer/_lib/viewer-styles";
 import { cn } from "@/app/lib/cn";
 import { useFloatingPanel } from "@/app/components/model-viewer/_hooks/use-floating-panel";
-import {
-  ComponentsPanel,
-  countModelBrowserNodes,
-  DownloadMenu,
-  ExplodePanel,
-  TransformMenu,
-  ViewPresetsMenu,
-} from "@/app/components/model-viewer/_components/viewer-control-panels";
+import { countModelBrowserNodes } from "@/app/components/model-viewer/_components/model-browser-tree";
 import { ViewerToolButton } from "@/app/components/model-viewer/_components/viewer-tool-button";
-import type { ModelBrowserNode, TransformMode, ViewPreset } from "@/app/types/model-viewer";
-
-interface ViewerControlsProps {
-  activeView: ViewPreset | null;
-  autoRotate: boolean;
-  canDownload: boolean;
-  canExplode: boolean;
-  canDownloadSource: boolean;
-  canShare: boolean;
-  explodeAmount: number;
-  hasTransforms: boolean;
-  isDownloading: boolean;
-  isDownloadingSource: boolean;
-  isLatestRevisionSelected: boolean;
-  isSharing: boolean;
-  modelBrowserNodes: ModelBrowserNode[];
-  revisions: ViewerRevisionOption[];
-  activeRevisionKey: string | null;
-  selectedBrowserNodeId: string | null;
-  transformMode: TransformMode;
-  visibleBrowserNodeIds: Set<string>;
-  wireframe: boolean;
-  onDownload: () => void;
-  onDownloadSource: () => void;
-  onFitView: () => void;
-  onResetTransforms: () => void;
-  onSelectLatestRevision?: () => void;
-  onSelectRevision?: (key: string) => void;
-  onSelectBrowserNode: (id: string) => void;
-  onExplodeAmountChange: (amount: number) => void;
-  onSetTransformMode: (mode: TransformMode) => void;
-  onShare: () => void;
-  onSetView: (view: ViewPreset) => void;
-  onToggleBrowserNodeVisibility: (id: string) => void;
-  onToggleAutoRotate: () => void;
-  onToggleWireframe: () => void;
-}
+import { ViewerControlPopovers } from "@/app/components/model-viewer/_components/viewer-control-popovers";
+import type { ViewerControlsProps } from "@/app/components/model-viewer/_types/viewer-controls";
 
 type OpenPanel = "components" | "download" | "explode" | "revisions" | "transform" | "views";
 
@@ -113,11 +69,7 @@ export const ViewerControls = memo(function ViewerControls({
   const [openPanel, setOpenPanel] = useState<OpenPanel | null>(null);
   const componentCount = useMemo(() => countModelBrowserNodes(modelBrowserNodes), [modelBrowserNodes]);
   const canShowComponents = modelBrowserNodes.length > 0;
-  const revisionControls = onSelectLatestRevision && onSelectRevision ? {
-    onSelectLatestRevision,
-    onSelectRevision,
-  } : null;
-  const canShowRevisions = revisions.length > 0 && revisionControls !== null;
+  const canShowRevisions = revisions.length > 0 && onSelectLatestRevision !== undefined && onSelectRevision !== undefined;
   const activeRevision = activeRevisionKey
     ? revisions.find((revision) => revision.key === activeRevisionKey) ?? null
     : null;
@@ -300,75 +252,41 @@ export const ViewerControls = memo(function ViewerControls({
         </>
       ) : null}
 
-      {viewMenuOpen ? (
-        <ViewPresetsMenu
-          activeView={activeView}
-          onClose={closePanel}
-          onSetView={onSetView}
-          panelRef={panelRef}
-          style={panelStyle}
-        />
-      ) : null}
-
-      {downloadOpen ? (
-        <DownloadMenu
-          canDownload={canDownload}
-          canDownloadSource={canDownloadSource}
-          isDownloading={isDownloading}
-          isDownloadingSource={isDownloadingSource}
-          onClose={closePanel}
-          onDownload={onDownload}
-          onDownloadSource={onDownloadSource}
-          panelRef={panelRef}
-          style={panelStyle}
-        />
-      ) : null}
-
-      {revisionsOpen && revisionControls ? (
-        <RevisionMenu
-          ref={panelRef}
-          activeRevisionKey={activeRevisionKey}
-          isLatestRevisionSelected={isLatestRevisionSelected}
-          revisions={revisions}
-          style={panelStyle}
-          onClose={closePanel}
-          onSelectLatestRevision={revisionControls.onSelectLatestRevision}
-          onSelectRevision={revisionControls.onSelectRevision}
-        />
-      ) : null}
-
-      {componentsOpen ? (
-        <ComponentsPanel
-          modelBrowserNodes={modelBrowserNodes}
-          onSelectBrowserNode={onSelectBrowserNode}
-          onToggleBrowserNodeVisibility={onToggleBrowserNodeVisibility}
-          panelRef={panelRef}
-          selectedBrowserNodeId={selectedBrowserNodeId}
-          style={panelStyle}
-          visibleBrowserNodeIds={visibleBrowserNodeIds}
-        />
-      ) : null}
-
-      {explodeOpen ? (
-        <ExplodePanel
-          explodeAmount={explodeAmount}
-          onExplodeAmountChange={onExplodeAmountChange}
-          panelRef={panelRef}
-          style={panelStyle}
-        />
-      ) : null}
-
-      {transformOpen ? (
-        <TransformMenu
-          hasTransforms={hasTransforms}
-          onClose={closePanel}
-          onResetTransforms={onResetTransforms}
-          onSetTransformMode={onSetTransformMode}
-          panelRef={panelRef}
-          style={panelStyle}
-          transformMode={transformMode}
-        />
-      ) : null}
+      <ViewerControlPopovers
+        activeRevisionKey={activeRevisionKey}
+        activeView={activeView}
+        canDownload={canDownload}
+        canDownloadSource={canDownloadSource}
+        componentsOpen={componentsOpen}
+        downloadOpen={downloadOpen}
+        explodeAmount={explodeAmount}
+        explodeOpen={explodeOpen}
+        hasTransforms={hasTransforms}
+        isDownloading={isDownloading}
+        isDownloadingSource={isDownloadingSource}
+        isLatestRevisionSelected={isLatestRevisionSelected}
+        modelBrowserNodes={modelBrowserNodes}
+        onClose={closePanel}
+        onDownload={onDownload}
+        onDownloadSource={onDownloadSource}
+        onExplodeAmountChange={onExplodeAmountChange}
+        onResetTransforms={onResetTransforms}
+        onSelectBrowserNode={onSelectBrowserNode}
+        onSelectLatestRevision={onSelectLatestRevision}
+        onSelectRevision={onSelectRevision}
+        onSetTransformMode={onSetTransformMode}
+        onSetView={onSetView}
+        onToggleBrowserNodeVisibility={onToggleBrowserNodeVisibility}
+        panelRef={panelRef}
+        panelStyle={panelStyle}
+        revisions={revisions}
+        revisionsOpen={revisionsOpen}
+        selectedBrowserNodeId={selectedBrowserNodeId}
+        transformMode={transformMode}
+        transformOpen={transformOpen}
+        viewMenuOpen={viewMenuOpen}
+        visibleBrowserNodeIds={visibleBrowserNodeIds}
+      />
     </div>
   );
 });

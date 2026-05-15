@@ -1,6 +1,8 @@
 "use client";
 
-import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import type { CSSProperties } from "react";
 
 interface FloatingPanelPosition {
   left: number;

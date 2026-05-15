@@ -3,23 +3,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-import { type BrowserNodeEntry } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
+import type { BrowserNodeEntry } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
 import { initialStatus } from "@/app/components/model-viewer/_lib/model-viewer-state";
 import type { LoadProgress, LoadState, ModelBrowserNode, ModelFormat, ModelSource, ViewPreset } from "@/app/types/model-viewer";
-import { setCameraView, fitCameraToObject } from "@/app/components/model-viewer/_lib/camera-view";
-import { applyExplodeAmount, buildExplodeAssembly, type ExplodeAssembly } from "@/app/components/model-viewer/_lib/explode-assembly";
+import { applyExplodeAmount, buildExplodeAssembly } from "@/app/components/model-viewer/_lib/explode-assembly";
+import type { ExplodeAssembly } from "@/app/components/model-viewer/_lib/explode-assembly";
 import { applyWireframe, disposeObject } from "@/app/components/model-viewer/_lib/three-materials";
-import { attachModelPicking, collectStandardMaterials, type HighlightState, visibleMeshes } from "@/app/components/model-viewer/_lib/model-viewer-picking";
+import { attachModelPicking } from "@/app/components/model-viewer/_lib/model-viewer-picking";
+import type { HighlightState } from "@/app/components/model-viewer/_lib/model-viewer-picking";
 import { useModelLoading } from "@/app/components/model-viewer/_hooks/use-model-loading";
 import { useThreeRenderer } from "@/app/components/model-viewer/_hooks/use-three-renderer";
 import { useTransformControls } from "@/app/components/model-viewer/_hooks/use-transform-controls";
+import { fitSceneView, setSceneActiveView } from "@/app/components/model-viewer/_lib/scene-view-actions";
+import { useBrowserSelection } from "@/app/components/model-viewer/_hooks/use-browser-selection";
 
 interface ModelViewerSceneOptions {
   source: ModelSource | null;
 }
-
-const browserSelectionColor = new THREE.Color(0x60a5fa);
-const browserSelectionEmissive = new THREE.Color(0x1d4ed8);
 
 export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
   const activeViewRef = useRef<ViewPreset>("iso");
@@ -49,26 +49,22 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
   const [visibleBrowserNodeIds, setVisibleBrowserNodeIds] = useState<Set<string>>(new Set());
   const [wireframe, setWireframe] = useState(false);
 
-  const refreshPickableMeshes = useCallback(() => {
-    pickableMeshesRef.current = visibleMeshes(allPickableMeshesRef.current);
-  }, []);
-
-  const clearBrowserSelectionHighlight = useCallback(() => {
-    clearHighlightRef.current();
-
-    for (const highlighted of selectedHighlightsRef.current) {
-      highlighted.material.color.copy(highlighted.color);
-      highlighted.material.emissive.copy(highlighted.emissive);
-    }
-
-    selectedHighlightsRef.current = [];
-  }, []);
-
-  const clearBrowserSelection = useCallback(() => {
-    selectedBrowserNodeIdRef.current = null;
-    setSelectedBrowserNodeId(null);
-    clearBrowserSelectionHighlight();
-  }, [clearBrowserSelectionHighlight]);
+  const {
+    clearBrowserSelection,
+    clearBrowserSelectionHighlight,
+    handleTransformSelect,
+    selectBrowserNode: selectBrowserNodeWithTransform,
+    toggleBrowserNodeVisibility,
+  } = useBrowserSelection({
+    allPickableMeshesRef,
+    browserNodeEntriesRef,
+    clearHighlightRef,
+    pickableMeshesRef,
+    selectedBrowserNodeIdRef,
+    selectedHighlightsRef,
+    setSelectedBrowserNodeId,
+    setVisibleBrowserNodeIds,
+  });
 
   const clearCurrentModel = useCallback(
     (scene?: THREE.Scene) => {
@@ -155,34 +151,6 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
     wireframeRef,
   });
 
-  const handleTransformSelect = useCallback((nodeId: string | null) => {
-    if (nodeId === null) {
-      clearBrowserSelectionHighlight();
-      selectedBrowserNodeIdRef.current = null;
-      setSelectedBrowserNodeId(null);
-      return;
-    }
-
-    const entry = browserNodeEntriesRef.current.get(nodeId);
-    if (!entry) return;
-
-    clearBrowserSelectionHighlight();
-    selectedBrowserNodeIdRef.current = nodeId;
-    setSelectedBrowserNodeId(nodeId);
-
-    const materials = collectStandardMaterials(entry.meshes);
-    selectedHighlightsRef.current = materials.map((material) => ({
-      material,
-      color: material.color.clone(),
-      emissive: material.emissive.clone(),
-    }));
-
-    for (const material of materials) {
-      material.color.copy(browserSelectionColor);
-      material.emissive.copy(browserSelectionEmissive);
-    }
-  }, [clearBrowserSelectionHighlight]);
-
   const {
     detachTransform,
     hasTransforms,
@@ -198,91 +166,22 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
     runtimeRef,
   });
 
-  const applyBrowserSelectionHighlight = useCallback(
-    (entry: BrowserNodeEntry) => {
-      clearBrowserSelectionHighlight();
-
-      const materials = collectStandardMaterials(entry.meshes);
-      selectedHighlightsRef.current = materials.map((material) => ({
-        material,
-        color: material.color.clone(),
-        emissive: material.emissive.clone(),
-      }));
-
-      for (const material of materials) {
-        material.color.copy(browserSelectionColor);
-        material.emissive.copy(browserSelectionEmissive);
-      }
-    },
-    [clearBrowserSelectionHighlight],
-  );
-
   const selectBrowserNode = useCallback(
     (id: string) => {
-      if (selectedBrowserNodeIdRef.current === id) {
-        clearBrowserSelection();
-        selectTransformNode(null);
-        return;
-      }
-
-      const entry = browserNodeEntriesRef.current.get(id);
-      if (!entry) {
-        clearBrowserSelection();
-        selectTransformNode(null);
-        return;
-      }
-
-      selectedBrowserNodeIdRef.current = id;
-      setSelectedBrowserNodeId(id);
-      applyBrowserSelectionHighlight(entry);
-      selectTransformNode(id);
+      selectBrowserNodeWithTransform(id, selectTransformNode);
     },
-    [applyBrowserSelectionHighlight, clearBrowserSelection, selectTransformNode],
-  );
-
-  const toggleBrowserNodeVisibility = useCallback(
-    (id: string) => {
-      const entry = browserNodeEntriesRef.current.get(id);
-      if (!entry) {
-        return;
-      }
-
-      const nextVisible = !entry.visible;
-      entry.visible = nextVisible;
-      for (const object of entry.objects) {
-        object.visible = nextVisible;
-      }
-
-      refreshPickableMeshes();
-
-      const selectedId = selectedBrowserNodeIdRef.current;
-      const selectedEntry = selectedId ? browserNodeEntriesRef.current.get(selectedId) : null;
-      if (selectedEntry && visibleMeshes(selectedEntry.meshes).length === 0) {
-        clearBrowserSelection();
-      }
-
-      setVisibleBrowserNodeIds((currentIds) => {
-        const nextIds = new Set(currentIds);
-        if (nextVisible) {
-          nextIds.add(id);
-        } else {
-          nextIds.delete(id);
-        }
-        return nextIds;
-      });
-    },
-    [clearBrowserSelection, refreshPickableMeshes],
+    [selectBrowserNodeWithTransform, selectTransformNode],
   );
 
   const setActiveView = useCallback(
     (view: ViewPreset) => {
-      activeViewRef.current = view;
-      setActiveViewState(view);
-
-      const runtime = runtimeRef.current;
-      if (runtime) {
-        setCameraView(runtime.camera, runtime.controls, view, fitDistanceRef.current);
-      }
+      setSceneActiveView({
+        activeViewRef,
+        fitDistanceRef,
+        runtime: runtimeRef.current,
+        setActiveViewState,
+        view,
+      });
     },
     [runtimeRef],
   );
@@ -296,24 +195,15 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
   }, [detachTransform]);
 
   const fitView = useCallback(() => {
-    const runtime = runtimeRef.current;
-    if (!runtime || !modelGroupRef.current) {
-      return;
-    }
-
-    const currentExplodeAmount = explodeAmountRef.current;
-    applyExplodeAmount(explodeAssemblyRef.current, 0);
-    fitDistanceRef.current = fitCameraToObject(
-      runtime.camera,
-      runtime.controls,
-      modelGroupRef.current,
-      activeViewRef.current,
-    );
-    if (currentFormatRef.current) {
-      const assembly = buildExplodeAssembly(modelGroupRef.current, currentFormatRef.current);
-      explodeAssemblyRef.current = assembly;
-      applyExplodeAmount(assembly, currentExplodeAmount);
-    }
+    fitSceneView({
+      activeViewRef,
+      currentExplodeAmount: explodeAmountRef.current,
+      currentFormat: currentFormatRef.current,
+      explodeAssemblyRef,
+      fitDistanceRef,
+      model: modelGroupRef.current,
+      runtime: runtimeRef.current,
+    });
   }, [runtimeRef]);
 
   const toggleWireframe = useCallback(() => {

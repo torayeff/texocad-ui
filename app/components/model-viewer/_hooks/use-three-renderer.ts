@@ -1,10 +1,11 @@
 "use client";
 
-import { type RefObject, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
+import type { RefObject } from "react";
 import type { ModelFormat, ViewPreset } from "@/app/types/model-viewer";
 import type { ViewerRuntime } from "@/app/components/model-viewer/_types/viewer-runtime";
 import { createAxisTriad } from "@/app/components/model-viewer/_lib/axis-triad";

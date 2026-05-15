@@ -1,6 +1,7 @@
-import { type CSSProperties, forwardRef } from "react";
+import { forwardRef } from "react";
 import { Check } from "lucide-react";
 
+import type { CSSProperties } from "react";
 import type { ViewerRevisionOption } from "@/app/types/model-viewer";
 import {
   activeControlClass,

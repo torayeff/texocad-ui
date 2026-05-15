@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { type MutableRefObject } from "react";
 
+import type { MutableRefObject } from "react";
 import { getIntersectionMaterial } from "@/app/components/model-viewer/_lib/three-materials";
 
 export interface HighlightState {

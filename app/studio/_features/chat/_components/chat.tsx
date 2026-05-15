@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
-import { ArrowDown, Loader2 } from "lucide-react";
 
 import { useThreadHistory } from "@/app/studio/_features/chat/_hooks/use-thread-history";
 import { useChatStream } from "@/app/studio/_features/chat/_hooks/use-chat-stream";
@@ -16,12 +15,11 @@ import type { DesignRevisionArtifact } from "@/app/studio/_features/design-revis
 import type { ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
 import { trackMessageSubmitted } from "@/app/studio/_features/chat/_lib/analytics";
 
-import { MessageWithSubagents } from "@/app/studio/_features/chat/_components/message-with-subagents";
-import { TodoList } from "@/app/studio/_features/chat/_components/todo-list";
 import { ChatHeader } from "@/app/studio/_features/chat/_components/chat-header";
 import ThreadHistoryPanel from "@/app/studio/_features/chat/_components/thread-history-panel";
-import EmptyChatState from "@/app/studio/_features/chat/_components/empty-chat-state";
 import ChatInput from "@/app/studio/_features/chat/_components/chat-input";
+import { ChatErrorBanner, ChatNotFoundState } from "@/app/studio/_features/chat/_components/chat-error-state";
+import { ChatMessagesPanel } from "@/app/studio/_features/chat/_components/chat-messages-panel";
 
 interface ChatProps {
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
@@ -184,26 +182,13 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
   const isNotFound = errorMessage?.includes("HTTP 404");
 
   if (isNotFound) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 bg-background text-foreground">
-        <h1 className="text-4xl font-bold">404</h1>
-        <p className="text-muted-foreground">Thread not found</p>
-        <button
-          onClick={() => router.replace(pathname)}
-          className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-4 py-2 text-sm font-medium text-muted-foreground shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors hover:bg-muted hover:text-foreground"
-        >
-          Start a new conversation
-        </button>
-      </div>
-    );
+    return <ChatNotFoundState onStartNew={() => router.replace(pathname)} />;
   }
 
   return (
     <div className="flex h-full flex-col bg-background">
       {errorMessage ? (
-        <div className="flex items-center gap-2 px-4 py-2 bg-error/10 border-b border-error/20 text-error text-xs">
-          <span>Error: {errorMessage}</span>
-        </div>
+        <ChatErrorBanner message={errorMessage} />
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -220,81 +205,25 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             onLoadMore={history.loadMore}
           />
         ) : (
-          <div
-            className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
-          >
-            <div
-              ref={messagesContainerRef}
-              onScroll={handleScroll}
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-on-hover px-4 pb-6 pt-6"
-            >
-              <div
-                className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full" : ""}`}
-              >
-                {isEmpty && !isHydrating && (
-                  <EmptyChatState
-                    isHydrating={isHydrating}
-                    isBusy={isBusy}
-                    onExamplePrompt={handleExamplePrompt}
-                  />
-                )}
-
-                {isHydrating && messages.length === 0 && (
-                  <div className="flex items-center justify-center py-10">
-                    <Loader2 size={24} className="animate-spin text-muted-foreground" />
-                  </div>
-                )}
-
-                {messageRows.map((row) => (
-                  <MessageWithSubagents
-                    key={row.rowKey}
-                    messageType={row.messageType}
-                    textContent={row.textContent}
-                    thinkingContent={row.thinkingContent}
-                    agentName={row.agentName}
-                    usage={row.usage}
-                    isStreaming={row.isStreaming}
-                    startedAtMs={row.startedAtMs}
-                    toolCalls={row.toolCalls}
-                    subagents={row.subagents}
-                    toolCallsSignature={row.toolCallsSignature}
-                    subagentsSignature={row.subagentsSignature}
-                    renderMarkdown={row.renderMarkdown}
-                  />
-                ))}
-
-                {shouldRenderPendingHumanMessage && pendingHumanMessage ? (
-                  <MessageWithSubagents
-                    key="pending-human-message"
-                    messageType="human"
-                    textContent={pendingHumanText}
-                  />
-                ) : null}
-
-                {isLoading &&
-                  lastMessageType === "human" && (
-                    <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Thinking...</span>
-                    </div>
-                  )}
-
-                {shouldShowTodoList ? <TodoList todos={todos} /> : null}
-
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
-
-            {showScrollButton && (
-              <button
-                onClick={scrollToBottom}
-                aria-label="Scroll to bottom"
-                className="absolute bottom-4 right-4 z-30 flex h-8 w-8 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] text-muted-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <ArrowDown size={16} />
-              </button>
-            )}
-          </div>
+          <ChatMessagesPanel
+            handleScroll={handleScroll}
+            isBusy={isBusy}
+            isEmpty={isEmpty}
+            isHydrating={isHydrating}
+            isLoading={isLoading}
+            lastMessageType={lastMessageType}
+            messageRows={messageRows}
+            messagesContainerRef={messagesContainerRef}
+            messagesEndRef={messagesEndRef}
+            onExamplePrompt={handleExamplePrompt}
+            pendingHumanMessage={pendingHumanMessage}
+            pendingHumanText={pendingHumanText}
+            scrollToBottom={scrollToBottom}
+            shouldRenderPendingHumanMessage={shouldRenderPendingHumanMessage}
+            shouldShowTodoList={shouldShowTodoList}
+            showScrollButton={showScrollButton}
+            todos={todos}
+          />
         )}
         {historyOpen ? null : (
           <ChatInput

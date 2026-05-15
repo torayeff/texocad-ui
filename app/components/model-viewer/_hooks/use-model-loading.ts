@@ -1,11 +1,13 @@
 "use client";
 
-import { type Dispatch, type RefObject, type SetStateAction, useEffect } from "react";
+import { useEffect } from "react";
 import * as THREE from "three";
 
+import type { Dispatch, RefObject, SetStateAction } from "react";
 import { buildModel } from "@/app/components/model-viewer/_lib/model-viewer-loaders";
 import { getSourceBuffer, sourceFormat } from "@/app/components/model-viewer/_lib/model-source";
-import { buildModelBrowserTree, type BrowserNodeEntry, visibleNodeIds } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
+import { buildModelBrowserTree, visibleNodeIds } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
+import type { BrowserNodeEntry } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
 import { initialStatus } from "@/app/components/model-viewer/_lib/model-viewer-state";
 import type { LoadProgress, LoadState, ModelBrowserNode, ModelFormat, ModelSource, ViewPreset } from "@/app/types/model-viewer";
 import { fitCameraToObject } from "@/app/components/model-viewer/_lib/camera-view";

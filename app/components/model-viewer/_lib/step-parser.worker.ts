@@ -1,4 +1,5 @@
-import occtimportjs, { type OcctImportModule, type OcctMesh, type OcctNumericArray } from "occt-import-js";
+import occtimportjs from "occt-import-js";
+import type { OcctImportModule, OcctMesh, OcctNumericArray } from "occt-import-js";
 
 import type { StepMeshData, StepWorkerRequest, StepWorkerResponse } from "@/app/components/model-viewer/_types/loader-types";
 

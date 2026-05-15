@@ -1,12 +1,19 @@
 "use client";
 
-import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 
-import { type BrowserNodeEntry } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
+import type { RefObject } from "react";
+import type { BrowserNodeEntry } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
 import type { TransformMode } from "@/app/types/model-viewer";
 import type { ViewerRuntime } from "@/app/components/model-viewer/_types/viewer-runtime";
+import {
+  findNodeIdForMesh,
+  retintTransformHelper,
+  visibleEntryMeshes,
+  visibleModelMeshes,
+} from "@/app/components/model-viewer/_lib/transform-control-targets";
 
 interface OriginalTransform {
   position: THREE.Vector3;
@@ -18,18 +25,6 @@ interface UseTransformControlsOptions {
   modelGroupRef: RefObject<THREE.Group | null>;
   onSelectNode: (nodeId: string | null) => void;
   runtimeRef: RefObject<ViewerRuntime | null>;
-}
-
-function findNodeIdForMesh(
-  mesh: THREE.Mesh,
-  entries: Map<string, BrowserNodeEntry>,
-): string | null {
-  for (const [id, entry] of entries) {
-    if (entry.meshes.includes(mesh)) {
-      return id;
-    }
-  }
-  return null;
 }
 
 export function useTransformControls({
@@ -164,14 +159,7 @@ export function useTransformControls({
     tc.setSize(0.75);
 
     const helper = tc.getHelper();
-    helper.traverse((child) => {
-      if ("material" in child) {
-        const mat = child.material as THREE.LineBasicMaterial | THREE.MeshBasicMaterial;
-        if (mat.color && mat.color.getHex() === 0xffffff) {
-          mat.color.setHex(0x888888);
-        }
-      }
-    });
+    retintTransformHelper(helper);
 
     scene.add(helper);
     transformControlsRef.current = tc;
@@ -229,18 +217,10 @@ export function useTransformControls({
       raycaster.setFromCamera(pointer, camera);
 
       const entries = browserNodeEntriesRef.current;
-      const allMeshes: THREE.Mesh[] = [];
-      for (const entry of entries.values()) {
-        for (const mesh of entry.meshes) {
-          if (mesh.visible) allMeshes.push(mesh);
-        }
-      }
+      const allMeshes = visibleEntryMeshes(entries);
 
       if (allMeshes.length === 0 && modelGroupRef.current) {
-        const modelMeshes: THREE.Mesh[] = [];
-        modelGroupRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.visible) modelMeshes.push(child);
-        });
+        const modelMeshes = visibleModelMeshes(modelGroupRef.current);
         const [hit] = raycaster.intersectObjects(modelMeshes, false);
         if (hit) {
           selectNode("__model__");

@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 
+import type { FormEvent } from "react";
 import type { ModelSource, ShareRevision } from "@/app/types/model-viewer";
 
 interface ShareResponse {
