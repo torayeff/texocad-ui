@@ -8,6 +8,7 @@ import {
   getToolPreviewImages,
   getToolResultText,
 } from "@/app/studio/_features/chat/_lib/tool-result-content";
+import { useAutoOpenDetails } from "@/app/studio/_features/chat/_hooks/use-auto-open-details";
 import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 
 type ToolCallState = "pending" | "completed" | "error";
@@ -24,6 +25,18 @@ const STATUS_LABEL: Record<ToolCallState, string> = {
   error: "Failed",
 };
 
+function getToolResultStatus(result: unknown): "success" | "error" | undefined {
+  if (typeof result !== "object" || result === null) return undefined;
+  const { status } = result as { status?: unknown };
+  return status === "success" || status === "error" ? status : undefined;
+}
+
+function getToolCallState(toolCall: StreamToolCall): ToolCallState {
+  if (getToolResultStatus(toolCall.result) === "error") return "error";
+  if (toolCall.result != null && toolCall.state === "pending") return "completed";
+  return toolCall.state;
+}
+
 export const ToolCallCard = React.memo(function ToolCallCard({
   toolCall,
   isStreaming = false,
@@ -31,13 +44,10 @@ export const ToolCallCard = React.memo(function ToolCallCard({
   toolCall: StreamToolCall;
   isStreaming?: boolean;
 }) {
-  const state: ToolCallState = toolCall.result != null && toolCall.state === "pending"
-    ? "completed"
-    : toolCall.state;
+  const state = getToolCallState(toolCall);
   const cls = `flex-shrink-0 ${STATUS_CLASS[state]}`;
-  const shouldAutoOpen = state === "error" || (state === "pending" && isStreaming);
-  const [userOpen, setUserOpen] = React.useState(false);
-  const isOpen = shouldAutoOpen || userOpen;
+  const shouldAutoOpen = state === "pending" && isStreaming;
+  const { isOpen, handleToggle } = useAutoOpenDetails(shouldAutoOpen);
   const shouldRenderBody = isOpen;
   const resultText = React.useMemo(
     () => shouldRenderBody ? getToolResultText(toolCall.result) : "",
@@ -61,7 +71,7 @@ export const ToolCallCard = React.memo(function ToolCallCard({
   return (
     <details
       open={isOpen}
-      onToggle={(event) => setUserOpen(event.currentTarget.open)}
+      onToggle={handleToggle}
       className="group/tool"
     >
       <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">

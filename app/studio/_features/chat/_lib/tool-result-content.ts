@@ -18,6 +18,12 @@ function isTextBlock(block: unknown): block is ToolResultTextBlock {
   return isRecord(block) && block.type === "text" && typeof block.text === "string";
 }
 
+function getTextBlockContent(block: unknown): string {
+  if (typeof block === "string") return block;
+  if (isTextBlock(block)) return block.text;
+  return "";
+}
+
 function isImageBlock(block: unknown): block is ToolResultImageBlock {
   return isRecord(block) && (block.type === "image" || block.type === "image_url");
 }
@@ -57,8 +63,7 @@ export function getToolResultText(result: unknown): string {
   if (content.length === 0) return typeof result === "string" ? result : "";
 
   return content
-    .filter(isTextBlock)
-    .map((block) => block.text)
+    .map(getTextBlockContent)
     .join("");
 }
 

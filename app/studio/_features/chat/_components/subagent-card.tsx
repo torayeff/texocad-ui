@@ -8,6 +8,7 @@ import { ToolCallCard } from "@/app/studio/_features/chat/_components/tool-call-
 import { getMessageTextContent, getReasoningContent } from "@/app/studio/_features/chat/_lib/message-content";
 import { AIPanel } from "@/app/studio/_features/chat/_components/ai-panel";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_features/chat/_components/inline-blocks";
+import { useAutoOpenDetails } from "@/app/studio/_features/chat/_hooks/use-auto-open-details";
 import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 import type { SubagentStatus, SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
 
@@ -36,8 +37,8 @@ function getSubagentToolCalls(subagent: SubagentStream): StreamToolCall[] {
     if (ToolMessage.isInstance(message)) {
       const tc = allToolCalls.find((t) => t.id === message.tool_call_id);
       if (tc) {
-        tc.result = { content: message.content };
-        tc.state = "completed";
+        tc.result = { content: message.content, status: message.status };
+        tc.state = message.status === "error" ? "error" : "completed";
       }
     }
 
@@ -134,22 +135,8 @@ export const SubagentCard = React.memo(function SubagentCard({
   const isStreaming = resolvedStatus === "running" && !!parentIsStreaming;
   const style = STATUS_STYLES[resolvedStatus];
   const StatusIcon = style.icon;
-  const [isOpen, setIsOpen] = React.useState(
-    resolvedStatus === "error",
-  );
-
-  React.useEffect(() => {
-    if (resolvedStatus === "error") {
-      setIsOpen(true);
-      return;
-    }
-
-    if (resolvedStatus === "complete") {
-      setIsOpen(false);
-    }
-  }, [resolvedStatus]);
-
-  const shouldRenderDetails = isOpen || isStreaming || resolvedStatus === "error";
+  const { isOpen, handleToggle } = useAutoOpenDetails(isStreaming);
+  const shouldRenderDetails = isOpen;
   const hasInputArgs = Object.keys(subagent.toolCall.args).length > 0;
 
   const cachedDetails = React.useMemo(() => {
@@ -180,7 +167,7 @@ export const SubagentCard = React.memo(function SubagentCard({
   return (
     <details
       open={isOpen}
-      onToggle={(event) => setIsOpen(event.currentTarget.open)}
+      onToggle={handleToggle}
       className="group/subagent"
     >
       <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground cursor-pointer">

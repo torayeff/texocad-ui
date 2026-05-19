@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Brain, CircleCheck, ChevronDown } from "lucide-react";
 import { useAutoScroll } from "@/app/studio/_features/chat/_hooks/use-auto-scroll";
+import { useAutoOpenDetails } from "@/app/studio/_features/chat/_hooks/use-auto-open-details";
 
 const REMARK_PLUGINS = [remarkGfm];
 
@@ -18,25 +19,14 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
   defaultOpen?: boolean;
 }) {
   const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>(isStreaming);
-  const [userOpen, setUserOpen] = React.useState(defaultOpen);
-  const previousStreamingRef = React.useRef(isStreaming);
-  const isOpen = isStreaming || userOpen;
-
-  React.useEffect(() => {
-    if (previousStreamingRef.current && !isStreaming) {
-      setUserOpen(false);
-    }
-    previousStreamingRef.current = isStreaming;
-  }, [isStreaming]);
+  const { isOpen, handleToggle } = useAutoOpenDetails(isStreaming, defaultOpen);
 
   if (!content && !isStreaming) return null;
 
   return (
     <details
       open={isOpen}
-      onToggle={(event) => {
-        if (!isStreaming) setUserOpen(event.currentTarget.open);
-      }}
+      onToggle={handleToggle}
       className="group/thinking"
     >
       <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
