@@ -3,29 +3,12 @@
 import React from "react";
 import { CircleCheck, CircleDashed, CircleX, ChevronDown, Wrench } from "lucide-react";
 
+import { ToolPreviewCard } from "@/app/studio/_features/chat/_components/tool-preview-card";
+import {
+  getToolPreviewImages,
+  getToolResultText,
+} from "@/app/studio/_features/chat/_lib/tool-result-content";
 import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
-
-function getToolResultText(result: unknown): string {
-  if (typeof result !== "object" || result === null || !("content" in result)) {
-    return "";
-  }
-
-  const { content } = result;
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-
-  return content
-    .filter((block): block is { type: "text"; text: string } =>
-      typeof block === "object"
-      && block !== null
-      && "type" in block
-      && "text" in block
-      && block.type === "text"
-      && typeof block.text === "string",
-    )
-    .map((block) => block.text)
-    .join("");
-}
 
 type ToolCallState = "pending" | "completed" | "error";
 
@@ -57,6 +40,10 @@ export const ToolCallCard = React.memo(function ToolCallCard({
   const resultText = React.useMemo(
     () => shouldRenderBody ? getToolResultText(toolCall.result) : "",
     [shouldRenderBody, toolCall.result],
+  );
+  const previewImages = React.useMemo(
+    () => state === "completed" ? getToolPreviewImages(toolCall.result) : [],
+    [state, toolCall.result],
   );
   const hasArgs = Object.keys(toolCall.call.args).length > 0;
 
@@ -96,6 +83,17 @@ export const ToolCallCard = React.memo(function ToolCallCard({
           />
         </div>
       </summary>
+
+      {previewImages.length > 0 ? (
+        <div className="mt-2 flex flex-col gap-2 border-l border-border/30 pl-4">
+          {previewImages.map((image, index) => (
+            <ToolPreviewCard
+              key={`${image.src.slice(0, 80)}:${index}`}
+              image={image}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {shouldRenderBody ? (
         <div className="mt-2 space-y-3 border-l border-border/30 pl-4">

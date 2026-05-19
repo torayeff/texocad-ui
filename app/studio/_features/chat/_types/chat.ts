@@ -54,6 +54,27 @@ export interface StreamToolCall {
   result?: unknown;
 }
 
+export interface ToolResultTextBlock {
+  type: "text";
+  text: string;
+}
+
+export interface ToolResultImageBlock {
+  type: "image" | "image_url";
+  source_type?: "base64" | "url";
+  data?: string;
+  base64?: string;
+  url?: string;
+  image_url?: string | { url?: string };
+  mime_type?: string;
+  mimeType?: string;
+}
+
+export interface ToolPreviewImage {
+  src: string;
+  mimeType: string;
+}
+
 export interface ThreadSummary {
   threadId: string;
   title: string;
