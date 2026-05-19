@@ -18,11 +18,27 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
   defaultOpen?: boolean;
 }) {
   const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>(isStreaming);
+  const [userOpen, setUserOpen] = React.useState(defaultOpen);
+  const previousStreamingRef = React.useRef(isStreaming);
+  const isOpen = isStreaming || userOpen;
+
+  React.useEffect(() => {
+    if (previousStreamingRef.current && !isStreaming) {
+      setUserOpen(false);
+    }
+    previousStreamingRef.current = isStreaming;
+  }, [isStreaming]);
 
   if (!content && !isStreaming) return null;
 
   return (
-    <details open={defaultOpen || undefined} className="group/thinking">
+    <details
+      open={isOpen}
+      onToggle={(event) => {
+        if (!isStreaming) setUserOpen(event.currentTarget.open);
+      }}
+      className="group/thinking"
+    >
       <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
         <Brain size={13} className="flex-shrink-0 text-muted-foreground/60" />
         <span>{isStreaming ? "Thinking..." : "Thought process"}</span>

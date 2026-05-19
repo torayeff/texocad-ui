@@ -35,8 +35,10 @@ export const ToolCallCard = React.memo(function ToolCallCard({
     ? "completed"
     : toolCall.state;
   const cls = `flex-shrink-0 ${STATUS_CLASS[state]}`;
-  const [isOpen, setIsOpen] = React.useState(false);
-  const shouldRenderBody = isOpen || (state === "pending" && isStreaming);
+  const shouldAutoOpen = state === "error" || (state === "pending" && isStreaming);
+  const [userOpen, setUserOpen] = React.useState(false);
+  const isOpen = shouldAutoOpen || userOpen;
+  const shouldRenderBody = isOpen;
   const resultText = React.useMemo(
     () => shouldRenderBody ? getToolResultText(toolCall.result) : "",
     [shouldRenderBody, toolCall.result],
@@ -59,7 +61,7 @@ export const ToolCallCard = React.memo(function ToolCallCard({
   return (
     <details
       open={isOpen}
-      onToggle={(event) => setIsOpen(event.currentTarget.open)}
+      onToggle={(event) => setUserOpen(event.currentTarget.open)}
       className="group/tool"
     >
       <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
