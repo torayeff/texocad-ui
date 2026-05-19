@@ -24,6 +24,8 @@ export const metadata: Metadata = {
   },
 };
 
+const EXPERT_NETWORK_FORM_URL = "https://tally.so/r/EkZGVr";
+
 export default function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
@@ -132,6 +134,27 @@ export default function Home() {
               >
                 Watch Demo
               </a>
+            </div>
+
+            <div className="mt-8 max-w-lg rounded-2xl border border-border bg-card p-4 shadow-[0_18px_55px_rgb(0_0_0_/_0.04)]">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/55">
+                    Are you a CAD expert?
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Join TexoCAD's expert network for paid CAD project work.
+                  </p>
+                </div>
+                <a
+                  href={EXPERT_NETWORK_FORM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center justify-center rounded-xl border border-accent/25 bg-accent/5 px-5 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/10"
+                >
+                  Apply to Join
+                </a>
+              </div>
             </div>
           </div>
 
