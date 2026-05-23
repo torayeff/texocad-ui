@@ -1,15 +1,19 @@
 "use client";
 
-import { History, Loader2, Share2 } from "lucide-react";
+import { Download, History, Loader2, Pencil, Scan, Share2 } from "lucide-react";
+import { useRef, useState } from "react";
 
+import { SketchRevisionMenu } from "@/app/components/sketch-viewer/_components/sketch-revision-menu";
 import { SketchShareDialog } from "@/app/components/sketch-viewer/_components/sketch-share-dialog";
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
 import {
   sketchViewerActiveControlClass,
-  sketchViewerGlassClass,
   sketchViewerToolButtonClass,
   sketchViewerToolRailClass,
 } from "@/app/components/sketch-viewer/_lib/sketch-viewer-styles";
+import { ViewerToolButton } from "@/app/components/model-viewer/_components/viewer-tool-button";
+import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
+import { useFloatingPanel } from "@/app/components/model-viewer/_hooks/use-floating-panel";
 import { cn } from "@/app/lib/cn";
 import type { ShareSketchRevision, SketchRevisionOption, SketchSource } from "@/app/types/sketch-viewer";
 
@@ -33,6 +37,8 @@ interface SketchViewerProps {
 }
 
 export default function SketchViewer({ revisions, sharing, source }: SketchViewerProps) {
+  const [revisionsOpen, setRevisionsOpen] = useState(false);
+  const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
   const {
     didCopyShareUrl,
     handleCloseShareDialog,
@@ -52,25 +58,42 @@ export default function SketchViewer({ revisions, sharing, source }: SketchViewe
   });
 
   const canShare = source !== null && sharing?.shareRevision != null;
+  const canDownload = source !== null;
   const revisionOptions = revisions?.revisions ?? [];
   const canShowRevisions = revisionOptions.length > 0 && revisions !== undefined;
   const latestRevisionKey = revisionOptions[0]?.key ?? null;
+  const activeRevision = revisionOptions.find((revision) => revision.key === revisions?.activeRevisionKey) ?? null;
+  const { activeTriggerRef, panelRef, panelStyle, railRef, resetPanelPosition } = useFloatingPanel(
+    revisionsOpen && canShowRevisions,
+    [canShowRevisions, revisionsOpen, revisionOptions.length, revisions?.activeRevisionKey],
+  );
+
+  const handleDownload = () => {
+    downloadLinkRef.current?.click();
+  };
+
+  const toggleRevisions = (trigger: HTMLButtonElement) => {
+    const nextOpen = !revisionsOpen;
+    activeTriggerRef.current = nextOpen ? trigger : null;
+    resetPanelPosition();
+    setRevisionsOpen(nextOpen);
+  };
+
+  const closeRevisions = () => setRevisionsOpen(false);
 
   return (
     <section
       className="relative size-full overflow-hidden bg-[var(--viewer-background,var(--muted))] text-foreground"
       aria-label="Generated sketch viewer"
     >
-      <div className="absolute inset-0 flex items-center justify-center p-6 md:p-10">
+      <div className="absolute inset-0 flex items-center justify-center p-4 py-20 md:p-8 md:py-24">
         {source ? (
-          <div className="relative max-h-full w-full max-w-5xl overflow-hidden rounded-[var(--viewer-radius)] border border-[color-mix(in_srgb,var(--border)_42%,transparent)] bg-[color-mix(in_srgb,var(--viewer-field-background)_72%,transparent)] shadow-[0_24px_80px_rgb(0_0_0_/_0.14)]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- signed blob URLs are short-lived and not configured for Next image optimization */}
-            <img
-              src={source.url}
-              alt={source.label}
-              className="h-full max-h-[calc(100dvh-10rem)] w-full object-contain"
-            />
-          </div>
+          // eslint-disable-next-line @next/next/no-img-element -- signed blob URLs are short-lived and not configured for Next image optimization
+          <img
+            src={source.url}
+            alt={source.label}
+            className="h-auto w-auto max-w-[min(1024px,calc(100vw-2rem))] max-h-[calc(100dvh-12rem)] object-contain"
+          />
         ) : (
           <p className="text-sm text-muted-foreground">
             No sketch loaded. Generate one in the chat.
@@ -78,54 +101,95 @@ export default function SketchViewer({ revisions, sharing, source }: SketchViewe
         )}
       </div>
 
-      {canShare ? (
-        <div className={sketchViewerToolRailClass}>
-          <button
+      <div ref={railRef} className={sketchViewerToolRailClass} aria-label="Sketch controls">
+        <ViewerToolButton
+          type="button"
+          disabled
+          tooltip="Mask"
+          aria-label="Mask sketch"
+          className={sketchViewerToolButtonClass}
+        >
+          <Scan size={14} strokeWidth={1.75} />
+        </ViewerToolButton>
+        <ViewerToolButton
+          type="button"
+          disabled
+          tooltip="Annotate"
+          aria-label="Annotate sketch"
+          className={sketchViewerToolButtonClass}
+        >
+          <Pencil size={14} strokeWidth={1.75} />
+        </ViewerToolButton>
+
+        {canShare ? (
+          <ViewerToolButton
             type="button"
             onClick={handleOpenShareDialog}
             disabled={isSharing}
-            className={sketchViewerToolButtonClass}
+            tooltip="Share sketch"
             aria-label="Share sketch"
+            className={sketchViewerToolButtonClass}
           >
             {isSharing ? (
-              <Loader2 size={14} strokeWidth={1.75} className="animate-spin" />
+              <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
             ) : (
               <Share2 size={14} strokeWidth={1.75} />
             )}
-          </button>
-        </div>
-      ) : null}
+          </ViewerToolButton>
+        ) : null}
 
-      {canShowRevisions ? (
-        <div className={cn(sketchViewerGlassClass, "absolute bottom-5 right-5 top-5 z-30 flex w-20 flex-col gap-1 overflow-y-auto rounded-[var(--viewer-control-radius)] p-1")}>
-          {revisionOptions.map((revision) => {
-            const isLatestRevision = revision.key === latestRevisionKey;
-            const isSelected = revisions?.activeRevisionKey === revision.key && (!isLatestRevision || revisions.isLatestRevisionSelected);
-            return (
-              <button
-                key={revision.key}
-                type="button"
-                disabled={!revision.canView}
-                onClick={() => {
-                  if (!revision.canView) return;
-                  if (isLatestRevision) {
-                    revisions.onSelectLatestRevision();
-                  } else {
-                    revisions.onSelectRevision(revision.key);
-                  }
-                }}
-                className={cn(
-                  "flex aspect-square flex-col items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-transparent text-[0.6875rem] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-55",
-                  isSelected && sketchViewerActiveControlClass,
-                )}
-                aria-label={`View sketch revision ${revision.revisionNumber}`}
-              >
-                <History size={14} strokeWidth={1.75} />
-                <span className="mt-1">R{revision.revisionNumber}</span>
-              </button>
-            );
-          })}
-        </div>
+        {canDownload ? (
+          <ViewerToolButton
+            type="button"
+            onClick={handleDownload}
+            tooltip="Download sketch"
+            aria-label="Download sketch"
+            className={sketchViewerToolButtonClass}
+          >
+            <Download size={14} strokeWidth={1.75} />
+          </ViewerToolButton>
+        ) : null}
+
+        {canShowRevisions ? (
+          <ViewerToolButton
+            type="button"
+            onClick={(event) => toggleRevisions(event.currentTarget)}
+            tooltip="Revisions"
+            tooltipDisabled={revisionsOpen}
+            aria-label={activeRevision ? `Revisions, viewing revision ${activeRevision.revisionNumber}` : "Revisions"}
+            aria-expanded={revisionsOpen}
+            aria-haspopup="menu"
+            aria-controls="sketch-revision-menu"
+            className={cn(sketchViewerToolButtonClass, (revisionsOpen || !revisions.isLatestRevisionSelected) && sketchViewerActiveControlClass)}
+          >
+            <History size={14} strokeWidth={1.75} />
+          </ViewerToolButton>
+        ) : null}
+
+        {revisionsOpen && canShowRevisions ? (
+          <SketchRevisionMenu
+            ref={panelRef}
+            activeRevisionKey={revisions.activeRevisionKey}
+            isLatestRevisionSelected={revisions.isLatestRevisionSelected}
+            latestRevisionKey={latestRevisionKey}
+            revisions={revisionOptions}
+            style={panelStyle}
+            onClose={closeRevisions}
+            onSelectLatestRevision={revisions.onSelectLatestRevision}
+            onSelectRevision={revisions.onSelectRevision}
+          />
+        ) : null}
+      </div>
+
+      {source ? (
+        <a
+          ref={downloadLinkRef}
+          className="hidden"
+          href={source.url}
+          download={source.label}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
       ) : null}
 
       {isShareDialogOpen ? (

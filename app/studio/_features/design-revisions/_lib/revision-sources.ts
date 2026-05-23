@@ -121,6 +121,7 @@ export function sketchRevisionOptionsFromArtifacts(revisions: SketchRevisionArti
         revisionNumber: revision.revisionNumber,
         filename: imageExport?.filename ?? null,
         canView: imageExport !== undefined,
+        thumbnailUrl: null,
       };
     })
     .sort((a, b) => b.revisionNumber - a.revisionNumber);

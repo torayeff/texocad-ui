@@ -41,7 +41,7 @@ const ModelViewer = dynamic(
 
 export default function StudioClient() {
   const [signedRevisionSources, setSignedRevisionSources] = useState<SignedRevisionSources | null>(null);
-  const [signedSketchRevisionSources, setSignedSketchRevisionSources] = useState<SignedSketchRevisionSources | null>(null);
+  const [signedSketchRevisionSources, setSignedSketchRevisionSources] = useState<SignedSketchRevisionSources[]>([]);
   const [hydratedDesignRevisions, setHydratedDesignRevisions] = useState<DesignRevisionArtifact[]>([]);
   const [liveDesignRevisions, setLiveDesignRevisions] = useState<DesignRevisionArtifact[]>([]);
   const [hydratedSketchRevisions, setHydratedSketchRevisions] = useState<SketchRevisionArtifact[]>([]);
@@ -95,7 +95,7 @@ export default function StudioClient() {
     designRequestVersionRef.current += 1;
     sketchRequestVersionRef.current += 1;
     setSignedRevisionSources(null);
-    setSignedSketchRevisionSources(null);
+    setSignedSketchRevisionSources([]);
     setHydratedDesignRevisions([]);
     setLiveDesignRevisions([]);
     setHydratedSketchRevisions([]);
@@ -128,10 +128,24 @@ export default function StudioClient() {
   const isLatestRevisionSelected = selectedRevisionKey === null || selectedRevision === null;
   const isLatestSketchRevisionSelected = selectedSketchRevisionKey === null || selectedSketchRevision === null;
   const revisionOptions = useMemo(() => revisionOptionsFromArtifacts(designRevisions), [designRevisions]);
-  const sketchRevisionOptions = useMemo(() => sketchRevisionOptionsFromArtifacts(sketchRevisions), [sketchRevisions]);
+  const signedSketchSourcesByKey = useMemo(() => {
+    const sourcesByKey = new Map<string, SignedSketchRevisionSources>();
+    for (const sources of signedSketchRevisionSources) {
+      sourcesByKey.set(sources.key, sources);
+    }
+    return sourcesByKey;
+  }, [signedSketchRevisionSources]);
+  const sketchRevisionOptions = useMemo(() => (
+    sketchRevisionOptionsFromArtifacts(sketchRevisions).map((revision) => ({
+      ...revision,
+      thumbnailUrl: signedSketchSourcesByKey.get(revision.key)?.imageSource?.url ?? null,
+    }))
+  ), [signedSketchSourcesByKey, sketchRevisions]);
   const viewerSource = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.viewerSource : null;
   const sourceCode = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.sourceCode : null;
-  const sketchSource = signedSketchRevisionSources?.key === activeSketchRevisionKey ? signedSketchRevisionSources.imageSource : null;
+  const sketchSource = activeSketchRevisionKey
+    ? signedSketchSourcesByKey.get(activeSketchRevisionKey)?.imageSource ?? null
+    : null;
   const activeStepExport = activeRevision?.exports.find(isStepExport) ?? null;
   const activeSketchExport = activeSketchRevision?.exports.find(isSketchImageExport) ?? null;
   const shouldShowSketchViewer = studioMode === SKETCH_ASSISTANT_ID || sketchSource !== null || (activeSketchRevision !== null && !activeRevision);
@@ -168,13 +182,20 @@ export default function StudioClient() {
     sketchRequestVersionRef.current += 1;
     const snapshotVersion = sketchRequestVersionRef.current;
 
-    if (!activeSketchRevision || !activeSketchRevisionKey) return;
+    const revisionsToSign = sketchRevisions.map((revision) => ({
+      key: sketchRevisionKey(revision),
+      revision,
+    }));
 
-    void getSignedSketchRevisionSources(activeSketchRevision, activeSketchRevisionKey).then((sources) => {
+    if (revisionsToSign.length === 0) return;
+
+    void Promise.all(
+      revisionsToSign.map(({ key, revision }) => getSignedSketchRevisionSources(revision, key)),
+    ).then((sources) => {
       if (snapshotVersion !== sketchRequestVersionRef.current) return;
-      setSignedSketchRevisionSources(sources);
+      setSignedSketchRevisionSources(sources.filter((source): source is SignedSketchRevisionSources => source !== null));
     });
-  }, [activeSketchRevision, activeSketchRevisionKey]);
+  }, [sketchRevisions]);
 
   useEffect(() => {
     if (!isResizing) return;

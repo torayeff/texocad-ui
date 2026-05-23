@@ -9,6 +9,7 @@ export interface SketchRevisionOption {
   revisionNumber: number;
   filename: string | null;
   canView: boolean;
+  thumbnailUrl: string | null;
 }
 
 export interface ShareSketchArtifact {
