@@ -5,10 +5,17 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_features/chat/_hooks/use-langgraph-auth";
-import { ASSISTANT_ID } from "@/app/studio/_features/chat/_lib/langgraph-config";
-import { designRevisionsFromMessages, isDesignRevisionArtifact, latestDesignRevision } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
+import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import {
+  designRevisionsFromMessages,
+  isDesignRevisionArtifact,
+  isSketchRevisionArtifact,
+  latestDesignRevision,
+  latestSketchRevision,
+  sketchRevisionsFromMessages,
+} from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
 import type { StreamAccessors } from "@/app/studio/_features/chat/_types/chat";
-import type { DesignRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
+import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type {
   TexocadGraphState,
   TodoItem,
@@ -16,7 +23,12 @@ import type {
 
 const EMPTY_TODOS: TodoItem[] = [];
 
-export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionArtifact) => void) {
+interface UseChatStreamEvents {
+  onDesignRevisionEvent?: (revision: DesignRevisionArtifact) => void;
+  onSketchRevisionEvent?: (revision: SketchRevisionArtifact) => void;
+}
+
+export function useChatStream(assistantId: StudioAssistantId, events: UseChatStreamEvents = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,10 +36,12 @@ export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionA
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
-  const onDesignRevisionEventRef = useRef(onDesignRevisionEvent);
+  const onDesignRevisionEventRef = useRef(events.onDesignRevisionEvent);
+  const onSketchRevisionEventRef = useRef(events.onSketchRevisionEvent);
   useEffect(() => {
-    onDesignRevisionEventRef.current = onDesignRevisionEvent;
-  }, [onDesignRevisionEvent]);
+    onDesignRevisionEventRef.current = events.onDesignRevisionEvent;
+    onSketchRevisionEventRef.current = events.onSketchRevisionEvent;
+  }, [events.onDesignRevisionEvent, events.onSketchRevisionEvent]);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
@@ -48,7 +62,7 @@ export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionA
 
   const streamOptions = useMemo(() => ({
     client,
-    assistantId: ASSISTANT_ID,
+    assistantId,
     threadId: isAuthReady ? (urlThreadId ?? undefined) : undefined,
     fetchStateHistory: true,
     filterSubagentMessages: true,
@@ -57,8 +71,12 @@ export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionA
       if (isDesignRevisionArtifact(data)) {
         onDesignRevisionEventRef.current?.(data);
       }
+      if (isSketchRevisionArtifact(data)) {
+        onSketchRevisionEventRef.current?.(data);
+      }
     },
   }), [
+    assistantId,
     client,
     handleThreadIdChange,
     isAuthReady,
@@ -74,7 +92,12 @@ export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionA
     () => designRevisionsFromMessages(messages),
     [messages],
   );
+  const sketchRevisions = useMemo(
+    () => sketchRevisionsFromMessages(messages),
+    [messages],
+  );
   const latestRevision = latestDesignRevision(designRevisions);
+  const latestSketch = latestSketchRevision(sketchRevisions);
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
   useEffect(() => {
@@ -82,6 +105,12 @@ export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionA
       onDesignRevisionEventRef.current?.(latestRevision);
     }
   }, [latestRevision]);
+
+  useEffect(() => {
+    if (latestSketch) {
+      onSketchRevisionEventRef.current?.(latestSketch);
+    }
+  }, [latestSketch]);
 
   const raw = stream as unknown as Record<string, unknown>;
   const streamAccessors: StreamAccessors = {
@@ -105,7 +134,9 @@ export function useChatStream(onDesignRevisionEvent?: (revision: DesignRevisionA
     error,
     todos,
     designRevisions,
+    sketchRevisions,
     latestRevision,
+    latestSketch,
     urlThreadId,
     pathname,
     router,

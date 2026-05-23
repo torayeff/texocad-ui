@@ -5,18 +5,32 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { Header } from "@/app/components/header";
+import type { ShareSketchRevision } from "@/app/types/sketch-viewer";
 import type { ShareRevision } from "@/app/types/model-viewer";
+import SketchViewer from "@/app/components/sketch-viewer/sketch-viewer";
 import Chat from "@/app/studio/_features/chat/_components/chat";
-import { latestDesignRevision } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
-import type { DesignRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
+import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import {
+  latestDesignRevision,
+  latestSketchRevision as getLatestSketchRevision,
+} from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
+import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import {
   isStepExport,
+  isSketchImageExport,
   mergeDesignRevisions,
+  mergeSketchRevisions,
   revisionKey,
   revisionListsMatch,
   revisionOptionsFromArtifacts,
   revisionsMatch,
+  signedSketchRevisionSources as getSignedSketchRevisionSources,
   signedRevisionSources as getSignedRevisionSources,
+  sketchRevisionKey,
+  sketchRevisionListsMatch,
+  sketchRevisionOptionsFromArtifacts,
+  sketchRevisionsMatch,
+  type SignedSketchRevisionSources,
   type SignedRevisionSources,
 } from "@/app/studio/_features/design-revisions/_lib/revision-sources";
 
@@ -27,13 +41,19 @@ const ModelViewer = dynamic(
 
 export default function StudioClient() {
   const [signedRevisionSources, setSignedRevisionSources] = useState<SignedRevisionSources | null>(null);
+  const [signedSketchRevisionSources, setSignedSketchRevisionSources] = useState<SignedSketchRevisionSources | null>(null);
   const [hydratedDesignRevisions, setHydratedDesignRevisions] = useState<DesignRevisionArtifact[]>([]);
   const [liveDesignRevisions, setLiveDesignRevisions] = useState<DesignRevisionArtifact[]>([]);
+  const [hydratedSketchRevisions, setHydratedSketchRevisions] = useState<SketchRevisionArtifact[]>([]);
+  const [liveSketchRevisions, setLiveSketchRevisions] = useState<SketchRevisionArtifact[]>([]);
   const [selectedRevisionKey, setSelectedRevisionKey] = useState<string | null>(null);
+  const [selectedSketchRevisionKey, setSelectedSketchRevisionKey] = useState<string | null>(null);
+  const [studioMode, setStudioMode] = useState<StudioAssistantId>(CAD_ASSISTANT_ID);
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const requestVersionRef = useRef(0);
+  const designRequestVersionRef = useRef(0);
+  const sketchRequestVersionRef = useRef(0);
 
   const handleDesignRevision = useCallback((revision: DesignRevisionArtifact) => {
     setLiveDesignRevisions((currentRevisions) => {
@@ -44,6 +64,19 @@ export default function StudioClient() {
       nextRevisions.push(revision);
       return nextRevisions;
     });
+    setStudioMode(CAD_ASSISTANT_ID);
+  }, []);
+
+  const handleSketchRevision = useCallback((revision: SketchRevisionArtifact) => {
+    setLiveSketchRevisions((currentRevisions) => {
+      const existingRevision = currentRevisions.find((currentRevision) => sketchRevisionKey(currentRevision) === sketchRevisionKey(revision));
+      if (existingRevision && sketchRevisionsMatch(existingRevision, revision)) return currentRevisions;
+
+      const nextRevisions = currentRevisions.filter((currentRevision) => sketchRevisionKey(currentRevision) !== sketchRevisionKey(revision));
+      nextRevisions.push(revision);
+      return nextRevisions;
+    });
+    setStudioMode(SKETCH_ASSISTANT_ID);
   }, []);
 
   const handleDesignRevisionsChange = useCallback((revisions: DesignRevisionArtifact[]) => {
@@ -52,12 +85,24 @@ export default function StudioClient() {
     ));
   }, []);
 
+  const handleSketchRevisionsChange = useCallback((revisions: SketchRevisionArtifact[]) => {
+    setHydratedSketchRevisions((currentRevisions) => (
+      sketchRevisionListsMatch(currentRevisions, revisions) ? currentRevisions : revisions
+    ));
+  }, []);
+
   const handleClearViewer = useCallback(() => {
-    requestVersionRef.current += 1;
+    designRequestVersionRef.current += 1;
+    sketchRequestVersionRef.current += 1;
     setSignedRevisionSources(null);
+    setSignedSketchRevisionSources(null);
     setHydratedDesignRevisions([]);
     setLiveDesignRevisions([]);
+    setHydratedSketchRevisions([]);
+    setLiveSketchRevisions([]);
     setSelectedRevisionKey(null);
+    setSelectedSketchRevisionKey(null);
+    setStudioMode(CAD_ASSISTANT_ID);
   }, []);
 
   const designRevisions = useMemo(
@@ -65,16 +110,31 @@ export default function StudioClient() {
     [hydratedDesignRevisions, liveDesignRevisions],
   );
   const latestRevision = useMemo(() => latestDesignRevision(designRevisions), [designRevisions]);
+  const sketchRevisions = useMemo(
+    () => mergeSketchRevisions(hydratedSketchRevisions, liveSketchRevisions),
+    [hydratedSketchRevisions, liveSketchRevisions],
+  );
+  const latestSketchRevision = useMemo(() => getLatestSketchRevision(sketchRevisions), [sketchRevisions]);
   const selectedRevision = useMemo(() => selectedRevisionKey
     ? designRevisions.find((revision) => revisionKey(revision) === selectedRevisionKey) ?? null
     : null, [designRevisions, selectedRevisionKey]);
+  const selectedSketchRevision = useMemo(() => selectedSketchRevisionKey
+    ? sketchRevisions.find((revision) => sketchRevisionKey(revision) === selectedSketchRevisionKey) ?? null
+    : null, [sketchRevisions, selectedSketchRevisionKey]);
   const activeRevision = selectedRevision ?? latestRevision;
+  const activeSketchRevision = selectedSketchRevision ?? latestSketchRevision;
   const activeRevisionKey = activeRevision ? revisionKey(activeRevision) : null;
+  const activeSketchRevisionKey = activeSketchRevision ? sketchRevisionKey(activeSketchRevision) : null;
   const isLatestRevisionSelected = selectedRevisionKey === null || selectedRevision === null;
+  const isLatestSketchRevisionSelected = selectedSketchRevisionKey === null || selectedSketchRevision === null;
   const revisionOptions = useMemo(() => revisionOptionsFromArtifacts(designRevisions), [designRevisions]);
+  const sketchRevisionOptions = useMemo(() => sketchRevisionOptionsFromArtifacts(sketchRevisions), [sketchRevisions]);
   const viewerSource = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.viewerSource : null;
   const sourceCode = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.sourceCode : null;
+  const sketchSource = signedSketchRevisionSources?.key === activeSketchRevisionKey ? signedSketchRevisionSources.imageSource : null;
   const activeStepExport = activeRevision?.exports.find(isStepExport) ?? null;
+  const activeSketchExport = activeSketchRevision?.exports.find(isSketchImageExport) ?? null;
+  const shouldShowSketchViewer = studioMode === SKETCH_ASSISTANT_ID || sketchSource !== null || (activeSketchRevision !== null && !activeRevision);
 
   const handleSelectLatestRevision = useCallback(() => {
     setSelectedRevisionKey(null);
@@ -84,17 +144,37 @@ export default function StudioClient() {
     setSelectedRevisionKey(key);
   }, []);
 
+  const handleSelectLatestSketchRevision = useCallback(() => {
+    setSelectedSketchRevisionKey(null);
+  }, []);
+
+  const handleSelectSketchRevision = useCallback((key: string) => {
+    setSelectedSketchRevisionKey(key);
+  }, []);
+
   useEffect(() => {
-    requestVersionRef.current += 1;
-    const snapshotVersion = requestVersionRef.current;
+    designRequestVersionRef.current += 1;
+    const snapshotVersion = designRequestVersionRef.current;
 
     if (!activeRevision || !activeRevisionKey) return;
 
     void getSignedRevisionSources(activeRevision, activeRevisionKey).then((sources) => {
-      if (snapshotVersion !== requestVersionRef.current) return;
+      if (snapshotVersion !== designRequestVersionRef.current) return;
       setSignedRevisionSources(sources);
     });
   }, [activeRevision, activeRevisionKey]);
+
+  useEffect(() => {
+    sketchRequestVersionRef.current += 1;
+    const snapshotVersion = sketchRequestVersionRef.current;
+
+    if (!activeSketchRevision || !activeSketchRevisionKey) return;
+
+    void getSignedSketchRevisionSources(activeSketchRevision, activeSketchRevisionKey).then((sources) => {
+      if (snapshotVersion !== sketchRequestVersionRef.current) return;
+      setSignedSketchRevisionSources(sources);
+    });
+  }, [activeSketchRevision, activeSketchRevisionKey]);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -126,6 +206,11 @@ export default function StudioClient() {
     revisionNumber: activeRevision.revisionNumber,
     exportArtifact: activeStepExport,
   } : null;
+  const shareSketchRevision: ShareSketchRevision | null = activeSketchRevision && activeSketchExport ? {
+    designId: activeSketchRevision.designId,
+    revisionNumber: activeSketchRevision.revisionNumber,
+    exportArtifact: activeSketchExport,
+  } : null;
 
   return (
     <main className="fixed left-0 top-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
@@ -136,23 +221,40 @@ export default function StudioClient() {
           className="min-h-0 flex-[2] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
           style={viewerPaneStyle}
         >
-          <ModelViewer
-            source={viewerSource}
-            downloads={{
-              sourceCode,
-            }}
-            revisions={{
-              activeRevisionKey,
-              isLatestRevisionSelected,
-              onSelectLatestRevision: handleSelectLatestRevision,
-              onSelectRevision: handleSelectRevision,
-              revisions: revisionOptions,
-            }}
-            sharing={{
-              activeRevisionKey,
-              shareRevision,
-            }}
-          />
+          {shouldShowSketchViewer ? (
+            <SketchViewer
+              source={sketchSource}
+              revisions={{
+                activeRevisionKey: activeSketchRevisionKey,
+                isLatestRevisionSelected: isLatestSketchRevisionSelected,
+                onSelectLatestRevision: handleSelectLatestSketchRevision,
+                onSelectRevision: handleSelectSketchRevision,
+                revisions: sketchRevisionOptions,
+              }}
+              sharing={{
+                activeRevisionKey: activeSketchRevisionKey,
+                shareRevision: shareSketchRevision,
+              }}
+            />
+          ) : (
+            <ModelViewer
+              source={viewerSource}
+              downloads={{
+                sourceCode,
+              }}
+              revisions={{
+                activeRevisionKey,
+                isLatestRevisionSelected,
+                onSelectLatestRevision: handleSelectLatestRevision,
+                onSelectRevision: handleSelectRevision,
+                revisions: revisionOptions,
+              }}
+              sharing={{
+                activeRevisionKey,
+                shareRevision,
+              }}
+            />
+          )}
         </div>
 
         <div className="relative hidden w-0 md:block" role="presentation">
@@ -169,8 +271,12 @@ export default function StudioClient() {
 
         <div className="min-h-0 flex-[3] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
           <Chat
+            assistantId={studioMode}
             onDesignRevisionEvent={handleDesignRevision}
             onDesignRevisionsChange={handleDesignRevisionsChange}
+            onModeChange={setStudioMode}
+            onSketchRevisionEvent={handleSketchRevision}
+            onSketchRevisionsChange={handleSketchRevisionsChange}
             onClearViewer={handleClearViewer}
           />
         </div>

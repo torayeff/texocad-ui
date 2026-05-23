@@ -1,46 +1,72 @@
 import { Loader2 } from "lucide-react";
 
-const EXAMPLE_PROMPTS = [
+import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID } from "@/app/studio/_features/chat/_lib/langgraph-config";
+
+interface ExamplePrompt {
+  label: string;
+  description: string;
+  mode: StudioAssistantId;
+}
+
+interface AgentExamplePrompt {
+  description: string;
+  label: string;
+  prompt: string;
+}
+
+const MODE_SELECTION_PROMPTS: ExamplePrompt[] = [
   {
-    label: "Spacer",
-    prompt:
-      "Create a flanged spacer with a 12 mm through-hole, 22 mm outer diameter barrel that is 14 mm long, and a 36 mm diameter flange that is 3 mm thick on one end.",
+    label: "Sketch image",
+    description: "Generate a visual concept first.",
+    mode: SKETCH_ASSISTANT_ID,
   },
   {
-    label: "L-bracket",
-    prompt:
-      "Design an L-shaped bracket with 80 mm and 60 mm legs, 4 mm wall thickness, and two 6 mm mounting holes on the base leg.",
-  },
-  {
-    label: "Washer",
-    prompt:
-      "Create a flat washer with a 6 mm inner hole, 14 mm outer diameter, and 1.5 mm thickness. Add 0.3 mm chamfers on both faces.",
-  },
-  {
-    label: "Pen holder",
-    prompt:
-      "Create a cylindrical pen holder with a 40 mm outer diameter, 34 mm inner diameter, and 100 mm height with a 4 mm thick base.",
-  },
-  {
-    label: "Box with lid",
-    prompt:
-      "Create a simple rectangular box 80 mm long, 60 mm wide, and 30 mm tall with 2 mm thick walls and a matching flat lid.",
-  },
-  {
-    label: "Knob",
-    prompt:
-      "Create a round knob with a 30 mm diameter head, 12 mm tall, a flat top, and a 6 mm diameter, 10 mm long shaft on the bottom.",
+    label: "CAD model",
+    description: "Generate a measurable STEP model.",
+    mode: CAD_ASSISTANT_ID,
   },
 ];
 
+const AGENT_EXAMPLE_PROMPTS: Record<StudioAssistantId, AgentExamplePrompt[]> = {
+  [CAD_ASSISTANT_ID]: [
+    {
+      description: "Wall-mounted sensor case.",
+      label: "Sensor enclosure",
+      prompt: "Design a wall-mounted enclosure for a small temperature and humidity sensor. Include a removable front cover, ventilation slots that protect the electronics, two internal PCB standoffs, rear screw mounting holes, 2 mm wall thickness, rounded corners, and dimensions around 70 mm x 45 mm x 22 mm.",
+    },
+    {
+      description: "Under-desk cable mount.",
+      label: "Cable bracket",
+      prompt: "Create an under-desk cable management bracket for 3D printing. Include a flat mounting flange with two countersunk screw holes, a rounded open channel for a bundle of cables, a small retaining lip, 3 mm wall thickness, chamfered edges, and enough clearance for easy cable insertion.",
+    },
+  ],
+  [SKETCH_ASSISTANT_ID]: [
+    {
+      description: "Clinic check-in device.",
+      label: "Kiosk concept",
+      prompt: "Sketch a compact tabletop check-in kiosk for a small clinic. Show a tilted touchscreen, stable weighted base, privacy shield around the display, subtle cable exit at the rear, soft rounded corners, and a clean medical-product aesthetic.",
+    },
+    {
+      description: "Workshop measuring tool.",
+      label: "Tool concept",
+      prompt: "Generate a visual concept for a handheld workshop measuring tool. Show a durable rubberized grip, small top display, thumb buttons, a protected measuring probe, visible part seams for assembly, and a rugged but simple industrial design.",
+    },
+  ],
+};
+
 export default function EmptyChatState({
+  activeMode,
   isHydrating,
   isBusy,
-  onExamplePrompt,
+  onModeSelect,
+  onPromptSelect,
 }: {
+  activeMode: StudioAssistantId | null;
   isHydrating: boolean;
   isBusy: boolean;
-  onExamplePrompt: (prompt: string) => void;
+  onModeSelect: (mode: StudioAssistantId) => void;
+  onPromptSelect: (prompt: string) => void;
 }) {
   if (isHydrating) {
     return (
@@ -57,31 +83,66 @@ export default function EmptyChatState({
     return null;
   }
 
+  if (activeMode) {
+    const examples = AGENT_EXAMPLE_PROMPTS[activeMode];
+    return (
+      <div className="mx-auto flex w-full max-w-2xl items-center justify-center px-4 py-8 sm:px-6">
+        <div className="flex w-full flex-col items-center text-center">
+          <div className="max-w-md space-y-2">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
+              Try an example
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Start from a realistic brief, then shape the details.
+            </p>
+          </div>
+
+          <div className="mt-6 grid w-full max-w-md grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {examples.map((example) => (
+              <button
+                key={example.label}
+                type="button"
+                onClick={() => onPromptSelect(example.prompt)}
+                className="rounded-[var(--viewer-control-radius)] border border-border/35 bg-transparent px-3 py-2.5 text-left transition-[background-color,border-color,color] hover:border-border/70 hover:bg-muted hover:text-foreground"
+              >
+                <span className="block text-sm font-medium text-foreground">{example.label}</span>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                  {example.description}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto flex w-full max-w-2xl justify-center px-4 pb-2 pt-4 sm:min-h-[calc(100dvh-20rem)] sm:items-center sm:px-6 sm:py-3">
-      <div className="flex w-full flex-col items-center px-2 py-1 text-center sm:px-4 sm:py-2">
-        <div className="max-w-xl space-y-2">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+    <div className="mx-auto flex w-full max-w-2xl items-center justify-center px-4 py-8 sm:px-6">
+      <div className="flex w-full flex-col items-center text-center">
+        <div className="max-w-md space-y-2">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
             What do you want to build?
           </h2>
-          <p className="text-xs leading-5 text-muted-foreground">
-            Describe the part in plain language or start with a prompt. You can
-            also add reference images, sketches, and technical specs.
+          <p className="text-sm leading-6 text-muted-foreground">
+            Start with a visual concept or a CAD-ready model.
           </p>
         </div>
 
-        <div className="mt-4 w-full max-w-xl">
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Quick starts
-          </p>
-          <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-            {EXAMPLE_PROMPTS.map((example) => (
+        <div className="mt-6 flex w-full justify-center">
+          <div className="grid w-full max-w-sm grid-cols-2 gap-1.5 rounded-[calc(var(--viewer-control-radius)+0.375rem)] border border-border/45 bg-muted/25 p-1.5">
+            {MODE_SELECTION_PROMPTS.map((example) => (
               <button
                 key={example.label}
-                onClick={() => onExamplePrompt(example.prompt)}
-                className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-border/40 bg-transparent px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-[background-color,border-color,color] hover:border-border/70 hover:bg-muted hover:text-foreground"
+                onClick={() => onModeSelect(example.mode)}
+                aria-pressed={activeMode === example.mode}
+                className={`rounded-[var(--viewer-control-radius)] border px-3 py-2.5 text-center transition-[background-color,border-color,color,box-shadow] ${activeMode === example.mode
+                  ? "border-border bg-background text-foreground shadow-[0_4px_14px_rgb(0_0_0_/_0.10)]"
+                  : "border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                  }`}
               >
-                {example.label}
+                <span className="block text-sm font-medium">{example.label}</span>
+                <span className="mt-0.5 block text-[11px] leading-4 opacity-70">{example.description}</span>
               </button>
             ))}
           </div>

@@ -20,6 +20,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const input = parseShareRevisionInput({
+    kind: searchParams.get("kind"),
     designId: searchParams.get("designId"),
     revisionNumber: Number(searchParams.get("revisionNumber")),
     exportArtifact: {
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
 
   const safeInput = validateShareBlob(userId, input);
   if (!safeInput) {
-    return NextResponse.json({ error: "Selected revision is not a STEP export." }, { status: 400 });
+    return NextResponse.json({ error: "Selected revision cannot be shared." }, { status: 400 });
   }
 
   try {

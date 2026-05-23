@@ -9,10 +9,10 @@ import {
 import { absoluteSiteUrl } from "@/app/lib/site";
 import {
   publicStorageConfig,
+  hashUserId,
 } from "@/app/lib/server/storage-auth";
-import { hashUserId } from "@/app/lib/server/storage-auth";
 import { isStepExport, STEP_CONTENT_TYPE } from "@/app/lib/server/shared-model-validation";
-import type { ShareModelInput } from "@/app/lib/server/shared-model-validation";
+import type { ShareArtifactInput, ShareKind, ShareModelInput } from "@/app/lib/server/shared-model-validation";
 export {
   parseShareInput,
   parseShareRevisionInput,
@@ -25,6 +25,7 @@ export interface SharedModel {
   createdAt: string;
   designId: string;
   filename: string;
+  kind: ShareKind;
   modelBlobName: string;
   modelUrl: string;
   name: string;
@@ -38,6 +39,7 @@ interface ShareEntity {
   createdAt: string;
   designId: string;
   filename: string;
+  kind?: ShareKind;
   modelBlobName: string;
   name: string;
   ownerHash: string;
@@ -62,7 +64,7 @@ function ownerPartitionKey(ownerHash: string) {
 }
 
 function shareRowKey(input: ShareModelInput) {
-  return safeTableKey(`${input.designId}:${input.revisionNumber}:${input.exportArtifact.checksum}`);
+  return safeTableKey(`${input.kind ?? "model"}:${input.designId}:${input.revisionNumber}:${input.exportArtifact.checksum}`);
 }
 
 function slugifyName(name: string) {
@@ -77,18 +79,39 @@ function slugifyName(name: string) {
 }
 
 function makeSlug(name: string) {
-  const base = slugifyName(name) || "model";
+  const base = slugifyName(name) || "share";
   const suffix = randomBytes(4).toString("base64url").toLowerCase().replace(SLUG_SAFE_CHARS, "").slice(0, 6);
   return `${base}-${suffix}`;
 }
 
 function extensionFromFilename(filename: string) {
-  const extension = filename.toLowerCase().endsWith(".stp") ? ".stp" : ".step";
-  return extension;
+  const lowerFilename = filename.toLowerCase();
+  if (lowerFilename.endsWith(".stp")) return ".stp";
+  if (lowerFilename.endsWith(".step")) return ".step";
+  if (lowerFilename.endsWith(".jpg")) return ".jpg";
+  if (lowerFilename.endsWith(".jpeg")) return ".jpeg";
+  if (lowerFilename.endsWith(".webp")) return ".webp";
+  if (lowerFilename.endsWith(".png")) return ".png";
+  return ".step";
 }
 
-function sharedModelBlobName(slug: string, filename: string) {
-  return `${PUBLIC_SHARED_PREFIX}/${slug}/model${extensionFromFilename(filename)}`;
+function sharedModelBlobName(kind: ShareKind, slug: string, filename: string) {
+  return `${PUBLIC_SHARED_PREFIX}/${slug}/${kind}${extensionFromFilename(filename)}`;
+}
+
+function shareContentType(kind: ShareKind, artifact: ShareArtifactInput) {
+  switch (kind) {
+    case "model":
+      return isStepExport(artifact.filename, artifact.contentType)
+        ? STEP_CONTENT_TYPE
+        : artifact.contentType;
+    case "sketch":
+      return artifact.contentType;
+    default: {
+      const exhaustive: never = kind;
+      return exhaustive;
+    }
+  }
 }
 
 function publicBlobUrl(blobName: string) {
@@ -146,6 +169,7 @@ function sharedModelFromShare(entity: ShareEntity): SharedModel {
     createdAt: entity.createdAt,
     designId: entity.designId,
     filename: entity.filename,
+    kind: entity.kind ?? "model",
     modelBlobName: entity.modelBlobName,
     modelUrl,
     name: entity.name,
@@ -157,10 +181,12 @@ function sharedModelFromShare(entity: ShareEntity): SharedModel {
 
 export async function createOrGetSharedModel(userId: string, input: ShareModelInput) {
   const ownerHash = hashUserId(userId);
+  const kind = input.kind ?? "model";
   const privateBlobName = input.exportArtifact.blobName.replace(/^\/+/, "");
   const ownerKey = ownerPartitionKey(ownerHash);
   const revisionKey = shareRowKey({
     ...input,
+    kind,
     exportArtifact: {
       ...input.exportArtifact,
       blobName: privateBlobName,
@@ -179,7 +205,7 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
   await client.createTable();
 
   const slug = makeSlug(input.name);
-  const modelBlobName = sharedModelBlobName(slug, input.exportArtifact.filename);
+  const modelBlobName = sharedModelBlobName(kind, slug, input.exportArtifact.filename);
   const serviceClient = blobServiceClient();
   const publicBlobClient = serviceClient
     .getContainerClient(publicStorageConfig().publicContainerName)
@@ -188,9 +214,7 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
   await publicBlobClient.syncCopyFromURL(privateReadSasUrl(privateBlobName));
   await publicBlobClient.setHTTPHeaders({
     blobContentDisposition: `attachment; filename="${input.exportArtifact.filename.replaceAll('"', "")}"`,
-    blobContentType: isStepExport(input.exportArtifact.filename, input.exportArtifact.contentType)
-      ? STEP_CONTENT_TYPE
-      : input.exportArtifact.contentType,
+    blobContentType: shareContentType(kind, input.exportArtifact),
   });
 
   const entity = {
@@ -200,6 +224,7 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
     createdAt: new Date().toISOString(),
     designId: input.designId,
     filename: input.exportArtifact.filename,
+    kind,
     modelBlobName,
     name: input.name.trim(),
     ownerHash,
@@ -226,9 +251,11 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
 
 export async function getSharedModelForRevision(userId: string, input: Omit<ShareModelInput, "name">) {
   const ownerHash = hashUserId(userId);
+  const kind = input.kind ?? "model";
   const ownerKey = ownerPartitionKey(ownerHash);
   const revisionKey = shareRowKey({
     ...input,
+    kind,
     name: "",
     exportArtifact: {
       ...input.exportArtifact,

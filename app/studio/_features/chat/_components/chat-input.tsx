@@ -38,6 +38,12 @@ function ComposerIconButton({ children, className, tooltip, ...buttonProps }: Co
   );
 }
 
+function resizeTextarea(textarea: HTMLTextAreaElement | null) {
+  if (!textarea) return;
+  textarea.style.height = "auto";
+  textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px";
+}
+
 const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
   isBusy,
   isLoading,
@@ -76,10 +82,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   React.useImperativeHandle(ref, () => ({
     setPrompt: (text: string) => {
       setInput(text);
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
-        textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + "px";
-      }
+      requestAnimationFrame(() => resizeTextarea(textareaRef.current));
     },
     focus: () => {
       textareaRef.current?.focus();
@@ -89,9 +92,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setInput(e.target.value);
-      const ta = e.target;
-      ta.style.height = "auto";
-      ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+      resizeTextarea(e.target);
     },
     []
   );

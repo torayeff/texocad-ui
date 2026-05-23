@@ -5,12 +5,22 @@ export interface StoredBlobArtifact {
   checksum: string;
 }
 
-export interface DesignRevisionArtifact {
-  type: "texocad.design_revision";
+interface BaseRevisionArtifact {
   designId: string;
   revisionNumber: number;
   source: StoredBlobArtifact;
   exports: StoredBlobArtifact[];
+  renders?: StoredBlobArtifact[];
   createdByThreadId: string;
   createdByRunId?: string;
 }
+
+export interface DesignRevisionArtifact extends BaseRevisionArtifact {
+  type: "texocad.design_revision";
+}
+
+export interface SketchRevisionArtifact extends BaseRevisionArtifact {
+  type: "texocad.sketch_revision";
+}
+
+export type TexocadRevisionArtifact = DesignRevisionArtifact | SketchRevisionArtifact;

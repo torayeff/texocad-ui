@@ -5,12 +5,14 @@ import { ArrowDown, Loader2 } from "lucide-react";
 import type { RefObject } from "react";
 import type { HumanMessage } from "@langchain/core/messages";
 import type { MessageRow } from "@/app/studio/_features/chat/_lib/message-rows";
+import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import type { TodoItem } from "@/app/studio/_features/chat/_types/chat";
 import EmptyChatState from "@/app/studio/_features/chat/_components/empty-chat-state";
 import { MessageWithSubagents } from "@/app/studio/_features/chat/_components/message-with-subagents";
 import { TodoList } from "@/app/studio/_features/chat/_components/todo-list";
 
 interface ChatMessagesPanelProps {
+  activeMode: StudioAssistantId | null;
   handleScroll: () => void;
   isBusy: boolean;
   isEmpty: boolean;
@@ -20,7 +22,8 @@ interface ChatMessagesPanelProps {
   messageRows: MessageRow[];
   messagesContainerRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  onExamplePrompt: (prompt: string) => void;
+  onModeSelect: (mode: StudioAssistantId) => void;
+  onPromptSelect: (prompt: string) => void;
   pendingHumanMessage: HumanMessage | null;
   pendingHumanText: string;
   scrollToBottom: () => void;
@@ -31,6 +34,7 @@ interface ChatMessagesPanelProps {
 }
 
 export function ChatMessagesPanel({
+  activeMode,
   handleScroll,
   isBusy,
   isEmpty,
@@ -40,7 +44,8 @@ export function ChatMessagesPanel({
   messageRows,
   messagesContainerRef,
   messagesEndRef,
-  onExamplePrompt,
+  onModeSelect,
+  onPromptSelect,
   pendingHumanMessage,
   pendingHumanText,
   scrollToBottom,
@@ -57,13 +62,15 @@ export function ChatMessagesPanel({
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-on-hover px-4 pb-6 pt-6"
       >
         <div
-          className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full" : ""}`}
+          className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-center" : ""}`}
         >
           {isEmpty && !isHydrating && (
             <EmptyChatState
+              activeMode={activeMode}
               isHydrating={isHydrating}
               isBusy={isBusy}
-              onExamplePrompt={onExamplePrompt}
+              onModeSelect={onModeSelect}
+              onPromptSelect={onPromptSelect}
             />
           )}
 

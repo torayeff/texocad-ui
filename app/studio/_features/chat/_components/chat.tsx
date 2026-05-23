@@ -11,7 +11,8 @@ import { useMessageRows } from "@/app/studio/_features/chat/_hooks/use-message-r
 import { useChatScroll } from "@/app/studio/_features/chat/_hooks/use-chat-scroll";
 import { getMessageTextContent } from "@/app/studio/_features/chat/_lib/message-content";
 import { DEFAULT_MODEL_ID, MODELS } from "@/app/studio/_features/chat/_lib/models";
-import type { DesignRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
+import { CAD_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type { ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
 import { trackMessageSubmitted } from "@/app/studio/_features/chat/_lib/analytics";
 
@@ -22,12 +23,24 @@ import { ChatErrorBanner, ChatNotFoundState } from "@/app/studio/_features/chat/
 import { ChatMessagesPanel } from "@/app/studio/_features/chat/_components/chat-messages-panel";
 
 interface ChatProps {
+  assistantId: StudioAssistantId;
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
+  onModeChange: (mode: StudioAssistantId) => void;
+  onSketchRevisionEvent: (revision: SketchRevisionArtifact) => void;
+  onSketchRevisionsChange: (revisions: SketchRevisionArtifact[]) => void;
   onClearViewer: () => void;
 }
 
-export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, onClearViewer }: ChatProps) {
+export default function Chat({
+  assistantId,
+  onDesignRevisionEvent,
+  onDesignRevisionsChange,
+  onModeChange,
+  onSketchRevisionEvent,
+  onSketchRevisionsChange,
+  onClearViewer,
+}: ChatProps) {
   const {
     client,
     stream,
@@ -44,7 +57,11 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
     pathname,
     router,
     handleThreadIdChange,
-  } = useChatStream(onDesignRevisionEvent);
+    sketchRevisions,
+  } = useChatStream(assistantId, {
+    onDesignRevisionEvent,
+    onSketchRevisionEvent,
+  });
 
   const timer = useAssistantTimer();
   const { sessionClaims, userId } = useAuth();
@@ -53,6 +70,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
   const [draftConversationKey, setDraftConversationKey] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
+  const [hasChosenMode, setHasChosenMode] = useState(urlThreadId !== null);
 
   const handleModelChange = useCallback((modelId: string) => {
     if (!MODELS.some((m) => m.id === modelId)) return;
@@ -69,6 +87,10 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
   useEffect(() => {
     onDesignRevisionsChange(designRevisions);
   }, [designRevisions, onDesignRevisionsChange]);
+
+  useEffect(() => {
+    onSketchRevisionsChange(sketchRevisions);
+  }, [sketchRevisions, onSketchRevisionsChange]);
 
   const history = useThreadHistory(client, isAuthReady);
 
@@ -138,16 +160,25 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
     });
   }, [isBusy, isVip, markNearBottom, scrollToBottom, selectedModel, stream, userId]);
 
-  const handleExamplePrompt = useCallback((prompt: string) => {
-    if (chatInputRef.current) {
-      chatInputRef.current.setPrompt(prompt);
-      chatInputRef.current.focus();
-    }
+  const handleModeSelect = useCallback((mode: StudioAssistantId) => {
+    onModeChange(mode);
+    setHasChosenMode(true);
+    requestAnimationFrame(() => {
+      chatInputRef.current?.focus();
+    });
+  }, [onModeChange]);
+
+  const handlePromptSelect = useCallback((prompt: string) => {
+    chatInputRef.current?.setPrompt(prompt);
+    requestAnimationFrame(() => {
+      chatInputRef.current?.focus();
+    });
   }, []);
 
   const handleSelectThread = useCallback((threadId: string) => {
     setHistoryOpen(false);
     setPendingHumanMessage(null);
+    setHasChosenMode(true);
     timer.reset();
     handleThreadIdChange(threadId);
     onClearViewerRef.current();
@@ -158,10 +189,12 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
     if (threadId === urlThreadId) {
       timer.reset();
       setDraftConversationKey((key) => key + 1);
+      setHasChosenMode(false);
+      onModeChange(CAD_ASSISTANT_ID);
       handleThreadIdChange(null);
       onClearViewerRef.current();
     }
-  }, [timer, history, urlThreadId, handleThreadIdChange]);
+  }, [timer, history, urlThreadId, onModeChange, handleThreadIdChange]);
 
   const handleNewChat = useCallback(() => {
     const nextUrl = new URL(window.location.href);
@@ -180,6 +213,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
     ? (error instanceof Error ? error.message : String(error))
     : null;
   const isNotFound = errorMessage?.includes("HTTP 404");
+  const hasActiveMode = hasChosenMode || urlThreadId !== null;
 
   if (isNotFound) {
     return <ChatNotFoundState onStartNew={() => router.replace(pathname)} />;
@@ -192,7 +226,13 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <ChatHeader historyOpen={historyOpen} onNewChat={handleNewChat} onToggleHistory={toggleHistory} />
+        <ChatHeader
+          activeMode={hasActiveMode ? assistantId : null}
+          historyOpen={historyOpen}
+          onModeChange={handleModeSelect}
+          onNewChat={handleNewChat}
+          onToggleHistory={toggleHistory}
+        />
 
         {historyOpen ? (
           <ThreadHistoryPanel
@@ -206,6 +246,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
           />
         ) : (
           <ChatMessagesPanel
+            activeMode={hasActiveMode ? assistantId : null}
             handleScroll={handleScroll}
             isBusy={isBusy}
             isEmpty={isEmpty}
@@ -215,7 +256,8 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             messageRows={messageRows}
             messagesContainerRef={messagesContainerRef}
             messagesEndRef={messagesEndRef}
-            onExamplePrompt={handleExamplePrompt}
+            onModeSelect={handleModeSelect}
+            onPromptSelect={handlePromptSelect}
             pendingHumanMessage={pendingHumanMessage}
             pendingHumanText={pendingHumanText}
             scrollToBottom={scrollToBottom}
@@ -225,7 +267,7 @@ export default function Chat({ onDesignRevisionEvent, onDesignRevisionsChange, o
             todos={todos}
           />
         )}
-        {historyOpen ? null : (
+        {historyOpen || (!hasActiveMode && isEmpty) ? null : (
           <ChatInput
             ref={chatInputRef}
             isLoading={isLoading}

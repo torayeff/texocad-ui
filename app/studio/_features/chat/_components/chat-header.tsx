@@ -2,6 +2,8 @@ import React from "react";
 import { FileClock, MessageSquarePlus } from "lucide-react";
 
 import { cn } from "@/app/lib/cn";
+import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import { AgentModePicker } from "@/app/studio/_features/chat/_components/agent-mode-picker";
 import {
   activeControlClass,
   chatHeaderClass,
@@ -28,18 +30,24 @@ function ChatHeaderActionButton({ children, className, tooltip, ...buttonProps }
 }
 
 interface ChatHeaderProps {
+  activeMode: StudioAssistantId | null;
   historyOpen: boolean;
+  onModeChange: (mode: StudioAssistantId) => void;
   onNewChat: () => void;
   onToggleHistory: () => void;
 }
 
-export function ChatHeader({ historyOpen, onNewChat, onToggleHistory }: ChatHeaderProps) {
+export function ChatHeader({ activeMode, historyOpen, onModeChange, onNewChat, onToggleHistory }: ChatHeaderProps) {
   return (
     <div className={chatHeaderClass}>
-      <div className="flex min-w-0 items-center">
-        <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
-          {historyOpen ? "Chat History" : "AI CAD Engineer"}
-        </span>
+      <div className="flex min-w-0 items-center gap-2">
+        {historyOpen || !activeMode ? (
+          <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
+            {historyOpen ? "Chat History" : "Choose Agent"}
+          </span>
+        ) : (
+          <AgentModePicker activeMode={activeMode} onModeChange={onModeChange} />
+        )}
       </div>
       <div className="flex items-center gap-0.5">
         <ChatHeaderActionButton
