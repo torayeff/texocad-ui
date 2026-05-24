@@ -1,9 +1,12 @@
 "use client";
 
-import { Download, History, Loader2, Paintbrush, Share2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { Brush, Download, History, Loader2, Share2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { SketchMaskEditor } from "@/app/components/sketch-viewer/_components/sketch-mask-editor";
+import {
+  SketchMaskEditor,
+  type SketchMaskEditorHandle,
+} from "@/app/components/sketch-viewer/_components/sketch-mask-editor";
 import { SketchRevisionMenu } from "@/app/components/sketch-viewer/_components/sketch-revision-menu";
 import { SketchShareDialog } from "@/app/components/sketch-viewer/_components/sketch-share-dialog";
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
@@ -16,7 +19,13 @@ import { ViewerToolButton } from "@/app/components/model-viewer/_components/view
 import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
 import { useFloatingPanel } from "@/app/components/model-viewer/_hooks/use-floating-panel";
 import { cn } from "@/app/lib/cn";
-import type { ShareSketchRevision, SketchMaskEditRequest, SketchRevisionOption, SketchSource } from "@/app/types/sketch-viewer";
+import type {
+  ShareSketchRevision,
+  SketchMaskComposerState,
+  SketchMaskEditRequest,
+  SketchRevisionOption,
+  SketchSource,
+} from "@/app/types/sketch-viewer";
 
 interface SketchViewerRevisions {
   activeRevisionKey: string | null;
@@ -34,6 +43,7 @@ interface SketchViewerSharing {
 interface SketchViewerProps {
   isMaskSubmitting?: boolean;
   onSubmitMaskEdit?: (request: SketchMaskEditRequest) => Promise<void> | void;
+  onMaskEditorChange?: (state: SketchMaskComposerState | null) => void;
   revisions?: SketchViewerRevisions;
   sharing?: SketchViewerSharing;
   source: SketchSource | null;
@@ -42,13 +52,17 @@ interface SketchViewerProps {
 export default function SketchViewer({
   isMaskSubmitting = false,
   onSubmitMaskEdit,
+  onMaskEditorChange,
   revisions,
   sharing,
   source,
 }: SketchViewerProps) {
   const [isMaskEditorOpen, setIsMaskEditorOpen] = useState(false);
+  const [hasMask, setHasMask] = useState(false);
+  const [maskError, setMaskError] = useState<string | null>(null);
   const [revisionsOpen, setRevisionsOpen] = useState(false);
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const maskEditorRef = useRef<SketchMaskEditorHandle | null>(null);
   const {
     didCopyShareUrl,
     handleCloseShareDialog,
@@ -94,21 +108,79 @@ export default function SketchViewer({
 
   const closeRevisions = () => setRevisionsOpen(false);
 
+  const handleCloseMaskEditor = useCallback(() => {
+    if (isMaskSubmitting) return;
+    setIsMaskEditorOpen(false);
+    setHasMask(false);
+    setMaskError(null);
+  }, [isMaskSubmitting]);
+
+  const handleSubmitMaskEdit = useCallback(async (prompt: string) => {
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt) {
+      const message = "Describe what should change inside the masked area.";
+      setMaskError(message);
+      throw new Error(message);
+    }
+
+    try {
+      const mask = await maskEditorRef.current?.createMaskFile();
+      if (!mask) {
+        throw new Error("Brush the area you want to edit first.");
+      }
+
+      if (!onSubmitMaskEdit) {
+        throw new Error("Mask editing is not available.");
+      }
+
+      await onSubmitMaskEdit({ prompt: trimmedPrompt, mask });
+      setIsMaskEditorOpen(false);
+      setHasMask(false);
+      setMaskError(null);
+      onMaskEditorChange?.(null);
+    } catch (submitError) {
+      setMaskError(submitError instanceof Error ? submitError.message : "Could not submit masked edit.");
+      throw submitError;
+    }
+  }, [onMaskEditorChange, onSubmitMaskEdit]);
+
+  const handleMaskChange = useCallback((nextHasMask: boolean) => {
+    setHasMask(nextHasMask);
+    if (nextHasMask) {
+      setMaskError(null);
+    }
+  }, []);
+
   const handleOpenMaskEditor = () => {
     closeRevisions();
+    setMaskError(null);
     setIsMaskEditorOpen(true);
   };
 
-  const handleCloseMaskEditor = () => {
-    if (isMaskSubmitting) return;
-    setIsMaskEditorOpen(false);
-  };
+  useEffect(() => {
+    if (!isMaskEditorOpen || !canMask) {
+      onMaskEditorChange?.(null);
+      return;
+    }
 
-  const handleSubmitMaskEdit = async (request: SketchMaskEditRequest) => {
-    if (!onSubmitMaskEdit) return;
-    await onSubmitMaskEdit(request);
-    setIsMaskEditorOpen(false);
-  };
+    onMaskEditorChange?.({
+      canSubmit: hasMask,
+      clear: () => maskEditorRef.current?.clear(),
+      close: handleCloseMaskEditor,
+      error: maskError,
+      isSubmitting: isMaskSubmitting,
+      submit: handleSubmitMaskEdit,
+    });
+  }, [
+    canMask,
+    handleCloseMaskEditor,
+    handleSubmitMaskEdit,
+    hasMask,
+    isMaskEditorOpen,
+    isMaskSubmitting,
+    maskError,
+    onMaskEditorChange,
+  ]);
 
   return (
     <section
@@ -118,10 +190,10 @@ export default function SketchViewer({
       <div className="absolute inset-0 flex items-center justify-center p-4 py-20 md:p-8 md:py-24">
         {source && isMaskEditorOpen && canMask ? (
           <SketchMaskEditor
+            ref={maskEditorRef}
             isSubmitting={isMaskSubmitting}
+            onMaskChange={handleMaskChange}
             source={source}
-            onCancel={handleCloseMaskEditor}
-            onSubmit={(prompt, mask) => handleSubmitMaskEdit({ prompt, mask })}
           />
         ) : source ? (
           // eslint-disable-next-line @next/next/no-img-element -- signed blob URLs are short-lived and not configured for Next image optimization
@@ -143,14 +215,14 @@ export default function SketchViewer({
             type="button"
             disabled={!canMask || isMaskSubmitting}
             onClick={handleOpenMaskEditor}
-            tooltip="Mask"
-            aria-label="Mask sketch"
+            tooltip="Edit"
+            aria-label="Edit sketch with mask"
             className={cn(sketchViewerToolButtonClass, isMaskEditorOpen && sketchViewerActiveControlClass)}
           >
             {isMaskSubmitting ? (
               <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
             ) : (
-              <Paintbrush size={14} strokeWidth={1.75} />
+              <Brush size={14} strokeWidth={1.75} />
             )}
           </ViewerToolButton>
 

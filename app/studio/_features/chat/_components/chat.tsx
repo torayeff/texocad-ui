@@ -15,6 +15,7 @@ import { CAD_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type { ChatHandle, ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
 import { trackMessageSubmitted } from "@/app/studio/_features/chat/_lib/analytics";
+import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 
 import { ChatHeader } from "@/app/studio/_features/chat/_components/chat-header";
 import ThreadHistoryPanel from "@/app/studio/_features/chat/_components/thread-history-panel";
@@ -24,6 +25,7 @@ import { ChatMessagesPanel } from "@/app/studio/_features/chat/_components/chat-
 
 interface ChatProps {
   assistantId: StudioAssistantId;
+  maskComposer: SketchMaskComposerState | null;
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
   onModeChange: (mode: StudioAssistantId) => void;
@@ -34,6 +36,7 @@ interface ChatProps {
 
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   assistantId,
+  maskComposer,
   onDesignRevisionEvent,
   onDesignRevisionsChange,
   onModeChange,
@@ -163,6 +166,9 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   }, [isBusy, isVip, markNearBottom, scrollToBottom, selectedModel, stream, userId]);
 
   React.useImperativeHandle(ref, () => ({
+    focusInput: () => {
+      chatInputRef.current?.focus();
+    },
     submitMessage: (content: string) => sendMessage(content),
   }), [sendMessage]);
 
@@ -278,6 +284,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
             ref={chatInputRef}
             isLoading={isLoading}
             isBusy={isBusy}
+            maskComposer={maskComposer}
             onSubmit={sendMessage}
             stopGeneration={() => stream.stop()}
             model={selectedModel}

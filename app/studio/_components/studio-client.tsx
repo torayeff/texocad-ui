@@ -6,7 +6,7 @@ import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 
 import { Header } from "@/app/components/header";
-import type { ShareSketchRevision, SketchMaskEditRequest } from "@/app/types/sketch-viewer";
+import type { ShareSketchRevision, SketchMaskComposerState, SketchMaskEditRequest } from "@/app/types/sketch-viewer";
 import type { ShareRevision } from "@/app/types/model-viewer";
 import SketchViewer from "@/app/components/sketch-viewer/sketch-viewer";
 import Chat from "@/app/studio/_features/chat/_components/chat";
@@ -55,6 +55,7 @@ export default function StudioClient() {
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
   const [isMaskSubmitting, setIsMaskSubmitting] = useState(false);
+  const [maskComposer, setMaskComposer] = useState<SketchMaskComposerState | null>(null);
   const chatRef = useRef<ChatHandle | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const designRequestVersionRef = useRef(0);
@@ -198,6 +199,15 @@ export default function StudioClient() {
     }
   }, [activeSketchExport]);
 
+  const handleMaskEditorChange = useCallback((state: SketchMaskComposerState | null) => {
+    setMaskComposer(state);
+    if (state) {
+      requestAnimationFrame(() => {
+        chatRef.current?.focusInput();
+      });
+    }
+  }, []);
+
   useEffect(() => {
     designRequestVersionRef.current += 1;
     const snapshotVersion = designRequestVersionRef.current;
@@ -277,6 +287,7 @@ export default function StudioClient() {
           {shouldShowSketchViewer ? (
             <SketchViewer
               isMaskSubmitting={isMaskSubmitting}
+              onMaskEditorChange={handleMaskEditorChange}
               onSubmitMaskEdit={activeSketchExport ? handleSketchMaskSubmit : undefined}
               source={sketchSource}
               revisions={{
@@ -328,6 +339,7 @@ export default function StudioClient() {
           <Chat
             ref={chatRef}
             assistantId={studioMode}
+            maskComposer={maskComposer}
             onDesignRevisionEvent={handleDesignRevision}
             onDesignRevisionsChange={handleDesignRevisionsChange}
             onModeChange={setStudioMode}

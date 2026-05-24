@@ -8,6 +8,7 @@ export interface ChatInputHandle {
 }
 
 export interface ChatHandle {
+  focusInput: () => void;
   submitMessage: (content: string) => boolean;
 }
 

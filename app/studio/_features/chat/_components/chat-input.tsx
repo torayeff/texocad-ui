@@ -2,18 +2,20 @@
 
 import React, { useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
+import { Brush, Eraser, Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_features/chat/_hooks/use-file-upload";
 import ModelPicker from "@/app/studio/_features/chat/_components/model-picker";
 import {
   composerButtonClass,
   composerTooltipClass,
 } from "@/app/studio/_features/chat/_lib/chat-styles";
+import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 import type { ChatInputHandle, UploadedFile } from "@/app/studio/_features/chat/_types/chat";
 
 interface ChatInputProps {
   isBusy: boolean;
   isLoading: boolean;
+  maskComposer: SketchMaskComposerState | null;
   onSubmit: (text: string) => void;
   stopGeneration: () => void;
   model: string;
@@ -55,9 +57,17 @@ function attachmentMarkdown(attachment: UploadedFile) {
   return `[${attachment.filename}](${attachment.url})`;
 }
 
+function maskComposerDisabledReason(maskComposer: SketchMaskComposerState | null) {
+  if (!maskComposer) return null;
+  if (maskComposer.isSubmitting) return "Submitting masked edit...";
+  if (!maskComposer.canSubmit) return "Brush an area in the sketch first.";
+  return null;
+}
+
 const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
   isBusy,
   isLoading,
+  maskComposer,
   onSubmit,
   stopGeneration,
   model,
@@ -109,8 +119,33 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   );
 
   const hasContent = input.trim() || attachments.length > 0;
+  const maskSubmitDisabledReason = maskComposerDisabledReason(maskComposer);
+  const canSubmitMaskEdit = maskComposer !== null && input.trim().length > 0 && maskSubmitDisabledReason === null && !isBusy;
+  const isComposerBusy = isBusy || maskComposer?.isSubmitting === true;
 
   const sendMessage = useCallback(() => {
+    if (maskComposer) {
+      if (!canSubmitMaskEdit) return;
+      const parts = [input.trim()];
+      if (attachments.length > 0) {
+        const links = attachments.map(attachmentMarkdown).join("\n");
+        parts.push(`Attachments:\n${links}`);
+      }
+      void maskComposer
+        .submit(parts.join("\n\n"))
+        .then(() => {
+          setInput("");
+          setAttachments([]);
+          if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+          }
+        })
+        .catch(() => {
+          // Validation and submit errors are shown by the sketch mask editor.
+        });
+      return;
+    }
+
     if (!hasContent || isBusy) return;
     const text = input.trim();
     const parts: string[] = [];
@@ -125,7 +160,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [input, attachments, hasContent, isBusy, onSubmit]);
+  }, [input, attachments, canSubmitMaskEdit, hasContent, isBusy, maskComposer, onSubmit]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -156,6 +191,37 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
           onChange={handleFileChange}
           className="hidden"
         />
+
+        {maskComposer ? (
+          <div className="mx-1 mb-2 flex items-center justify-between gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--border)_58%,transparent)] bg-muted/35 px-2.5 py-1.5 text-xs text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-2">
+              <Brush size={14} strokeWidth={1.75} className="shrink-0 text-foreground" />
+              <span className="truncate">
+                {maskComposer.error ?? maskSubmitDisabledReason ?? "Editing masked area"}
+              </span>
+            </div>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <button
+                type="button"
+                onClick={maskComposer.clear}
+                disabled={isComposerBusy || !maskComposer.canSubmit}
+                className={composerButtonClass}
+                aria-label="Clear mask"
+              >
+                <Eraser size={14} strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                onClick={maskComposer.close}
+                disabled={isComposerBusy}
+                className={composerButtonClass}
+                aria-label="Cancel mask edit"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-2 pb-2">
@@ -193,11 +259,11 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
           <textarea
             ref={textareaRef}
             value={input}
-            disabled={isBusy}
+            disabled={isComposerBusy}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onBlur={() => window.scrollTo(0, 0)}
-            placeholder="Describe a part..."
+            placeholder={maskComposer ? "Describe the masked edit..." : "Describe a part..."}
             rows={1}
             className="w-full resize-none overflow-y-auto bg-transparent px-2 pt-3 text-base text-foreground placeholder:text-muted-foreground outline-none max-h-[200px] md:text-[15px]"
             style={{ minHeight: "24px" }}
@@ -237,10 +303,10 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
               ) : (
                 <ComposerIconButton
                   onClick={sendMessage}
-                  disabled={!hasContent || isBusy}
+                  disabled={maskComposer ? !canSubmitMaskEdit : !hasContent || isBusy}
                   aria-label="Send message"
-                  tooltip="Send message"
-                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] transition-colors ${hasContent
+                  tooltip={maskComposer ? "Submit masked edit" : "Send message"}
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] transition-colors ${(maskComposer ? canSubmitMaskEdit : hasContent)
                     ? "bg-foreground text-background hover:bg-foreground/90"
                     : "bg-muted text-muted-foreground"
                     } disabled:cursor-not-allowed`}

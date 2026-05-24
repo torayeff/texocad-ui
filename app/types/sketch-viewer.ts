@@ -9,6 +9,15 @@ export interface SketchMaskEditRequest {
   mask: File;
 }
 
+export interface SketchMaskComposerState {
+  canSubmit: boolean;
+  clear: () => void;
+  close: () => void;
+  error: string | null;
+  isSubmitting: boolean;
+  submit: (prompt: string) => Promise<void>;
+}
+
 export interface SketchRevisionOption {
   key: string;
   revisionNumber: number;

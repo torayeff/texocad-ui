@@ -1,16 +1,7 @@
 "use client";
 
-import { Eraser, Loader2, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
-import {
-  sketchViewerGlassClass,
-  sketchViewerInputClass,
-  sketchViewerPrimaryButtonClass,
-  sketchViewerShareButtonClass,
-} from "@/app/components/sketch-viewer/_lib/sketch-viewer-styles";
-import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
-import { cn } from "@/app/lib/cn";
 import type { SketchSource } from "@/app/types/sketch-viewer";
 
 const DEFAULT_BRUSH_SIZE = 36;
@@ -24,8 +15,12 @@ interface MaskPoint {
 interface SketchMaskEditorProps {
   isSubmitting: boolean;
   source: SketchSource;
-  onCancel: () => void;
-  onSubmit: (prompt: string, mask: File) => Promise<void> | void;
+  onMaskChange: (hasMask: boolean) => void;
+}
+
+export interface SketchMaskEditorHandle {
+  clear: () => void;
+  createMaskFile: () => Promise<File>;
 }
 
 function drawStroke(
@@ -95,15 +90,12 @@ function canvasToFile(canvas: HTMLCanvasElement): Promise<File> {
   });
 }
 
-export function SketchMaskEditor({
+export const SketchMaskEditor = forwardRef<SketchMaskEditorHandle, SketchMaskEditorProps>(function SketchMaskEditor({
   isSubmitting,
-  onCancel,
-  onSubmit,
+  onMaskChange,
   source,
-}: SketchMaskEditorProps) {
-  const [prompt, setPrompt] = useState("");
+}: SketchMaskEditorProps, ref) {
   const [hasMask, setHasMask] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -120,12 +112,15 @@ export function SketchMaskEditor({
     clearPreviewCanvas(previewCanvas, image.naturalWidth, image.naturalHeight);
     initializeMaskCanvas(maskCanvas, image.naturalWidth, image.naturalHeight);
     setHasMask(false);
-    setError(null);
   }, []);
 
   useEffect(() => {
     resetCanvases();
   }, [resetCanvases, source.url]);
+
+  useEffect(() => {
+    onMaskChange(hasMask);
+  }, [hasMask, onMaskChange]);
 
   const pointFromEvent = useCallback((event: React.PointerEvent<HTMLCanvasElement>): MaskPoint | null => {
     const image = imageRef.current;
@@ -158,7 +153,6 @@ export function SketchMaskEditor({
     drawStroke(maskCanvas, previousPoint, point, brushSize, "mask");
     lastPointRef.current = point;
     setHasMask(true);
-    setError(null);
   }, []);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -193,110 +187,42 @@ export function SketchMaskEditor({
     resetCanvases();
   }, [isSubmitting, resetCanvases]);
 
-  const handleSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const maskCanvas = maskCanvasRef.current;
-    const trimmedPrompt = prompt.trim();
+  useImperativeHandle(ref, () => ({
+    clear: handleClear,
+    createMaskFile: async () => {
+      const maskCanvas = maskCanvasRef.current;
+      if (!hasMask || !maskCanvas) {
+        throw new Error("Brush the area you want to edit first.");
+      }
 
-    if (!trimmedPrompt) {
-      setError("Describe what should change inside the masked area.");
-      return;
-    }
-    if (!hasMask || !maskCanvas) {
-      setError("Brush the area you want to edit first.");
-      return;
-    }
-
-    try {
-      const maskFile = await canvasToFile(maskCanvas);
-      await onSubmit(trimmedPrompt, maskFile);
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Could not submit masked edit.");
-    }
-  }, [hasMask, onSubmit, prompt]);
+      return canvasToFile(maskCanvas);
+    },
+  }), [handleClear, hasMask]);
 
   return (
-    <>
-      <div className="relative inline-block">
-        {/* eslint-disable-next-line @next/next/no-img-element -- signed blob URLs are short-lived and not configured for Next image optimization */}
-        <img
-          ref={imageRef}
-          src={source.url}
-          alt={source.label}
-          onLoad={resetCanvases}
-          className="h-auto w-auto max-w-[min(1024px,calc(100vw-2rem))] max-h-[calc(100dvh-12rem)] select-none object-contain"
-          draggable={false}
-        />
-        <canvas
-          ref={previewCanvasRef}
-          aria-label="Brush mask edit area"
-          className="absolute inset-0 size-full touch-none cursor-crosshair rounded-sm"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={stopDrawing}
-          onPointerCancel={stopDrawing}
-          onPointerLeave={(event) => {
-            if (drawingRef.current) stopDrawing(event);
-          }}
-        />
-        <canvas ref={maskCanvasRef} className="hidden" aria-hidden="true" />
-      </div>
-
-      <form
-        onSubmit={handleSubmit}
-        className={cn(
-          sketchViewerGlassClass,
-          "absolute bottom-5 left-1/2 z-40 grid w-[min(32rem,calc(100vw-1.5rem))] -translate-x-1/2 gap-2 rounded-[1rem] p-2.5 text-foreground",
-        )}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-medium text-muted-foreground">
-            Brush the area to change, then describe the edit.
-          </p>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-55"
-            aria-label="Close mask editor"
-          >
-            <X size={14} strokeWidth={1.75} />
-          </button>
-        </div>
-        <div className="flex gap-2">
-          <input
-            value={prompt}
-            onChange={(event) => {
-              setPrompt(event.target.value);
-              setError(null);
-            }}
-            disabled={isSubmitting}
-            placeholder="Replace the masked area with..."
-            className={sketchViewerInputClass}
-          />
-          <button
-            type="button"
-            onClick={handleClear}
-            disabled={isSubmitting || !hasMask}
-            className={sketchViewerShareButtonClass}
-            aria-label="Clear mask"
-          >
-            <Eraser size={14} strokeWidth={1.75} />
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting || !hasMask || prompt.trim().length === 0}
-            className={cn(sketchViewerShareButtonClass, sketchViewerPrimaryButtonClass, "min-w-24")}
-          >
-            {isSubmitting ? (
-              <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
-            ) : (
-              "Edit"
-            )}
-          </button>
-        </div>
-        {error ? <p className="text-xs text-destructive">{error}</p> : null}
-      </form>
-    </>
+    <div className="relative inline-block">
+      {/* eslint-disable-next-line @next/next/no-img-element -- signed blob URLs are short-lived and not configured for Next image optimization */}
+      <img
+        ref={imageRef}
+        src={source.url}
+        alt={source.label}
+        onLoad={resetCanvases}
+        className="h-auto w-auto max-w-[min(1024px,calc(100vw-2rem))] max-h-[calc(100dvh-12rem)] select-none object-contain"
+        draggable={false}
+      />
+      <canvas
+        ref={previewCanvasRef}
+        aria-label="Brush mask edit area"
+        className="absolute inset-0 size-full touch-none cursor-crosshair rounded-sm"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={stopDrawing}
+        onPointerCancel={stopDrawing}
+        onPointerLeave={(event) => {
+          if (drawingRef.current) stopDrawing(event);
+        }}
+      />
+      <canvas ref={maskCanvasRef} className="hidden" aria-hidden="true" />
+    </div>
   );
-}
+});
