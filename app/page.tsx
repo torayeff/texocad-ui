@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Menu } from "lucide-react";
 import Link from "next/link";
+import { FaLinkedin, FaXTwitter } from "react-icons/fa6";
 
+import { ExpertNetworkBanner } from "@/app/_components/expert-network-banner";
+import { SiteHeader } from "@/app/_components/site-header";
 import { ThemeHeroImage } from "@/app/_components/theme-hero-image";
-import { ThemeLogo } from "@/app/components/theme-logo";
-import { ThemeToggle } from "@/app/components/theme-toggle";
 import {
   SITE_DESCRIPTION,
   SITE_ROUTES,
@@ -46,67 +46,8 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="flex min-h-dvh flex-col bg-background text-foreground">
-        <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-[var(--app-chrome-gutter)] py-6 text-sm">
-          <div className="flex items-center gap-2">
-            <details className="relative sm:hidden">
-              <summary
-                className="grid size-[1.875rem] list-none place-items-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] text-muted-foreground [&::-webkit-details-marker]:hidden"
-                aria-label="Open navigation menu"
-              >
-                <Menu size={18} strokeWidth={2} />
-              </summary>
-              <div className="absolute left-0 top-10 z-20 flex min-w-36 flex-col gap-1 rounded-xl border border-border bg-background p-2 text-[13px] font-medium text-foreground/70 shadow-[0_8px_30px_rgb(0_0_0_/_0.08)]">
-                <Link href={SITE_ROUTES.studio} className="px-3 py-2">
-                  Studio
-                </Link>
-                <Link href={SITE_ROUTES.pricing} className="px-3 py-2">
-                  Pricing
-                </Link>
-                <Link href={SITE_ROUTES.viewer} className="px-3 py-2">
-                  Viewer
-                </Link>
-              </div>
-            </details>
-
-            <Link
-              href={SITE_ROUTES.home}
-              className="flex items-center gap-2 text-xl font-semibold tracking-tight"
-              aria-label="TexoCAD home"
-            >
-              <ThemeLogo alt="" width={22} height={22} priority />
-              <span>TexoCAD</span>
-            </Link>
-          </div>
-
-          <nav
-            className="hidden items-center gap-8 text-[13px] font-medium text-foreground/70 sm:flex"
-            aria-label="Primary navigation"
-          >
-            <Link
-              href={SITE_ROUTES.studio}
-              className="transition-colors hover:text-foreground"
-            >
-              Studio
-            </Link>
-            <Link
-              href={SITE_ROUTES.pricing}
-              className="transition-colors hover:text-foreground"
-            >
-              Pricing
-            </Link>
-            <Link
-              href={SITE_ROUTES.viewer}
-              className="transition-colors hover:text-foreground"
-            >
-              Viewer
-            </Link>
-            <ThemeToggle />
-          </nav>
-
-          <div className="sm:hidden">
-            <ThemeToggle />
-          </div>
-        </header>
+        <ExpertNetworkBanner />
+        <SiteHeader />
 
         <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-12 px-6 py-12 sm:px-10 lg:grid-cols-[0.72fr_1fr] lg:px-12 lg:py-16">
           <div className="max-w-xl">
@@ -132,25 +73,6 @@ export default function Home() {
               >
                 Watch Demo
               </a>
-            </div>
-
-            <div className="mt-8 max-w-lg rounded-2xl border border-border bg-card p-4 shadow-[0_18px_55px_rgb(0_0_0_/_0.04)]">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/55">
-                    Are you a CAD expert?
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Join TexoCAD&apos;s expert network for paid CAD project work.
-                  </p>
-                </div>
-                <Link
-                  href={SITE_ROUTES.expertNetwork}
-                  className="inline-flex shrink-0 items-center justify-center rounded-xl border border-accent/25 bg-accent/5 px-5 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/10"
-                >
-                  Apply to Join
-                </Link>
-              </div>
             </div>
           </div>
 
@@ -178,6 +100,24 @@ export default function Home() {
           >
             Terms & Conditions
           </Link>
+          <a
+            href="https://www.linkedin.com/company/texocad/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-foreground/60"
+            aria-label="TexoCAD on LinkedIn"
+          >
+            <FaLinkedin size={14} aria-hidden="true" />
+          </a>
+          <a
+            href="https://x.com/texocad"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-foreground/60"
+            aria-label="TexoCAD on X"
+          >
+            <FaXTwitter size={14} aria-hidden="true" />
+          </a>
         </footer>
       </main>
     </>
