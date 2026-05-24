@@ -22,7 +22,7 @@ export const centerStatusClass =
   "absolute left-3 right-3 top-1/2 -translate-y-1/2 sm:left-1/2 sm:right-auto sm:w-[min(24rem,calc(100vw-2rem))] sm:-translate-x-1/2";
 
 export const shareButtonClass =
-  "inline-flex cursor-pointer items-center justify-center gap-[0.45rem] rounded-[0.8125rem] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--muted)_55%,transparent)] px-[0.8rem] py-[0.625rem] text-[0.8125rem] font-bold text-foreground transition-[background-color,border-color,opacity] duration-150 ease-in-out hover:bg-muted disabled:cursor-not-allowed disabled:opacity-55";
+  "inline-flex cursor-pointer items-center justify-center gap-[0.45rem] rounded-[0.8125rem] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--muted)_55%,transparent)] px-[0.8rem] py-[0.625rem] text-[0.8125rem] font-bold text-muted-foreground transition-[background-color,border-color,opacity,color] duration-150 ease-in-out hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-55";
 
 export const primaryButtonClass =
   "border-[color-mix(in_srgb,var(--accent)_38%,var(--border))] bg-[color-mix(in_srgb,var(--foreground)_92%,transparent)] text-background hover:bg-foreground";

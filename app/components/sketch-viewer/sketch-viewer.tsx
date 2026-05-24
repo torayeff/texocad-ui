@@ -18,6 +18,7 @@ import {
 import { ViewerToolButton } from "@/app/components/model-viewer/_components/viewer-tool-button";
 import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
 import { useFloatingPanel } from "@/app/components/model-viewer/_hooks/use-floating-panel";
+import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
 import { cn } from "@/app/lib/cn";
 import type {
   ShareSketchRevision,
@@ -63,10 +64,6 @@ export default function SketchViewer({
   const [hasMask, setHasMask] = useState(false);
   const [maskError, setMaskError] = useState<string | null>(null);
   const [revisionsOpen, setRevisionsOpen] = useState(false);
-  const [didCopyViewerUrl, setDidCopyViewerUrl] = useState(false);
-  const [isViewerShareDialogOpen, setIsViewerShareDialogOpen] = useState(false);
-  const [viewerShareError, setViewerShareError] = useState<string | null>(null);
-  const [viewerShareUrl, setViewerShareUrl] = useState<string | null>(null);
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
   const maskEditorRef = useRef<SketchMaskEditorHandle | null>(null);
   const {
@@ -86,6 +83,7 @@ export default function SketchViewer({
     shareRevision: sharing?.shareRevision ?? null,
     source,
   });
+  const publicShareDialog = usePublicShareDialog();
 
   const canShare = source !== null && sharing?.shareRevision != null;
   const canDownload = source !== null;
@@ -104,25 +102,6 @@ export default function SketchViewer({
   const handleDownload = () => {
     if (!source) return;
     downloadLinkRef.current?.click();
-  };
-
-  const handleOpenViewerShareDialog = () => {
-    setDidCopyViewerUrl(false);
-    setViewerShareError(null);
-    setViewerShareUrl(window.location.href);
-    setIsViewerShareDialogOpen(true);
-  };
-
-  const handleCloseViewerShareDialog = () => {
-    setIsViewerShareDialogOpen(false);
-    setViewerShareError(null);
-  };
-
-  const handleCopyViewerShareUrl = () => {
-    if (!viewerShareUrl) return;
-
-    void navigator.clipboard.writeText(viewerShareUrl)
-      .then(() => setDidCopyViewerUrl(true));
   };
 
   const toggleRevisions = (trigger: HTMLButtonElement) => {
@@ -240,7 +219,7 @@ export default function SketchViewer({
           {isSharedView ? (
             <ViewerToolButton
               type="button"
-              onClick={handleOpenViewerShareDialog}
+              onClick={publicShareDialog.handleOpenShareDialog}
               tooltip="Share"
               aria-label="Share sketch"
               className={sketchViewerToolButtonClass}
@@ -350,17 +329,17 @@ export default function SketchViewer({
         />
       ) : null}
 
-      {isViewerShareDialogOpen ? (
+      {publicShareDialog.isShareDialogOpen ? (
         <SketchShareDialog
-          didCopyShareUrl={didCopyViewerUrl}
+          didCopyShareUrl={publicShareDialog.didCopyShareUrl}
           isSharing={false}
-          onClose={handleCloseViewerShareDialog}
-          onCopyShareUrl={handleCopyViewerShareUrl}
+          onClose={publicShareDialog.handleCloseShareDialog}
+          onCopyShareUrl={publicShareDialog.handleCopyShareUrl}
           onShareNameChange={() => undefined}
           onSubmit={(event) => event.preventDefault()}
-          shareError={viewerShareError}
+          shareError={publicShareDialog.shareError}
           shareName={source?.label ?? ""}
-          shareUrl={viewerShareUrl}
+          shareUrl={publicShareDialog.shareUrl}
         />
       ) : null}
     </section>

@@ -10,6 +10,7 @@ import { ViewerGestureHint } from "@/app/components/model-viewer/_components/vie
 import { useModelDownloads } from "@/app/components/model-viewer/_hooks/use-model-downloads";
 import { useModelViewerScene } from "@/app/components/model-viewer/_hooks/use-model-viewer-scene";
 import { useShareModel } from "@/app/components/model-viewer/_hooks/use-share-model";
+import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
 
 interface ModelViewerDownloads {
   sourceCode: ModelSource | null;
@@ -33,6 +34,7 @@ interface ModelViewerProps {
   revisions?: ModelViewerRevisions;
   sharing?: ModelViewerSharing;
   source: ModelSource | null;
+  variant?: "studio" | "shared";
 }
 
 export default function ModelViewer({
@@ -40,6 +42,7 @@ export default function ModelViewer({
   revisions,
   sharing,
   source,
+  variant = "studio",
 }: ModelViewerProps) {
   const {
     activeView,
@@ -86,9 +89,11 @@ export default function ModelViewer({
     shareRevision: sharing?.shareRevision ?? null,
     source,
   });
+  const publicShareDialog = usePublicShareDialog();
 
   const canUseModel = source !== null && loadState === "ready";
-  const canShare = canUseModel && sharing?.shareRevision !== null && sharing?.shareRevision !== undefined;
+  const isSharedView = variant === "shared";
+  const canShare = canUseModel && (isSharedView || sharing?.shareRevision !== null && sharing?.shareRevision !== undefined);
 
   return (
     <section
@@ -150,7 +155,7 @@ export default function ModelViewer({
           onSelectRevision={revisions?.onSelectRevision}
           onSelectBrowserNode={selectBrowserNode}
           onSetTransformMode={setTransformMode}
-          onShare={handleOpenShareDialog}
+          onShare={isSharedView ? publicShareDialog.handleOpenShareDialog : handleOpenShareDialog}
           onSetView={setActiveView}
           onToggleAutoRotate={toggleAutoRotate}
           onToggleBrowserNodeVisibility={toggleBrowserNodeVisibility}
@@ -169,6 +174,20 @@ export default function ModelViewer({
           shareError={shareError}
           shareName={shareName}
           shareUrl={shareUrl}
+        />
+      ) : null}
+
+      {publicShareDialog.isShareDialogOpen ? (
+        <ShareModelDialog
+          didCopyShareUrl={publicShareDialog.didCopyShareUrl}
+          isSharing={false}
+          onClose={publicShareDialog.handleCloseShareDialog}
+          onCopyShareUrl={publicShareDialog.handleCopyShareUrl}
+          onShareNameChange={() => undefined}
+          onSubmit={(event) => event.preventDefault()}
+          shareError={publicShareDialog.shareError}
+          shareName={source?.label ?? ""}
+          shareUrl={publicShareDialog.shareUrl}
         />
       ) : null}
 

@@ -14,5 +14,5 @@ interface SharedModelViewerProps {
 }
 
 export function SharedModelViewer({ source }: SharedModelViewerProps) {
-  return <ModelViewer source={source} />;
+  return <ModelViewer source={source} variant="shared" />;
 }

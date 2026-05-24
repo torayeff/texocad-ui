@@ -18,7 +18,7 @@ export const sketchViewerInputClass =
   "h-[2.625rem] w-full min-w-0 rounded-[0.8125rem] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[var(--viewer-field-background)] px-[0.8rem] py-[0.675rem] text-sm text-foreground outline-none transition-[border-color,box-shadow] duration-150 ease-in-out focus:border-accent focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_18%,transparent)]";
 
 export const sketchViewerShareButtonClass =
-  "inline-flex cursor-pointer items-center justify-center gap-[0.45rem] rounded-[0.8125rem] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--muted)_55%,transparent)] px-[0.8rem] py-[0.625rem] text-[0.8125rem] font-bold text-foreground transition-[background-color,border-color,opacity] duration-150 ease-in-out hover:bg-muted disabled:cursor-not-allowed disabled:opacity-55";
+  "inline-flex cursor-pointer items-center justify-center gap-[0.45rem] rounded-[0.8125rem] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--muted)_55%,transparent)] px-[0.8rem] py-[0.625rem] text-[0.8125rem] font-bold text-muted-foreground transition-[background-color,border-color,opacity,color] duration-150 ease-in-out hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-55";
 
 export const sketchViewerPrimaryButtonClass =
   "border-[color-mix(in_srgb,var(--accent)_38%,var(--border))] bg-[color-mix(in_srgb,var(--foreground)_92%,transparent)] text-background hover:bg-foreground";
