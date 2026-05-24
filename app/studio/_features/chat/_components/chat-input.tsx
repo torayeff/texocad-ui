@@ -9,6 +9,7 @@ import {
   composerButtonClass,
   composerTooltipClass,
 } from "@/app/studio/_features/chat/_lib/chat-styles";
+import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_lib/signed-attachment-url";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 import type { ChatInputHandle, UploadedFile } from "@/app/studio/_features/chat/_types/chat";
 
@@ -62,6 +63,43 @@ function maskComposerDisabledReason(maskComposer: SketchMaskComposerState | null
   if (maskComposer.isSubmitting) return "Submitting masked edit...";
   if (!maskComposer.canSubmit) return "Brush an area in the sketch first.";
   return null;
+}
+
+function AttachmentPill({
+  attachment,
+  onRemove,
+}: {
+  attachment: UploadedFile;
+  onRemove: (url: string) => void;
+}) {
+  const signedUrl = useSignedAttachmentUrl(attachment.url);
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-xl bg-muted px-2 py-1 text-xs text-foreground"
+    >
+      {isImageAttachment(attachment) ? (
+        // eslint-disable-next-line @next/next/no-img-element -- Uploaded private blob URLs are user-scoped and not configured for Next image optimization.
+        <img
+          src={signedUrl}
+          alt=""
+          className="size-8 rounded-lg object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <Paperclip size={12} className="text-muted-foreground" />
+      )}
+      <span className="max-w-[180px] truncate">{attachment.filename}</span>
+      <button
+        type="button"
+        onClick={() => onRemove(attachment.url)}
+        className="ml-0.5 rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <X size={12} />
+      </button>
+    </span>
+  );
 }
 
 const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
@@ -226,31 +264,11 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-2 pb-2">
             {attachments.map((a) => (
-              <span
+              <AttachmentPill
                 key={a.url}
-                className="inline-flex items-center gap-1 rounded-xl bg-muted px-2 py-1 text-xs text-foreground"
-              >
-                {isImageAttachment(a) ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- Uploaded private blob URLs are user-scoped and not configured for Next image optimization.
-                  <img
-                    src={a.url}
-                    alt=""
-                    className="size-8 rounded-lg object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <Paperclip size={12} className="text-muted-foreground" />
-                )}
-                <span className="max-w-[180px] truncate">{a.filename}</span>
-                <button
-                  type="button"
-                  onClick={() => removeAttachment(a.url)}
-                  className="ml-0.5 rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <X size={12} />
-                </button>
-              </span>
+                attachment={a}
+                onRemove={removeAttachment}
+              />
             ))}
           </div>
         )}

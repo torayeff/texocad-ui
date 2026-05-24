@@ -187,7 +187,6 @@ export default function StudioClient() {
         "Edit the active sketch using this mask.",
         `Input image: ${activeSketchExport.blobName}`,
         `Mask: ${uploadedMask.url}`,
-        `![${uploadedMask.filename}](${uploadedMask.url})`,
         `Instructions: ${prompt}`,
       ].join("\n"));
 
