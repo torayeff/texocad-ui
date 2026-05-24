@@ -22,6 +22,10 @@ import ThreadHistoryPanel from "@/app/studio/_features/chat/_components/thread-h
 import ChatInput from "@/app/studio/_features/chat/_components/chat-input";
 import { ChatErrorBanner, ChatNotFoundState } from "@/app/studio/_features/chat/_components/chat-error-state";
 import { ChatMessagesPanel } from "@/app/studio/_features/chat/_components/chat-messages-panel";
+import {
+  NewChatConfirmationDialog,
+  type NewChatConfirmationIntent,
+} from "@/app/studio/_features/chat/_components/new-chat-confirmation-dialog";
 
 interface ChatProps {
   assistantId: StudioAssistantId;
@@ -74,6 +78,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
   const [hasChosenMode, setHasChosenMode] = useState(urlThreadId !== null);
+  const [newChatConfirmationIntent, setNewChatConfirmationIntent] = useState<NewChatConfirmationIntent | null>(null);
 
   const handleModelChange = useCallback((modelId: string) => {
     if (!MODELS.some((m) => m.id === modelId)) return;
@@ -124,6 +129,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   });
 
   const isEmpty = messageRows.length === 0 && !shouldRenderPendingHumanMessage;
+  const hasActiveMode = hasChosenMode || urlThreadId !== null;
   const lastMessageType = shouldRenderPendingHumanMessage
     ? "human"
     : messageRows[messageRows.length - 1]?.messageType;
@@ -172,13 +178,34 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     submitMessage: (content: string) => sendMessage(content),
   }), [sendMessage]);
 
-  const handleModeSelect = useCallback((mode: StudioAssistantId) => {
-    onModeChange(mode);
+  const startNewChat = useCallback((mode: StudioAssistantId) => {
+    setHistoryOpen(false);
+    setPendingHumanMessage(null);
+    timer.reset();
+    setDraftConversationKey((key) => key + 1);
     setHasChosenMode(true);
+    handleThreadIdChange(null);
+    onClearViewerRef.current();
+    onModeChange(mode);
     requestAnimationFrame(() => {
       chatInputRef.current?.focus();
     });
-  }, [onModeChange]);
+  }, [timer, onModeChange, handleThreadIdChange]);
+
+  const hasStartedChat = !isEmpty || urlThreadId !== null;
+
+  const handleModeSelect = useCallback((mode: StudioAssistantId) => {
+    if (mode === assistantId && hasActiveMode) return;
+    if (!hasStartedChat) {
+      onModeChange(mode);
+      setHasChosenMode(true);
+      requestAnimationFrame(() => {
+        chatInputRef.current?.focus();
+      });
+      return;
+    }
+    setNewChatConfirmationIntent({ kind: "mode", mode });
+  }, [assistantId, hasActiveMode, hasStartedChat, onModeChange]);
 
   const handlePromptSelect = useCallback((prompt: string) => {
     chatInputRef.current?.setPrompt(prompt);
@@ -209,9 +236,21 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   }, [timer, history, urlThreadId, onModeChange, handleThreadIdChange]);
 
   const handleNewChat = useCallback(() => {
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.delete("thread_id");
-    window.open(nextUrl.toString(), "_blank", "noopener,noreferrer");
+    if (!hasStartedChat) {
+      startNewChat(hasActiveMode ? assistantId : CAD_ASSISTANT_ID);
+      return;
+    }
+    setNewChatConfirmationIntent({ kind: "new" });
+  }, [assistantId, hasActiveMode, hasStartedChat, startNewChat]);
+
+  const handleConfirmNewChat = useCallback(() => {
+    const intent = newChatConfirmationIntent;
+    setNewChatConfirmationIntent(null);
+    startNewChat(intent?.kind === "mode" ? intent.mode : (hasActiveMode ? assistantId : CAD_ASSISTANT_ID));
+  }, [assistantId, hasActiveMode, newChatConfirmationIntent, startNewChat]);
+
+  const handleCancelNewChat = useCallback(() => {
+    setNewChatConfirmationIntent(null);
   }, []);
 
   const toggleHistory = useCallback(() => {
@@ -225,7 +264,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     ? (error instanceof Error ? error.message : String(error))
     : null;
   const isNotFound = errorMessage?.includes("HTTP 404");
-  const hasActiveMode = hasChosenMode || urlThreadId !== null;
 
   if (isNotFound) {
     return <ChatNotFoundState onStartNew={() => router.replace(pathname)} />;
@@ -291,6 +329,13 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
             onModelChange={handleModelChange}
           />
         )}
+        {newChatConfirmationIntent ? (
+          <NewChatConfirmationDialog
+            intent={newChatConfirmationIntent}
+            onCancel={handleCancelNewChat}
+            onConfirm={handleConfirmNewChat}
+          />
+        ) : null}
       </div>
     </div>
   );

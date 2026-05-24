@@ -1,5 +1,5 @@
 import React from "react";
-import { FileClock, MessageSquarePlus } from "lucide-react";
+import { FileClock, MessageSquarePlus, X } from "lucide-react";
 
 import { cn } from "@/app/lib/cn";
 import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
@@ -67,7 +67,7 @@ export function ChatHeader({ activeMode, historyOpen, onModeChange, onNewChat, o
           tooltip={historyOpen ? "Close history" : "History"}
           className={cn(toolButtonClass, historyOpen && activeControlClass)}
         >
-          <FileClock size={14} strokeWidth={1.75} />
+          {historyOpen ? <X size={14} strokeWidth={1.75} /> : <FileClock size={14} strokeWidth={1.75} />}
         </ChatHeaderActionButton>
       </div>
     </div>
