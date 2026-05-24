@@ -20,6 +20,7 @@ interface SketchViewerControlsProps {
   canMask: boolean;
   canShare: boolean;
   canShowRevisions: boolean;
+  isDownloading: boolean;
   isLatestRevisionSelected: boolean;
   isMaskEditorOpen: boolean;
   isMaskSubmitting: boolean;
@@ -48,6 +49,7 @@ export function SketchViewerControls({
   canMask,
   canShare,
   canShowRevisions,
+  isDownloading,
   isLatestRevisionSelected,
   isMaskEditorOpen,
   isMaskSubmitting,
@@ -118,11 +120,16 @@ export function SketchViewerControls({
         <ViewerToolButton
           type="button"
           onClick={onDownload}
+          disabled={isDownloading}
           tooltip="Download"
           aria-label="Download sketch"
           className={toolButtonClass}
         >
-          <Download size={14} strokeWidth={1.75} />
+          {isDownloading ? (
+            <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
+          ) : (
+            <Download size={14} strokeWidth={1.75} />
+          )}
         </ViewerToolButton>
       ) : null}
 

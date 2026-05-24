@@ -11,6 +11,7 @@ import { SketchViewerShareDialogs } from "@/app/components/sketch-viewer/_compon
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
 import { useFloatingPanel } from "@/app/components/viewer/use-floating-panel";
 import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
+import { saveModelFile } from "@/app/components/model-viewer/_lib/model-viewer-actions";
 import type {
   ShareSketchRevision,
   SketchMaskComposerState,
@@ -42,6 +43,16 @@ interface SketchViewerProps {
   variant?: "studio" | "shared";
 }
 
+async function downloadSketchSource(source: SketchSource) {
+  const response = await fetch(source.url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch sketch: ${response.status}`);
+  }
+
+  const buffer = await response.arrayBuffer();
+  saveModelFile(buffer, source.label, response.headers.get("Content-Type") ?? "application/octet-stream");
+}
+
 export default function SketchViewer({
   isMaskSubmitting = false,
   onSubmitMaskEdit,
@@ -55,7 +66,7 @@ export default function SketchViewer({
   const [hasMask, setHasMask] = useState(false);
   const [maskError, setMaskError] = useState<string | null>(null);
   const [revisionsOpen, setRevisionsOpen] = useState(false);
-  const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const maskEditorRef = useRef<SketchMaskEditorHandle | null>(null);
   const {
     didCopyShareUrl,
@@ -91,8 +102,12 @@ export default function SketchViewer({
   );
 
   const handleDownload = () => {
-    if (!source) return;
-    downloadLinkRef.current?.click();
+    if (!source || isDownloading) return;
+
+    setIsDownloading(true);
+    void downloadSketchSource(source)
+      .catch(() => window.alert("Could not download the sketch."))
+      .finally(() => setIsDownloading(false));
   };
 
   const toggleRevisions = (trigger: HTMLButtonElement) => {
@@ -216,6 +231,7 @@ export default function SketchViewer({
           isLatestRevisionSelected={revisions?.isLatestRevisionSelected ?? true}
           isMaskEditorOpen={isMaskEditorOpen}
           isMaskSubmitting={isMaskSubmitting}
+          isDownloading={isDownloading}
           isSharedView={isSharedView}
           isSharing={isSharing}
           latestRevisionKey={latestRevisionKey}
@@ -232,17 +248,6 @@ export default function SketchViewer({
           onSelectRevision={revisions?.onSelectRevision ?? closeRevisions}
           onShare={handleOpenShareDialog}
           onToggleRevisions={toggleRevisions}
-        />
-      ) : null}
-
-      {source ? (
-        <a
-          ref={downloadLinkRef}
-          className="hidden"
-          href={source.url}
-          download={source.label}
-          aria-hidden="true"
-          tabIndex={-1}
         />
       ) : null}
 
