@@ -2,6 +2,7 @@ import {
   BlobSASPermissions,
   generateBlobSASQueryParameters,
 } from "@azure/storage-blob";
+import type { StorageSharedKeyCredential } from "@azure/storage-blob";
 import { ulid } from "ulidx";
 
 import {
@@ -58,6 +59,27 @@ export function resolveBlobLookup(blobUrl: string | null, blobNameParam: string 
     blobName: pathParts.slice(1).join("/"),
     blobUrl,
   };
+}
+
+export function generateSignedReadUrl(options: {
+  blobHost: string;
+  blobName: string;
+  containerName: string;
+  credential: StorageSharedKeyCredential;
+  expiryMs: number;
+}) {
+  const blobUrl = `https://${options.blobHost}/${options.containerName}/${options.blobName}`;
+  const sasToken = generateBlobSASQueryParameters(
+    {
+      containerName: options.containerName,
+      blobName: options.blobName,
+      permissions: BlobSASPermissions.parse("r"),
+      expiresOn: new Date(Date.now() + options.expiryMs),
+    },
+    options.credential,
+  ).toString();
+
+  return `${blobUrl}?${sasToken}`;
 }
 
 export function signedReadUrl(blobUrl: string, blobName: string) {

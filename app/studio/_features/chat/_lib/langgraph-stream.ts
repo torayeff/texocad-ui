@@ -2,6 +2,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 
 import type { SubagentView } from "@/app/studio/_features/chat/_lib/message-rows";
 import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
+import { isRecord } from "@/app/lib/type-guards";
 
 export interface CreatedRunIds {
   runId: string | null;
@@ -31,10 +32,6 @@ interface ThreadRun {
 
 const EMPTY_TOOL_CALLS: StreamToolCall[] = [];
 const EMPTY_SUBAGENTS: SubagentView[] = [];
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function stringValue(record: Record<string, unknown>, ...keys: string[]) {
   for (const key of keys) {

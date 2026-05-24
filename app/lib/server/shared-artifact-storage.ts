@@ -1,33 +1,25 @@
 import {
-  BlobSASPermissions,
   BlobServiceClient,
-  generateBlobSASQueryParameters,
 } from "@azure/storage-blob";
 
 import { isStepExport, STEP_CONTENT_TYPE } from "@/app/lib/artifact-formats";
-import { contentTypeForLocalModelShare, normalizeLocalModelShareExtension } from "@/app/lib/model-formats";
+import { contentTypeForLocalModelShare, extensionFromName, normalizeLocalModelShareExtension } from "@/app/lib/model-formats";
+import { generateSignedReadUrl } from "@/app/lib/server/blob-storage";
 import { publicStorageConfig } from "@/app/lib/server/storage-auth";
 import type { ShareExportArtifactInput, ShareKind } from "@/app/lib/server/shared-artifact-validation";
 
 const PUBLIC_SHARED_PREFIX = "public/shared";
 const READ_SAS_EXPIRY_MS = 10 * 60 * 1000;
 
-function extensionFromFilename(filename: string) {
-  const lowerFilename = filename.toLowerCase();
-  if (lowerFilename.endsWith(".stp")) return ".stp";
-  if (lowerFilename.endsWith(".step")) return ".step";
-  if (lowerFilename.endsWith(".stl")) return ".stl";
-  if (lowerFilename.endsWith(".glb")) return ".glb";
-  if (lowerFilename.endsWith(".gltf")) return ".gltf";
-  if (lowerFilename.endsWith(".jpg")) return ".jpg";
-  if (lowerFilename.endsWith(".jpeg")) return ".jpeg";
-  if (lowerFilename.endsWith(".webp")) return ".webp";
-  if (lowerFilename.endsWith(".png")) return ".png";
-  return ".step";
+const KNOWN_EXTENSIONS = new Set(["step", "stp", "stl", "glb", "gltf", "jpg", "jpeg", "webp", "png"]);
+
+function dotExtensionFromFilename(filename: string) {
+  const ext = extensionFromName(filename);
+  return KNOWN_EXTENSIONS.has(ext) ? `.${ext}` : ".step";
 }
 
 export function sharedArtifactBlobName(kind: ShareKind, slug: string, filename: string) {
-  return `${PUBLIC_SHARED_PREFIX}/${slug}/${kind}${extensionFromFilename(filename)}`;
+  return `${PUBLIC_SHARED_PREFIX}/${slug}/${kind}${dotExtensionFromFilename(filename)}`;
 }
 
 function contentTypeForModelArtifact(artifact: ShareExportArtifactInput) {
@@ -61,24 +53,15 @@ function blobServiceClient() {
   return BlobServiceClient.fromConnectionString(publicStorageConfig().connectionString);
 }
 
-function privateBlobUrl(blobName: string) {
-  const { blobHost, privateContainerName } = publicStorageConfig();
-  return `https://${blobHost}/${privateContainerName}/${blobName}`;
-}
-
 function privateReadSasUrl(blobName: string) {
-  const { credential, privateContainerName } = publicStorageConfig();
-  const sasToken = generateBlobSASQueryParameters(
-    {
-      blobName,
-      containerName: privateContainerName,
-      expiresOn: new Date(Date.now() + READ_SAS_EXPIRY_MS),
-      permissions: BlobSASPermissions.parse("r"),
-    },
+  const { credential, blobHost, privateContainerName } = publicStorageConfig();
+  return generateSignedReadUrl({
+    blobHost,
+    blobName,
+    containerName: privateContainerName,
     credential,
-  ).toString();
-
-  return `${privateBlobUrl(blobName)}?${sasToken}`;
+    expiryMs: READ_SAS_EXPIRY_MS,
+  });
 }
 
 export async function copyPrivateArtifactToPublic(input: {

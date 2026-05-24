@@ -1,4 +1,5 @@
 import { isSketchImageExport, isStepExport } from "@/app/lib/artifact-formats";
+import { isRecord } from "@/app/lib/type-guards";
 import { hashUserId, isAuthorizedUserBlob } from "@/app/lib/server/storage-auth";
 
 export interface ShareExportArtifactInput {
@@ -21,10 +22,6 @@ export type ShareKind = "model" | "sketch";
 
 const MAX_SHARE_NAME_LENGTH = 80;
 const MAX_BLOB_NAME_LENGTH = 1024;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function parseShareExportArtifact(value: Record<string, unknown>): ShareExportArtifactInput | null {
   const { blobName, checksum, contentType, filename } = value;

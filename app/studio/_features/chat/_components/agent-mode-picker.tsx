@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback } from "react";
 import type { ComponentType } from "react";
 import { Box, Check, ChevronDown, Image } from "lucide-react";
 
@@ -11,6 +11,7 @@ import {
   chatGlassClass,
   controlMenuItemClass,
 } from "@/app/studio/_features/chat/_lib/chat-styles";
+import { useDropdown } from "@/app/studio/_features/chat/_hooks/use-dropdown";
 
 interface AgentModeOption {
   icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
@@ -41,39 +42,20 @@ function activeModeOption(activeMode: StudioAssistantId) {
 }
 
 export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { isOpen, containerRef, toggle, close } = useDropdown();
   const selected = activeModeOption(activeMode);
   const SelectedIcon = selected.icon;
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClick = (event: MouseEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [isOpen]);
-
   const handleSelect = useCallback((mode: StudioAssistantId) => {
     onModeChange(mode);
-    setIsOpen(false);
-  }, [onModeChange]);
+    close();
+  }, [onModeChange, close]);
 
   return (
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        onClick={() => setIsOpen((value) => !value)}
+        onClick={() => toggle()}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className="-ml-2.5 flex h-8 items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"

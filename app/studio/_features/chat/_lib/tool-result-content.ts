@@ -4,9 +4,7 @@ import type {
   ToolResultTextBlock,
 } from "@/app/studio/_features/chat/_types/chat";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
+import { isRecord } from "@/app/lib/type-guards";
 
 function getResultContent(result: unknown): unknown[] {
   if (!isRecord(result) || !("content" in result)) return [];

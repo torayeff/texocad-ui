@@ -132,7 +132,7 @@ function collectStepEntityNames(content: string, entityName: string, argumentNam
 }
 
 function uniqueNames(names: string[]) {
-  return names.filter((name, index) => names.indexOf(name) === index);
+  return [...new Set(names)];
 }
 
 function parseStepDisplayNameCandidates(buffer: ArrayBuffer): StepDisplayNameCandidates {

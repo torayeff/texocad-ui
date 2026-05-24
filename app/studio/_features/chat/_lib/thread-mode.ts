@@ -5,16 +5,13 @@ import {
   designRevisionsFromMessages,
   sketchRevisionsFromMessages,
 } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
+import { isRecord } from "@/app/lib/type-guards";
 
 export const THREAD_MODE_METADATA_KEY = "texocad_mode";
 
 interface ThreadMetadata {
   metadata?: unknown;
   values?: unknown;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 function isStudioAssistantId(value: unknown): value is StudioAssistantId {

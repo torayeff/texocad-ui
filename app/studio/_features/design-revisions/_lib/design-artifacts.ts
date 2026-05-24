@@ -5,12 +5,10 @@ import type {
   TexocadRevisionArtifact,
 } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 
+import { isRecord } from "@/app/lib/type-guards";
+
 const DESIGN_REVISION_TYPE = "texocad.design_revision";
 const SKETCH_REVISION_TYPE = "texocad.sketch_revision";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function isStoredBlobArtifact(value: unknown): value is StoredBlobArtifact {
   if (!isRecord(value)) return false;
@@ -53,8 +51,8 @@ function isRevisionArtifact<TType extends TexocadRevisionArtifact["type"]>(
 }
 
 function artifactFromMessage(message: unknown): TexocadRevisionArtifact | null {
-  const rawMessage = message as unknown as Record<string, unknown>;
-  const additionalKwargs = rawMessage.additional_kwargs ?? rawMessage.additionalKwargs;
+  if (!isRecord(message)) return null;
+  const additionalKwargs = message.additional_kwargs ?? message.additionalKwargs;
   if (!isRecord(additionalKwargs)) return null;
 
   const artifact = additionalKwargs.texocad_artifact;
@@ -79,10 +77,10 @@ export function sketchRevisionsFromMessages(messages: readonly unknown[]): Sketc
   return revisions;
 }
 
-export function latestDesignRevision(
-  revisions: DesignRevisionArtifact[],
-): DesignRevisionArtifact | null {
-  let latest: DesignRevisionArtifact | null = null;
+export function latestRevision<T extends { revisionNumber: number }>(
+  revisions: T[],
+): T | null {
+  let latest: T | null = null;
   for (const revision of revisions) {
     if (!latest || revision.revisionNumber > latest.revisionNumber) {
       latest = revision;
@@ -91,14 +89,10 @@ export function latestDesignRevision(
   return latest;
 }
 
-export function latestSketchRevision(
-  revisions: SketchRevisionArtifact[],
-): SketchRevisionArtifact | null {
-  let latest: SketchRevisionArtifact | null = null;
-  for (const revision of revisions) {
-    if (!latest || revision.revisionNumber > latest.revisionNumber) {
-      latest = revision;
-    }
-  }
-  return latest;
+export function latestDesignRevision(revisions: DesignRevisionArtifact[]) {
+  return latestRevision(revisions);
+}
+
+export function latestSketchRevision(revisions: SketchRevisionArtifact[]) {
+  return latestRevision(revisions);
 }

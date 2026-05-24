@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
 import { cn } from "@/app/lib/cn";
@@ -10,6 +10,7 @@ import {
   chatGlassClass,
   controlMenuItemClass,
 } from "@/app/studio/_features/chat/_lib/chat-styles";
+import { useDropdown } from "@/app/studio/_features/chat/_hooks/use-dropdown";
 
 interface ModelPickerProps {
   value: string;
@@ -18,35 +19,16 @@ interface ModelPickerProps {
 }
 
 export default function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { isOpen, containerRef, toggle, close } = useDropdown();
 
   const selected = MODELS.find((m) => m.id === value) ?? MODELS[0];
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [isOpen]);
 
   const handleSelect = useCallback(
     (modelId: string) => {
       onChange(modelId);
-      setIsOpen(false);
+      close();
     },
-    [onChange],
+    [onChange, close],
   );
 
   return (
@@ -54,7 +36,7 @@ export default function ModelPicker({ value, onChange, disabled }: ModelPickerPr
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={() => toggle()}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         title="Select model"

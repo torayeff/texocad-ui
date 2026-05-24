@@ -3,28 +3,9 @@
 import { useCallback, useRef, useState } from "react";
 
 import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
+import type { ShareExportArtifact, ShareResponse, ShareRevision } from "@/app/types/share-artifact";
 
-interface ShareArtifact {
-  blobName: string;
-  checksum: string;
-  contentType: string;
-  filename: string;
-}
-
-interface ShareRevision {
-  designId: string;
-  exportArtifact: ShareArtifact;
-  revisionNumber: number;
-}
-
-interface ShareResponse {
-  sharedArtifact?: SharedArtifactResponse;
-}
-
-interface SharedArtifactResponse {
-  shareUrl: string;
-  slug: string;
-}
+export type { ShareExportArtifact, ShareRevision };
 
 interface ShareResult {
   revisionKey: string | null;

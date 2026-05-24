@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import {
   SketchMaskEditor,
-  type SketchMaskEditorHandle,
 } from "@/app/components/sketch-viewer/_components/sketch-mask-editor";
 import { SketchViewerControls } from "@/app/components/sketch-viewer/_components/sketch-viewer-controls";
 import { SketchViewerShareDialogs } from "@/app/components/sketch-viewer/_components/sketch-viewer-share-dialogs";
+import { useSketchDownload } from "@/app/components/sketch-viewer/_hooks/use-sketch-download";
+import { useSketchMaskEditor } from "@/app/components/sketch-viewer/_hooks/use-sketch-mask-editor";
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
 import { useFloatingPanel } from "@/app/components/viewer/use-floating-panel";
 import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
-import { saveBrowserFile } from "@/app/lib/browser-downloads";
 import type {
   ShareSketchRevision,
   SketchMaskComposerState,
@@ -43,16 +43,6 @@ interface SketchViewerProps {
   variant?: "studio" | "shared";
 }
 
-async function downloadSketchSource(source: SketchSource) {
-  const response = await fetch(source.url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch sketch: ${response.status}`);
-  }
-
-  const buffer = await response.arrayBuffer();
-  saveBrowserFile(buffer, source.label, response.headers.get("Content-Type") ?? "application/octet-stream", "sketch");
-}
-
 export default function SketchViewer({
   isMaskSubmitting = false,
   onSubmitMaskEdit,
@@ -62,13 +52,23 @@ export default function SketchViewer({
   source,
   variant = "studio",
 }: SketchViewerProps) {
-  const [isMaskEditorOpen, setIsMaskEditorOpen] = useState(false);
-  const [hasMask, setHasMask] = useState(false);
-  const [maskError, setMaskError] = useState<string | null>(null);
   const [revisionsOpen, setRevisionsOpen] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
-  const maskEditorRef = useRef<SketchMaskEditorHandle | null>(null);
+
+  const { isDownloading, downloadError, handleDownload } = useSketchDownload(source);
+
+  const canMask = source !== null && onSubmitMaskEdit !== undefined;
+  const {
+    handleMaskChange,
+    handleOpenMaskEditor,
+    isMaskEditorOpen,
+    maskEditorRef,
+  } = useSketchMaskEditor({
+    isMaskSubmitting,
+    onMaskEditorChange,
+    onSubmitMaskEdit,
+    canMask,
+  });
+
   const {
     didCopyShareUrl,
     handleCloseShareDialog,
@@ -94,23 +94,12 @@ export default function SketchViewer({
   const canShowRevisions = revisionOptions.length > 0 && revisions !== undefined;
   const latestRevisionKey = revisionOptions[0]?.key ?? null;
   const activeRevision = revisionOptions.find((revision) => revision.key === revisions?.activeRevisionKey) ?? null;
-  const canMask = source !== null && onSubmitMaskEdit !== undefined;
   const hasSource = source !== null;
   const isSharedView = variant === "shared";
   const { activeTriggerRef, panelRef, panelStyle, railRef, resetPanelPosition } = useFloatingPanel(
     hasSource && revisionsOpen && canShowRevisions,
     [canShowRevisions, revisionsOpen, revisionOptions.length, revisions?.activeRevisionKey],
   );
-
-  const handleDownload = () => {
-    if (!source || isDownloading) return;
-
-    setDownloadError(null);
-    setIsDownloading(true);
-    void downloadSketchSource(source)
-      .catch(() => setDownloadError("Could not download the sketch."))
-      .finally(() => setIsDownloading(false));
-  };
 
   const toggleRevisions = (trigger: HTMLButtonElement) => {
     const nextOpen = !revisionsOpen;
@@ -120,80 +109,6 @@ export default function SketchViewer({
   };
 
   const closeRevisions = () => setRevisionsOpen(false);
-
-  const handleCloseMaskEditor = useCallback(() => {
-    if (isMaskSubmitting) return;
-    setIsMaskEditorOpen(false);
-    setHasMask(false);
-    setMaskError(null);
-  }, [isMaskSubmitting]);
-
-  const handleSubmitMaskEdit = useCallback(async (prompt: string) => {
-    const trimmedPrompt = prompt.trim();
-    if (!trimmedPrompt) {
-      const message = "Describe what should change inside the masked area.";
-      setMaskError(message);
-      throw new Error(message);
-    }
-
-    try {
-      const mask = await maskEditorRef.current?.createMaskFile();
-      if (!mask) {
-        throw new Error("Brush the area you want to edit first.");
-      }
-
-      if (!onSubmitMaskEdit) {
-        throw new Error("Mask editing is not available.");
-      }
-
-      await onSubmitMaskEdit({ prompt: trimmedPrompt, mask });
-      setIsMaskEditorOpen(false);
-      setHasMask(false);
-      setMaskError(null);
-      onMaskEditorChange?.(null);
-    } catch (submitError) {
-      setMaskError(submitError instanceof Error ? submitError.message : "Could not submit masked edit.");
-      throw submitError;
-    }
-  }, [onMaskEditorChange, onSubmitMaskEdit]);
-
-  const handleMaskChange = useCallback((nextHasMask: boolean) => {
-    setHasMask(nextHasMask);
-    if (nextHasMask) {
-      setMaskError(null);
-    }
-  }, []);
-
-  const handleOpenMaskEditor = () => {
-    closeRevisions();
-    setMaskError(null);
-    setIsMaskEditorOpen(true);
-  };
-
-  useEffect(() => {
-    if (!isMaskEditorOpen || !canMask) {
-      onMaskEditorChange?.(null);
-      return;
-    }
-
-    onMaskEditorChange?.({
-      canSubmit: hasMask,
-      clear: () => maskEditorRef.current?.clear(),
-      close: handleCloseMaskEditor,
-      error: maskError,
-      isSubmitting: isMaskSubmitting,
-      submit: handleSubmitMaskEdit,
-    });
-  }, [
-    canMask,
-    handleCloseMaskEditor,
-    handleSubmitMaskEdit,
-    hasMask,
-    isMaskEditorOpen,
-    isMaskSubmitting,
-    maskError,
-    onMaskEditorChange,
-  ]);
 
   return (
     <section
@@ -252,7 +167,7 @@ export default function SketchViewer({
           revisionsOpen={revisionsOpen}
           onCloseRevisions={closeRevisions}
           onDownload={handleDownload}
-          onOpenMaskEditor={handleOpenMaskEditor}
+          onOpenMaskEditor={() => handleOpenMaskEditor(closeRevisions)}
           onPublicShare={publicShareDialog.handleOpenShareDialog}
           onSelectLatestRevision={revisions?.onSelectLatestRevision ?? closeRevisions}
           onSelectRevision={revisions?.onSelectRevision ?? closeRevisions}

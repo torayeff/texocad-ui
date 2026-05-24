@@ -34,15 +34,7 @@ export interface ViewerRevisionOption {
   canView: boolean;
 }
 
-export interface ShareModelArtifact {
-  filename: string;
-  blobName: string;
-  contentType: string;
-  checksum: string;
-}
+import type { ShareExportArtifact, ShareRevision } from "@/app/types/share-artifact";
 
-export interface ShareRevision {
-  designId: string;
-  exportArtifact: ShareModelArtifact;
-  revisionNumber: number;
-}
+export type ShareModelArtifact = ShareExportArtifact;
+export type { ShareRevision };

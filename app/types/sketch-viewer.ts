@@ -26,15 +26,7 @@ export interface SketchRevisionOption {
   thumbnailUrl: string | null;
 }
 
-export interface ShareSketchArtifact {
-  filename: string;
-  blobName: string;
-  contentType: string;
-  checksum: string;
-}
+import type { ShareExportArtifact, ShareRevision } from "@/app/types/share-artifact";
 
-export interface ShareSketchRevision {
-  designId: string;
-  exportArtifact: ShareSketchArtifact;
-  revisionNumber: number;
-}
+export type ShareSketchArtifact = ShareExportArtifact;
+export type ShareSketchRevision = ShareRevision;

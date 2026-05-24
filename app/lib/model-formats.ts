@@ -1,6 +1,8 @@
 import type { LocalModelShareExtension } from "@/app/types/local-model-share";
 import type { ModelFormat } from "@/app/types/model-viewer";
 
+import { slugify } from "@/app/lib/slugify";
+
 export const localModelShareExtensions: LocalModelShareExtension[] = ["step", "stl", "glb", "gltf"];
 export const maxLocalModelShareUploadBytes = 100 * 1024 * 1024;
 export const maxLocalModelShareApiBodyBytes = 8 * 1024;
@@ -24,14 +26,7 @@ export function extensionFromName(name: string) {
 }
 
 export function slugifyLocalModelShareName(value: string) {
-  return value
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, maxLocalModelShareSlugChars)
-    .replace(/-+$/g, "");
+  return slugify(value, { maxLength: maxLocalModelShareSlugChars, normalize: true });
 }
 
 export function normalizeLocalModelShareExtension(name: string) {
