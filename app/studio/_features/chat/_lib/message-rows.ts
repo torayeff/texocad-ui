@@ -3,21 +3,14 @@ import { getMessageTextContent, getReasoningContent } from "@/app/studio/_featur
 import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 import type { SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
 
-export interface MessageUsage {
-  inputTokens: number;
-  outputTokens: number;
-  reasoningTokens?: number;
-  runtimeSeconds?: number;
-}
-
 export interface MessageRow {
   rowKey: string;
   messageType: "human" | "ai";
   textContent: string;
   thinkingContent: string;
   agentName?: string;
-  usage?: MessageUsage;
   isStreaming: boolean;
+  runtimeSeconds?: number;
   startedAtMs?: number;
   toolCalls: StreamToolCall[];
   toolCallsSignature: string;
@@ -40,30 +33,6 @@ export function getMessageRowKey(
 ): string {
   if (messageId) return `${conversationScope}:${messageId}`;
   return `${conversationScope}:message-${index}`;
-}
-
-export function getMessageUsage(
-  message: AIMessage,
-  runtimeSeconds?: number,
-): MessageUsage | undefined {
-  const usage = message.usage_metadata;
-
-  if (!usage) {
-    if (runtimeSeconds === undefined) return undefined;
-    return {
-      inputTokens: 0,
-      outputTokens: 0,
-      runtimeSeconds,
-    };
-  }
-
-  return {
-    inputTokens: usage.input_tokens || 0,
-    outputTokens: usage.output_tokens || 0,
-    reasoningTokens: usage.output_token_details?.reasoning || 0,
-    runtimeSeconds: runtimeSeconds
-      ?? (usage as Record<string, unknown>).runtimeSeconds as number | undefined,
-  };
 }
 
 export function getToolCallsSignature(toolCalls: StreamToolCall[]): string {

@@ -1,11 +1,6 @@
 import React from "react";
 import { Bot, Loader2, CircleCheck } from "lucide-react";
 import { PanelTimer } from "@/app/studio/_features/chat/_components/panel-timer";
-import type { MessageUsage } from "@/app/studio/_features/chat/_lib/message-rows";
-
-function formatNumber(value: number): string {
-  return value.toLocaleString("en-US");
-}
 
 export function AIPanel({
   agentName,
@@ -13,7 +8,7 @@ export function AIPanel({
   statusLabel,
   isStreaming,
   timerStartedAtMs,
-  usage,
+  runtimeSeconds,
   children,
 }: {
   agentName?: string;
@@ -21,7 +16,7 @@ export function AIPanel({
   statusLabel: string | null;
   isStreaming: boolean;
   timerStartedAtMs?: number;
-  usage?: MessageUsage;
+  runtimeSeconds?: number;
   children: React.ReactNode;
 }) {
   return (
@@ -42,7 +37,7 @@ export function AIPanel({
             <PanelTimer
               active={isStreaming}
               startedAtMs={timerStartedAtMs}
-              fixedSeconds={!isStreaming ? usage?.runtimeSeconds : undefined}
+              fixedSeconds={!isStreaming ? runtimeSeconds : undefined}
             />
             {isStreaming ? (
               <Loader2 size={13} className="animate-spin text-success" />
@@ -54,13 +49,6 @@ export function AIPanel({
       )}
       <div className={hideHeader ? "mt-1 flex flex-col gap-3" : "mt-2 flex flex-col gap-3 pl-5"}>
         {children}
-        {process.env.NODE_ENV === "development" && !isStreaming && (usage?.inputTokens || usage?.outputTokens) ? (
-          <div className="text-[11px] text-muted-foreground/70">
-            {formatNumber(usage?.inputTokens ?? 0)} input ·{" "}
-            {formatNumber(usage?.outputTokens ?? 0)} output tokens
-            {usage?.reasoningTokens ? ` · ${formatNumber(usage.reasoningTokens)} reasoning` : ""}
-          </div>
-        ) : null}
       </div>
     </div>
   );

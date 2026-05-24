@@ -142,18 +142,7 @@ export const SubagentCard = React.memo(function SubagentCard({
   const cachedDetails = React.useMemo(() => {
     const { text: displayContent, thinking } = getDisplayContent(subagent);
     const visibleToolCalls = getSubagentToolCalls(subagent);
-    const usage = subagent.messages.reduce(
-      (acc, m) => {
-        if (AIMessage.isInstance(m) && m.usage_metadata) {
-          acc.inputTokens += m.usage_metadata.input_tokens || 0;
-          acc.outputTokens += m.usage_metadata.output_tokens || 0;
-          acc.reasoningTokens += m.usage_metadata.output_token_details?.reasoning || 0;
-        }
-        return acc;
-      },
-      { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 },
-    );
-    return { displayContent, thinking, visibleToolCalls, usage };
+    return { displayContent, thinking, visibleToolCalls };
   }, [subagent]);
 
   const detailState = shouldRenderDetails ? cachedDetails : null;
@@ -214,7 +203,6 @@ export const SubagentCard = React.memo(function SubagentCard({
                 hideHeader
                 statusLabel={resolvedStatus === "running" ? "Working" : null}
                 isStreaming={resolvedStatus === "running"}
-                usage={detailState?.usage}
               >
                 {detailState?.thinking || (isStreaming && !detailState?.displayContent) ? (
                   <InlineThinkingBlock

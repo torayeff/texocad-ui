@@ -87,8 +87,8 @@ export function ChatMessagesPanel({
               textContent={row.textContent}
               thinkingContent={row.thinkingContent}
               agentName={row.agentName}
-              usage={row.usage}
               isStreaming={row.isStreaming}
+              runtimeSeconds={row.runtimeSeconds}
               startedAtMs={row.startedAtMs}
               toolCalls={row.toolCalls}
               subagents={row.subagents}

@@ -9,7 +9,6 @@ import {
   EMPTY_SUBAGENTS,
   EMPTY_TOOL_CALLS,
   getMessageRowKey,
-  getMessageUsage,
   getSubagentsSignature,
   getToolCallsSignature,
 } from "@/app/studio/_features/chat/_lib/message-rows";
@@ -118,8 +117,8 @@ export function useMessageRows({
         textContent,
         thinkingContent,
         agentName: message.name ?? "",
-        usage: getMessageUsage(message, runtimeSeconds),
         isStreaming: isActive,
+        runtimeSeconds,
         startedAtMs: isActive ? timer.getStartedAtMs(rowKey) : undefined,
         toolCalls,
         toolCallsSignature: toolCalls === EMPTY_TOOL_CALLS ? "" : getToolCallsSignature(toolCalls),

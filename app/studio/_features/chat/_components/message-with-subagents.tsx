@@ -2,7 +2,6 @@
 
 import React from "react";
 import { ChatMessage } from "@/app/studio/_features/chat/_components/chat-message";
-import type { MessageUsage } from "@/app/studio/_features/chat/_lib/message-rows";
 import { SubagentCard } from "@/app/studio/_features/chat/_components/subagent-card";
 import type { ChatMessageType, StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 import type { SubagentStatus, SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
@@ -29,20 +28,13 @@ function getSubagentStatus(
   return subagent.status;
 }
 
-function areUsageEqual(prev?: MessageUsage, next?: MessageUsage): boolean {
-  return prev?.inputTokens === next?.inputTokens
-    && prev?.outputTokens === next?.outputTokens
-    && prev?.reasoningTokens === next?.reasoningTokens
-    && prev?.runtimeSeconds === next?.runtimeSeconds;
-}
-
 interface MessageWithSubagentsProps {
   messageType: ChatMessageType;
   textContent: string;
   thinkingContent?: string;
   agentName?: string;
-  usage?: MessageUsage;
   isStreaming?: boolean;
+  runtimeSeconds?: number;
   startedAtMs?: number;
   toolCalls?: StreamToolCall[];
   subagents?: SubagentStream[];
@@ -56,8 +48,8 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
   textContent,
   thinkingContent = "",
   agentName,
-  usage,
   isStreaming = false,
+  runtimeSeconds,
   startedAtMs,
   toolCalls = [],
   subagents = [],
@@ -82,8 +74,8 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
         textContent={textContent}
         thinkingContent={thinkingContent}
         agentName={agentName}
-        usage={usage}
         isStreaming={isStreaming}
+        runtimeSeconds={runtimeSeconds}
         startedAtMs={startedAtMs}
         toolCalls={visibleToolCalls}
         forcePanelShell={messageType === "ai" && subagents.length > 0}
@@ -109,8 +101,8 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
   && prevProps.textContent === nextProps.textContent
   && prevProps.thinkingContent === nextProps.thinkingContent
   && prevProps.agentName === nextProps.agentName
-  && areUsageEqual(prevProps.usage, nextProps.usage)
   && prevProps.isStreaming === nextProps.isStreaming
+  && prevProps.runtimeSeconds === nextProps.runtimeSeconds
   && prevProps.startedAtMs === nextProps.startedAtMs
   && prevProps.renderMarkdown === nextProps.renderMarkdown
   && prevProps.toolCallsSignature === nextProps.toolCallsSignature

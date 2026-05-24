@@ -5,7 +5,6 @@ import { AIPanel } from "@/app/studio/_features/chat/_components/ai-panel";
 import { ToolCallCard } from "@/app/studio/_features/chat/_components/tool-call-card";
 import { ToolPreviewCard } from "@/app/studio/_features/chat/_components/tool-preview-card";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_features/chat/_components/inline-blocks";
-import type { MessageUsage } from "@/app/studio/_features/chat/_lib/message-rows";
 import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_lib/signed-attachment-url";
 import type { ChatMessageType, StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 
@@ -14,8 +13,8 @@ interface ChatMessageProps {
   textContent: string;
   thinkingContent?: string;
   agentName?: string;
-  usage?: MessageUsage;
   isStreaming?: boolean;
+  runtimeSeconds?: number;
   startedAtMs?: number;
   toolCalls?: StreamToolCall[];
   forcePanelShell?: boolean;
@@ -177,8 +176,8 @@ function AIMessageView({
   agentName = "",
   textContent,
   thinkingContent = "",
-  usage,
   isStreaming,
+  runtimeSeconds,
   startedAtMs,
   toolCalls,
   forcePanelShell,
@@ -188,8 +187,8 @@ function AIMessageView({
   agentName?: string;
   textContent: string;
   thinkingContent?: string;
-  usage?: MessageUsage;
   isStreaming: boolean;
+  runtimeSeconds?: number;
   startedAtMs?: number;
   toolCalls: StreamToolCall[];
   forcePanelShell: boolean;
@@ -212,7 +211,7 @@ function AIMessageView({
       statusLabel={statusLabel}
       isStreaming={isStreaming}
       timerStartedAtMs={startedAtMs}
-      usage={usage}
+      runtimeSeconds={runtimeSeconds}
     >
       {hasThinking || (isStreaming && !hasText) ? (
         <InlineThinkingBlock
@@ -251,8 +250,8 @@ export const ChatMessage = React.memo(function ChatMessage({
   textContent,
   thinkingContent = "",
   agentName,
-  usage,
   isStreaming = false,
+  runtimeSeconds,
   startedAtMs,
   toolCalls = [],
   forcePanelShell = false,
@@ -268,8 +267,8 @@ export const ChatMessage = React.memo(function ChatMessage({
       agentName={agentName}
       textContent={textContent}
       thinkingContent={thinkingContent}
-      usage={usage}
       isStreaming={isStreaming}
+      runtimeSeconds={runtimeSeconds}
       startedAtMs={startedAtMs}
       toolCalls={toolCalls}
       forcePanelShell={forcePanelShell}
