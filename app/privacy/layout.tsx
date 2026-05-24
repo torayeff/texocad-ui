@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import { SITE_NAME, SITE_ROUTES } from "@/app/lib/site";
 
 export const metadata: Metadata = {
-  title: `Privacy Policy | ${SITE_NAME}`,
+  title: {
+    absolute: `${SITE_NAME} - Privacy Policy`,
+  },
   description:
     "How TexoCAD collects, uses, stores, shares, and protects personal data when you use TexoCAD.",
   alternates: {

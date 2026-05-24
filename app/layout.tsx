@@ -129,7 +129,7 @@ export default function RootLayout({
     },
     about: {
       "@type": "Thing",
-      name: "Text-to-CAD, AI CAD, manufacturing-ready CAD, and rapid prototyping",
+      name: "Text-to-CAD, text-to-sketch, text-to-3D models, AI CAD, manufacturing-ready CAD, and rapid prototyping",
     },
   };
 
@@ -149,8 +149,12 @@ export default function RootLayout({
     featureList: [
       "Natural-language CAD generation",
       "Sketch-guided design input",
+      "Text-to-3D model and 3D CAD generation",
       "Editable parametric CAD output",
       "STEP and STL export",
+      "Text-to-CAD generation from natural-language prompts",
+      "Text-to-sketch generation from product ideas",
+      "Manufacturing-ready CAD export",
     ],
   };
 

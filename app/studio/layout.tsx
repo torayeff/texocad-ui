@@ -5,7 +5,7 @@ import { SITE_NAME } from "@/app/lib/site";
 
 export const metadata: Metadata = {
   title: {
-    absolute: `Studio | ${SITE_NAME}`,
+    absolute: `${SITE_NAME} - Studio`,
   },
   description:
     "Use TexoCAD Studio to generate CAD designs and inspect generated STEP exports.",
