@@ -36,6 +36,7 @@ interface ChatProps {
   onSketchRevisionEvent: (revision: SketchRevisionArtifact) => void;
   onSketchRevisionsChange: (revisions: SketchRevisionArtifact[]) => void;
   onClearViewer: () => void;
+  onToggleCollapse: () => void;
 }
 
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
@@ -47,6 +48,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   onSketchRevisionEvent,
   onSketchRevisionsChange,
   onClearViewer,
+  onToggleCollapse,
 }: ChatProps, ref) {
   const {
     client,
@@ -282,6 +284,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
           onModeChange={handleModeSelect}
           onNewChat={handleNewChat}
           onToggleHistory={toggleHistory}
+          onToggleCollapse={onToggleCollapse}
         />
 
         {historyOpen ? (

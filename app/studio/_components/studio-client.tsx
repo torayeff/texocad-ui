@@ -4,8 +4,10 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
+import { PanelBottomOpen, PanelRightOpen } from "lucide-react";
 
 import { Header } from "@/app/components/header";
+import { cn } from "@/app/lib/cn";
 import type { ShareSketchRevision, SketchMaskComposerState, SketchMaskEditRequest } from "@/app/types/sketch-viewer";
 import type { ShareRevision } from "@/app/types/model-viewer";
 import SketchViewer from "@/app/components/sketch-viewer/sketch-viewer";
@@ -54,6 +56,7 @@ export default function StudioClient() {
   const [studioMode, setStudioMode] = useState<StudioAssistantId>(CAD_ASSISTANT_ID);
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const [isMaskSubmitting, setIsMaskSubmitting] = useState(false);
   const [maskComposer, setMaskComposer] = useState<SketchMaskComposerState | null>(null);
   const chatRef = useRef<ChatHandle | null>(null);
@@ -207,6 +210,10 @@ export default function StudioClient() {
     }
   }, []);
 
+  const toggleChatCollapsed = useCallback(() => {
+    setIsChatCollapsed((collapsed) => !collapsed);
+  }, []);
+
   useEffect(() => {
     designRequestVersionRef.current += 1;
     const snapshotVersion = designRequestVersionRef.current;
@@ -280,7 +287,10 @@ export default function StudioClient() {
 
       <div ref={contentRef} className="relative flex min-h-0 flex-1 flex-col md:flex-row">
         <div
-          className="min-h-0 flex-[2] border-b border-border md:min-w-0 md:flex-none md:basis-[var(--viewer-width)] md:border-b-0"
+          className={cn(
+            "min-h-0 md:min-w-0 md:border-b-0",
+            isChatCollapsed ? "flex-1" : "flex-[2] md:flex-none md:basis-[var(--viewer-width)]",
+          )}
           style={viewerPaneStyle}
         >
           {shouldShowSketchViewer ? (
@@ -322,7 +332,7 @@ export default function StudioClient() {
           )}
         </div>
 
-        <div className="relative hidden w-0 md:block" role="presentation">
+        <div className={cn("relative hidden w-0 md:block", isChatCollapsed && "md:hidden")} role="presentation">
           <button
             type="button"
             role="separator"
@@ -334,7 +344,25 @@ export default function StudioClient() {
           />
         </div>
 
-        <div className="min-h-0 flex-[3] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
+        {isChatCollapsed ? (
+          <button
+            type="button"
+            onClick={toggleChatCollapsed}
+            aria-label="Show chat panel"
+            aria-expanded={false}
+            className="flex h-9 shrink-0 items-center justify-center gap-1.5 border-t border-border bg-background text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:h-full md:w-10 md:border-l md:border-t-0"
+          >
+            <PanelBottomOpen size={14} strokeWidth={1.75} className="md:hidden" />
+            <PanelRightOpen size={14} strokeWidth={1.75} className="hidden md:block" />
+          </button>
+        ) : null}
+
+        <div
+          className={cn(
+            "min-h-0 flex-[3] md:min-w-[320px] md:flex-1 md:border-l md:border-border",
+            isChatCollapsed && "hidden",
+          )}
+        >
           <Chat
             ref={chatRef}
             assistantId={studioMode}
@@ -345,6 +373,7 @@ export default function StudioClient() {
             onSketchRevisionEvent={handleSketchRevision}
             onSketchRevisionsChange={handleSketchRevisionsChange}
             onClearViewer={handleClearViewer}
+            onToggleCollapse={toggleChatCollapsed}
           />
         </div>
       </div>

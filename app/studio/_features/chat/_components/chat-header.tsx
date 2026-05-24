@@ -1,5 +1,5 @@
 import React from "react";
-import { FileClock, MessageSquarePlus, X } from "lucide-react";
+import { FileClock, MessageSquarePlus, PanelBottomClose, PanelRightClose, X } from "lucide-react";
 
 import { cn } from "@/app/lib/cn";
 import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
@@ -34,10 +34,18 @@ interface ChatHeaderProps {
   historyOpen: boolean;
   onModeChange: (mode: StudioAssistantId) => void;
   onNewChat: () => void;
+  onToggleCollapse: () => void;
   onToggleHistory: () => void;
 }
 
-export function ChatHeader({ activeMode, historyOpen, onModeChange, onNewChat, onToggleHistory }: ChatHeaderProps) {
+export function ChatHeader({
+  activeMode,
+  historyOpen,
+  onModeChange,
+  onNewChat,
+  onToggleCollapse,
+  onToggleHistory,
+}: ChatHeaderProps) {
   return (
     <div className={chatHeaderClass}>
       <div className="flex min-w-0 items-center gap-2">
@@ -68,6 +76,17 @@ export function ChatHeader({ activeMode, historyOpen, onModeChange, onNewChat, o
           className={cn(toolButtonClass, historyOpen && activeControlClass)}
         >
           {historyOpen ? <X size={14} strokeWidth={1.75} /> : <FileClock size={14} strokeWidth={1.75} />}
+        </ChatHeaderActionButton>
+        <ChatHeaderActionButton
+          type="button"
+          onClick={onToggleCollapse}
+          aria-label="Hide chat panel"
+          aria-expanded
+          tooltip="Hide chat"
+          className={toolButtonClass}
+        >
+          <PanelBottomClose size={14} strokeWidth={1.75} className="md:hidden" />
+          <PanelRightClose size={14} strokeWidth={1.75} className="hidden md:block" />
         </ChatHeaderActionButton>
       </div>
     </div>
