@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 
 import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import { chatGlassClass } from "@/app/studio/_features/chat/_lib/chat-styles";
 
 interface ExamplePrompt {
   label: string;
@@ -130,7 +131,7 @@ export default function EmptyChatState({
         </div>
 
         <div className="mt-6 flex w-full justify-center">
-          <div className="grid w-full max-w-sm grid-cols-2 gap-1.5 rounded-[calc(var(--viewer-control-radius)+0.375rem)] border border-border/45 bg-muted/25 p-1.5">
+          <div className={`${chatGlassClass} relative grid w-full max-w-sm grid-cols-2 gap-1.5 rounded-[calc(var(--viewer-control-radius)+0.375rem)] p-1.5 before:absolute before:inset-y-2 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-border/45 before:content-['']`}>
             {MODE_SELECTION_PROMPTS.map((example) => (
               <button
                 key={example.label}
@@ -138,11 +139,11 @@ export default function EmptyChatState({
                 aria-pressed={activeMode === example.mode}
                 className={`rounded-[var(--viewer-control-radius)] border px-3 py-2.5 text-center transition-[background-color,border-color,color,box-shadow] ${activeMode === example.mode
                   ? "border-border bg-background text-foreground shadow-[0_4px_14px_rgb(0_0_0_/_0.10)]"
-                  : "border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                  : "border-transparent text-foreground/85 hover:border-border/45 hover:bg-muted hover:text-foreground"
                   }`}
               >
                 <span className="block text-sm font-medium">{example.label}</span>
-                <span className="mt-0.5 block text-[11px] leading-4 opacity-70">{example.description}</span>
+                <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{example.description}</span>
               </button>
             ))}
           </div>
