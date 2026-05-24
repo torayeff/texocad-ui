@@ -31,17 +31,6 @@ interface UseChatStreamOptions extends UseChatStreamEvents {
   initialThreadId?: string | null;
 }
 
-interface JoinableRun {
-  run_id?: string;
-  runId?: string;
-}
-
-interface RunsClient {
-  runs?: {
-    list?: (threadId: string, options?: { status?: "pending" | "running" | "all"; limit?: number }) => Promise<JoinableRun[]>;
-  };
-}
-
 function replaceUrlThreadId(pathname: string, currentSearchParams: URLSearchParams, threadId: string | null) {
   const params = new URLSearchParams(currentSearchParams.toString());
   if (threadId) {
@@ -67,7 +56,6 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const onSketchRevisionEventRef = useRef(options.onSketchRevisionEvent);
   const assistantIdRef = useRef(assistantId);
   const threadIdRef = useRef(threadId);
-  const hasJoinedActiveRunRef = useRef(false);
   useEffect(() => {
     onDesignRevisionEventRef.current = options.onDesignRevisionEvent;
     onSketchRevisionEventRef.current = options.onSketchRevisionEvent;
@@ -100,7 +88,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     threadId: isAuthReady ? (threadId ?? undefined) : undefined,
     fetchStateHistory: true,
     filterSubagentMessages: true,
-    reconnectOnMount: true,
+    reconnectOnMount: false,
     onCreated: handleRunCreated,
     onThreadId: (id: string) => handleThreadIdChange(id),
     onCustomEvent: (data: unknown) => {
@@ -136,30 +124,6 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const latestRevision = latestDesignRevision(designRevisions);
   const latestSketch = latestSketchRevision(sketchRevisions);
   const isBusy = isLoading || isHydrating || !isAuthReady;
-
-  useEffect(() => {
-    if (!isAuthReady || !threadId || isLoading || isHydrating || hasJoinedActiveRunRef.current) return;
-    const runs = (client as unknown as RunsClient).runs;
-    const listRuns = runs?.list;
-    if (typeof listRuns !== "function") return;
-
-    let cancelled = false;
-    void listRuns.call(runs, threadId, { status: "running", limit: 1 })
-      .then((runs) => {
-        if (cancelled || runs.length === 0 || hasJoinedActiveRunRef.current) return;
-        const runId = runs[0]?.run_id ?? runs[0]?.runId;
-        if (!runId) return;
-        hasJoinedActiveRunRef.current = true;
-        void stream.joinStream(runId);
-      })
-      .catch(() => {
-        // Missing or stale active runs should fall back to hydrated thread state.
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [client, isAuthReady, isHydrating, isLoading, stream, threadId]);
 
   useEffect(() => {
     if (latestRevision) {
