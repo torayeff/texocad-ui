@@ -3,6 +3,7 @@
 import { memo, useMemo, useState } from "react";
 import {
   Camera,
+  CircleX,
   Download,
   Fullscreen,
   History,
@@ -36,6 +37,7 @@ export const ViewerControls = memo(function ViewerControls({
   autoRotate,
   canDownload,
   canExplode,
+  canClear,
   canDownloadSource,
   canShare,
   explodeAmount,
@@ -53,6 +55,7 @@ export const ViewerControls = memo(function ViewerControls({
   wireframe,
   onDownload,
   onDownloadSource,
+  onClear,
   onExplodeAmountChange,
   onFitView,
   onResetTransforms,
@@ -166,6 +169,11 @@ export const ViewerControls = memo(function ViewerControls({
       >
         <RefreshCcwDot size={14} strokeWidth={1.75} />
       </ViewerToolButton>
+      {canClear && onClear ? (
+        <ViewerToolButton type="button" onClick={onClear} tooltip="Clear model" aria-label="Clear model" className={toolButtonClass}>
+          <CircleX size={14} strokeWidth={1.75} />
+        </ViewerToolButton>
+      ) : null}
 
       <ViewerToolButton
         type="button"

@@ -62,7 +62,7 @@ export default function Home() {
                 <Link href={SITE_ROUTES.pricing} className="px-3 py-2">
                   Pricing
                 </Link>
-                <Link href="https://viewer.texocad.ai" className="px-3 py-2">
+                <Link href={SITE_ROUTES.viewer} className="px-3 py-2">
                   Viewer
                 </Link>
               </div>
@@ -95,7 +95,7 @@ export default function Home() {
               Pricing
             </Link>
             <Link
-              href="https://viewer.texocad.ai"
+              href={SITE_ROUTES.viewer}
               className="transition-colors hover:text-foreground"
             >
               Viewer

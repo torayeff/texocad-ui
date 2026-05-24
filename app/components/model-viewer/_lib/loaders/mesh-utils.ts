@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { geometryTriangleCount, shouldCreateEdgeOverlay } from "@/app/components/model-viewer/_lib/geometry-budget";
 import type { NumericArrayData } from "@/app/components/model-viewer/_types/loader-types";
 
 export function throwIfAborted(signal?: AbortSignal) {
@@ -38,6 +39,10 @@ export function createStandardMaterial(color: THREE.Color | number) {
 }
 
 export function addEdgeOverlay(mesh: THREE.Mesh, thresholdAngle = 25) {
+  if (!shouldCreateEdgeOverlay(geometryTriangleCount(mesh.geometry))) {
+    return;
+  }
+
   const edgeGeometry = new THREE.EdgesGeometry(mesh.geometry, thresholdAngle);
   const edgeLines = new THREE.LineSegments(edgeGeometry, createEdgeMaterial());
   edgeLines.name = `${mesh.name || "mesh"} edges`;

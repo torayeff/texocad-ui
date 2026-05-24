@@ -1,4 +1,5 @@
 import type { ModelFormat, ModelSource } from "@/app/types/model-viewer";
+import { assertSourceByteLength } from "@/app/components/model-viewer/_lib/geometry-budget";
 
 type SourceBufferProgress = (percent: number) => void;
 
@@ -37,6 +38,12 @@ function readFileBuffer(file: File, onProgress?: SourceBufferProgress, signal?: 
       reject(new Error("Model file read was canceled."));
       return;
     }
+    try {
+      assertSourceByteLength(file.size);
+    } catch (error) {
+      reject(error);
+      return;
+    }
 
     reader.addEventListener("progress", (event) => {
       if (event.lengthComputable && event.total > 0) {
@@ -46,7 +53,12 @@ function readFileBuffer(file: File, onProgress?: SourceBufferProgress, signal?: 
     reader.addEventListener("load", () => {
       if (reader.result instanceof ArrayBuffer) {
         cleanup();
-        resolve(reader.result);
+        try {
+          assertSourceByteLength(reader.result.byteLength);
+          resolve(reader.result);
+        } catch (error) {
+          reject(error);
+        }
         return;
       }
 
@@ -91,7 +103,12 @@ function fetchUrlBuffer(url: string, onProgress?: SourceBufferProgress, signal?:
     request.addEventListener("load", () => {
       if (request.status >= 200 && request.status < 300 && request.response instanceof ArrayBuffer) {
         cleanup();
-        resolve(request.response);
+        try {
+          assertSourceByteLength(request.response.byteLength);
+          resolve(request.response);
+        } catch (error) {
+          reject(error);
+        }
         return;
       }
 
@@ -129,7 +146,12 @@ export function sourceFormat(source: ModelSource): ModelFormat {
     case "step":
     case "stp":
       return "step";
+    case "stl":
+      return "stl";
+    case "glb":
+    case "gltf":
+      return "glb";
     default:
-      throw new Error("Unsupported model format. Use STEP or STP.");
+      throw new Error("Unsupported model format. Use STEP, STP, STL, GLB, or self-contained GLTF.");
   }
 }

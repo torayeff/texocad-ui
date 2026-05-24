@@ -7,6 +7,7 @@ export interface ViewerControlsProps {
   canDownload: boolean;
   canDownloadSource: boolean;
   canExplode: boolean;
+  canClear?: boolean;
   canShare: boolean;
   explodeAmount: number;
   hasTransforms: boolean;
@@ -22,6 +23,7 @@ export interface ViewerControlsProps {
   wireframe: boolean;
   onDownload: () => void;
   onDownloadSource: () => void;
+  onClear?: () => void;
   onExplodeAmountChange: (amount: number) => void;
   onFitView: () => void;
   onResetTransforms: () => void;

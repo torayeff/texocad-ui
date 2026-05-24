@@ -13,6 +13,7 @@ import {
 } from "@/app/lib/server/storage-auth";
 import { isStepExport, STEP_CONTENT_TYPE } from "@/app/lib/server/shared-model-validation";
 import type { ShareArtifactInput, ShareKind, ShareModelInput } from "@/app/lib/server/shared-model-validation";
+import { contentTypeForLocalModelShare, normalizeLocalModelShareExtension } from "@/app/types/local-model-share";
 export {
   parseShareInput,
   parseShareRevisionInput,
@@ -89,6 +90,9 @@ function extensionFromFilename(filename: string) {
   const lowerFilename = filename.toLowerCase();
   if (lowerFilename.endsWith(".stp")) return ".stp";
   if (lowerFilename.endsWith(".step")) return ".step";
+  if (lowerFilename.endsWith(".stl")) return ".stl";
+  if (lowerFilename.endsWith(".glb")) return ".glb";
+  if (lowerFilename.endsWith(".gltf")) return ".gltf";
   if (lowerFilename.endsWith(".jpg")) return ".jpg";
   if (lowerFilename.endsWith(".jpeg")) return ".jpeg";
   if (lowerFilename.endsWith(".webp")) return ".webp";
@@ -103,9 +107,7 @@ function sharedArtifactBlobName(kind: ShareKind, slug: string, filename: string)
 function shareContentType(kind: ShareKind, artifact: ShareArtifactInput) {
   switch (kind) {
     case "model":
-      return isStepExport(artifact.filename, artifact.contentType)
-        ? STEP_CONTENT_TYPE
-        : artifact.contentType;
+      return contentTypeForModelArtifact(artifact);
     case "sketch":
       return artifact.contentType;
     default: {
@@ -113,6 +115,15 @@ function shareContentType(kind: ShareKind, artifact: ShareArtifactInput) {
       return exhaustive;
     }
   }
+}
+
+function contentTypeForModelArtifact(artifact: ShareArtifactInput) {
+  if (isStepExport(artifact.filename, artifact.contentType)) {
+    return STEP_CONTENT_TYPE;
+  }
+
+  const extension = normalizeLocalModelShareExtension(artifact.filename);
+  return extension ? contentTypeForLocalModelShare(extension) : artifact.contentType;
 }
 
 function publicBlobUrl(blobName: string) {
@@ -254,6 +265,39 @@ export async function createOrGetSharedArtifact(userId: string, input: ShareMode
     alreadyShared: false,
     sharedArtifact: sharedArtifactFromShare(entity),
   };
+}
+
+export async function createSharedArtifactForLocalModel(input: {
+  artifactBlobName: string;
+  checksum: string;
+  contentType: string;
+  filename: string;
+  name: string;
+}) {
+  const client = tableClient();
+  await client.createTable();
+
+  const slug = makeSlug(input.name);
+  const entity: ShareEntity & { partitionKey: string; rowKey: string } = {
+    partitionKey: SLUG_PARTITION_KEY,
+    rowKey: slug,
+    checksum: input.checksum,
+    createdAt: new Date().toISOString(),
+    designId: `local:${slug}`,
+    filename: input.filename,
+    kind: "model",
+    artifactBlobName: input.artifactBlobName,
+    modelBlobName: input.artifactBlobName,
+    name: input.name.trim(),
+    ownerHash: "local",
+    privateBlobName: input.artifactBlobName,
+    revisionNumber: 1,
+    slug,
+  };
+
+  await client.createEntity<ShareEntity>(entity);
+
+  return sharedArtifactFromShare(entity);
 }
 
 export async function getSharedArtifactForRevision(userId: string, input: Omit<ShareModelInput, "name">) {
