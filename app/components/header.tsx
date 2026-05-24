@@ -11,7 +11,10 @@ const headerGlassClass =
   "relative z-10 flex h-12 shrink-0 select-none items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-3 text-sm shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] md:px-8";
 
 const headerLinkClass =
-  "rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2 py-1 text-[13px] font-medium text-muted-foreground";
+  "rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+
+const primaryHeaderLinkClass =
+  "rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-foreground px-2.5 py-1.5 text-[13px] font-medium text-background transition-colors hover:bg-foreground/90 md:px-4";
 
 export function Header() {
   const { isSignedIn, has, sessionClaims } = useAuth();
@@ -33,7 +36,7 @@ export function Header() {
         <Link
           href="/"
           aria-label="TexoCAD"
-          className="flex min-w-0 items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-1.5 py-1 md:px-2"
+          className="flex min-w-0 items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-1.5 py-1 transition-colors hover:bg-muted hover:text-foreground md:px-2"
         >
           <ThemeLogo width={20} height={20} priority />
           <span className="truncate font-medium tracking-tight">TexoCAD</span>
@@ -44,7 +47,7 @@ export function Header() {
         {isSignedIn && !hasAccess && (
           <Link
             href={SITE_ROUTES.pricing}
-            className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-foreground px-2.5 py-1.5 text-[13px] font-medium text-background md:px-4"
+            className={primaryHeaderLinkClass}
           >
             Upgrade
           </Link>

@@ -18,7 +18,7 @@ export const controlMenuItemClass =
   "flex min-h-8 w-full shrink-0 items-center justify-between gap-3 rounded-[calc(var(--viewer-control-radius)-0.125rem)] border-0 bg-transparent px-[0.625rem] py-[0.3125rem] text-left text-xs font-medium text-muted-foreground transition-colors duration-150 ease-in-out hover:bg-muted hover:text-foreground sm:px-[0.7rem]";
 
 export const chatHeaderClass =
-  "relative z-20 flex h-11 shrink-0 items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-4 py-1.5 text-foreground shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12]";
+  "relative z-20 flex h-11 shrink-0 items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] py-1.5 pl-7 pr-8 text-foreground shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12]";
 
 export const chatHeaderTooltipClass = cn(
   toolTooltipClass,

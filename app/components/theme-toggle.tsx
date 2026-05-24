@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import { useMounted } from "@/app/hooks/use-mounted";
 
 const themeToggleClass =
-  "grid size-[1.875rem] place-items-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] border-0 bg-transparent p-0 text-muted-foreground disabled:opacity-50";
+  "grid size-[1.875rem] place-items-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] border-0 bg-transparent p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
