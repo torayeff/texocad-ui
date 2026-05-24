@@ -47,6 +47,7 @@ interface SketchViewerProps {
   revisions?: SketchViewerRevisions;
   sharing?: SketchViewerSharing;
   source: SketchSource | null;
+  variant?: "studio" | "shared";
 }
 
 export default function SketchViewer({
@@ -56,11 +57,16 @@ export default function SketchViewer({
   revisions,
   sharing,
   source,
+  variant = "studio",
 }: SketchViewerProps) {
   const [isMaskEditorOpen, setIsMaskEditorOpen] = useState(false);
   const [hasMask, setHasMask] = useState(false);
   const [maskError, setMaskError] = useState<string | null>(null);
   const [revisionsOpen, setRevisionsOpen] = useState(false);
+  const [didCopyViewerUrl, setDidCopyViewerUrl] = useState(false);
+  const [isViewerShareDialogOpen, setIsViewerShareDialogOpen] = useState(false);
+  const [viewerShareError, setViewerShareError] = useState<string | null>(null);
+  const [viewerShareUrl, setViewerShareUrl] = useState<string | null>(null);
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
   const maskEditorRef = useRef<SketchMaskEditorHandle | null>(null);
   const {
@@ -89,6 +95,7 @@ export default function SketchViewer({
   const activeRevision = revisionOptions.find((revision) => revision.key === revisions?.activeRevisionKey) ?? null;
   const canMask = source !== null && onSubmitMaskEdit !== undefined;
   const hasSource = source !== null;
+  const isSharedView = variant === "shared";
   const { activeTriggerRef, panelRef, panelStyle, railRef, resetPanelPosition } = useFloatingPanel(
     hasSource && revisionsOpen && canShowRevisions,
     [canShowRevisions, revisionsOpen, revisionOptions.length, revisions?.activeRevisionKey],
@@ -96,7 +103,26 @@ export default function SketchViewer({
 
   const handleDownload = () => {
     if (!source) return;
-    window.open(source.url, "_blank", "noopener,noreferrer");
+    downloadLinkRef.current?.click();
+  };
+
+  const handleOpenViewerShareDialog = () => {
+    setDidCopyViewerUrl(false);
+    setViewerShareError(null);
+    setViewerShareUrl(window.location.href);
+    setIsViewerShareDialogOpen(true);
+  };
+
+  const handleCloseViewerShareDialog = () => {
+    setIsViewerShareDialogOpen(false);
+    setViewerShareError(null);
+  };
+
+  const handleCopyViewerShareUrl = () => {
+    if (!viewerShareUrl) return;
+
+    void navigator.clipboard.writeText(viewerShareUrl)
+      .then(() => setDidCopyViewerUrl(true));
   };
 
   const toggleRevisions = (trigger: HTMLButtonElement) => {
@@ -211,27 +237,39 @@ export default function SketchViewer({
 
       {hasSource ? (
         <div ref={railRef} className={sketchViewerToolRailClass} aria-label="Sketch controls">
-          <ViewerToolButton
-            type="button"
-            disabled={!canMask || isMaskSubmitting}
-            onClick={handleOpenMaskEditor}
-            tooltip="Edit"
-            aria-label="Edit sketch with mask"
-            className={cn(sketchViewerToolButtonClass, isMaskEditorOpen && sketchViewerActiveControlClass)}
-          >
-            {isMaskSubmitting ? (
-              <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
-            ) : (
-              <Brush size={14} strokeWidth={1.75} />
-            )}
-          </ViewerToolButton>
+          {isSharedView ? (
+            <ViewerToolButton
+              type="button"
+              onClick={handleOpenViewerShareDialog}
+              tooltip="Share"
+              aria-label="Share sketch"
+              className={sketchViewerToolButtonClass}
+            >
+              <Share2 size={14} strokeWidth={1.75} />
+            </ViewerToolButton>
+          ) : (
+            <ViewerToolButton
+              type="button"
+              disabled={!canMask || isMaskSubmitting}
+              onClick={handleOpenMaskEditor}
+              tooltip="Edit"
+              aria-label="Edit sketch with mask"
+              className={cn(sketchViewerToolButtonClass, isMaskEditorOpen && sketchViewerActiveControlClass)}
+            >
+              {isMaskSubmitting ? (
+                <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
+              ) : (
+                <Brush size={14} strokeWidth={1.75} />
+              )}
+            </ViewerToolButton>
+          )}
 
-          {canShare ? (
+          {canShare && !isSharedView ? (
             <ViewerToolButton
               type="button"
               onClick={handleOpenShareDialog}
               disabled={isSharing}
-              tooltip="Share sketch"
+              tooltip="Share"
               aria-label="Share sketch"
               className={sketchViewerToolButtonClass}
             >
@@ -247,8 +285,8 @@ export default function SketchViewer({
             <ViewerToolButton
               type="button"
               onClick={handleDownload}
-              tooltip="Open sketch"
-              aria-label="Open sketch in a new window"
+              tooltip="Download"
+              aria-label="Download sketch"
               className={sketchViewerToolButtonClass}
             >
               <Download size={14} strokeWidth={1.75} />
@@ -309,6 +347,20 @@ export default function SketchViewer({
           shareError={shareError}
           shareName={shareName}
           shareUrl={shareUrl}
+        />
+      ) : null}
+
+      {isViewerShareDialogOpen ? (
+        <SketchShareDialog
+          didCopyShareUrl={didCopyViewerUrl}
+          isSharing={false}
+          onClose={handleCloseViewerShareDialog}
+          onCopyShareUrl={handleCopyViewerShareUrl}
+          onShareNameChange={() => undefined}
+          onSubmit={(event) => event.preventDefault()}
+          shareError={viewerShareError}
+          shareName={source?.label ?? ""}
+          shareUrl={viewerShareUrl}
         />
       ) : null}
     </section>

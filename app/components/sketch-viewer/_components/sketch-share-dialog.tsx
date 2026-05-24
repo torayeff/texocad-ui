@@ -31,6 +31,8 @@ export function SketchShareDialog({
   shareName,
   shareUrl,
 }: SketchShareDialogProps) {
+  const hasShareUrl = shareUrl !== null;
+
   return (
     <div className="absolute inset-0 z-50 grid place-items-center bg-background/40 p-4 backdrop-blur-[2px]" role="presentation">
       <form
@@ -46,7 +48,7 @@ export function SketchShareDialog({
               Share sketch
             </h2>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Create a public link for this selected image revision.
+              {hasShareUrl ? "Copy the public link for this sketch." : "Create a public link for this selected sketch revision."}
             </p>
           </div>
           <button
@@ -60,14 +62,12 @@ export function SketchShareDialog({
           </button>
         </div>
 
-        {shareUrl ? (
+        {hasShareUrl ? (
           <div className="grid gap-2">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="share-sketch-link">
-              Public link
-            </label>
             <div className="flex min-w-0 gap-2">
               <input
                 id="share-sketch-link"
+                aria-label="Public link"
                 className={sketchViewerInputClass}
                 readOnly
                 value={shareUrl}
@@ -102,7 +102,7 @@ export function SketchShareDialog({
 
         {shareError ? <p className="text-xs text-error">{shareError}</p> : null}
 
-        {shareUrl ? null : (
+        {hasShareUrl ? null : (
           <div className="flex justify-end gap-2">
             <button
               type="submit"

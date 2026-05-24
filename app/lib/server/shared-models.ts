@@ -20,14 +20,14 @@ export {
   validateShareName,
 } from "@/app/lib/server/shared-model-validation";
 
-export interface SharedModel {
+export interface SharedArtifact {
+  artifactBlobName: string;
+  artifactUrl: string;
   checksum: string;
   createdAt: string;
   designId: string;
   filename: string;
   kind: ShareKind;
-  modelBlobName: string;
-  modelUrl: string;
   name: string;
   revisionNumber: number;
   shareUrl: string;
@@ -35,6 +35,7 @@ export interface SharedModel {
 }
 
 interface ShareEntity {
+  artifactBlobName?: string;
   checksum: string;
   createdAt: string;
   designId: string;
@@ -95,7 +96,7 @@ function extensionFromFilename(filename: string) {
   return ".step";
 }
 
-function sharedModelBlobName(kind: ShareKind, slug: string, filename: string) {
+function sharedArtifactBlobName(kind: ShareKind, slug: string, filename: string) {
   return `${PUBLIC_SHARED_PREFIX}/${slug}/${kind}${extensionFromFilename(filename)}`;
 }
 
@@ -162,16 +163,21 @@ async function getShareEntity(partitionKey: string, rowKey: string) {
   }
 }
 
-function sharedModelFromShare(entity: ShareEntity): SharedModel {
-  const modelUrl = publicBlobUrl(entity.modelBlobName);
+function getEntityArtifactBlobName(entity: ShareEntity) {
+  return entity.artifactBlobName ?? entity.modelBlobName;
+}
+
+function sharedArtifactFromShare(entity: ShareEntity): SharedArtifact {
+  const artifactBlobName = getEntityArtifactBlobName(entity);
+  const artifactUrl = publicBlobUrl(artifactBlobName);
   return {
+    artifactBlobName,
+    artifactUrl,
     checksum: entity.checksum,
     createdAt: entity.createdAt,
     designId: entity.designId,
     filename: entity.filename,
     kind: entity.kind ?? "model",
-    modelBlobName: entity.modelBlobName,
-    modelUrl,
     name: entity.name,
     revisionNumber: entity.revisionNumber,
     shareUrl: absoluteSiteUrl(`/viewer/${entity.slug}`),
@@ -179,7 +185,7 @@ function sharedModelFromShare(entity: ShareEntity): SharedModel {
   };
 }
 
-export async function createOrGetSharedModel(userId: string, input: ShareModelInput) {
+export async function createOrGetSharedArtifact(userId: string, input: ShareModelInput) {
   const ownerHash = hashUserId(userId);
   const kind = input.kind ?? "model";
   const privateBlobName = input.exportArtifact.blobName.replace(/^\/+/, "");
@@ -197,7 +203,7 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
   if (existingEntity) {
     return {
       alreadyShared: true,
-      sharedModel: sharedModelFromShare(existingEntity),
+      sharedArtifact: sharedArtifactFromShare(existingEntity),
     };
   }
 
@@ -205,11 +211,11 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
   await client.createTable();
 
   const slug = makeSlug(input.name);
-  const modelBlobName = sharedModelBlobName(kind, slug, input.exportArtifact.filename);
+  const artifactBlobName = sharedArtifactBlobName(kind, slug, input.exportArtifact.filename);
   const serviceClient = blobServiceClient();
   const publicBlobClient = serviceClient
     .getContainerClient(publicStorageConfig().publicContainerName)
-    .getBlobClient(modelBlobName);
+    .getBlobClient(artifactBlobName);
 
   await publicBlobClient.syncCopyFromURL(privateReadSasUrl(privateBlobName));
   await publicBlobClient.setHTTPHeaders({
@@ -225,7 +231,8 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
     designId: input.designId,
     filename: input.exportArtifact.filename,
     kind,
-    modelBlobName,
+    artifactBlobName,
+    modelBlobName: artifactBlobName,
     name: input.name.trim(),
     ownerHash,
     privateBlobName,
@@ -245,11 +252,11 @@ export async function createOrGetSharedModel(userId: string, input: ShareModelIn
 
   return {
     alreadyShared: false,
-    sharedModel: sharedModelFromShare(entity),
+    sharedArtifact: sharedArtifactFromShare(entity),
   };
 }
 
-export async function getSharedModelForRevision(userId: string, input: Omit<ShareModelInput, "name">) {
+export async function getSharedArtifactForRevision(userId: string, input: Omit<ShareModelInput, "name">) {
   const ownerHash = hashUserId(userId);
   const kind = input.kind ?? "model";
   const ownerKey = ownerPartitionKey(ownerHash);
@@ -263,12 +270,16 @@ export async function getSharedModelForRevision(userId: string, input: Omit<Shar
     },
   });
   const entity = await getShareEntity(ownerKey, revisionKey);
-  return entity ? sharedModelFromShare(entity) : null;
+  return entity ? sharedArtifactFromShare(entity) : null;
 }
 
-export async function getSharedModelBySlug(slug: string) {
+export async function getSharedArtifactBySlug(slug: string) {
   if (slug !== slugifyName(slug)) return null;
 
   const entity = await getShareEntity(SLUG_PARTITION_KEY, slug);
-  return entity ? sharedModelFromShare(entity) : null;
+  return entity ? sharedArtifactFromShare(entity) : null;
 }
+
+export const createOrGetSharedModel = createOrGetSharedArtifact;
+export const getSharedModelForRevision = getSharedArtifactForRevision;
+export const getSharedModelBySlug = getSharedArtifactBySlug;

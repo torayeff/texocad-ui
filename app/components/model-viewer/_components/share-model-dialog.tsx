@@ -32,6 +32,8 @@ export function ShareModelDialog({
   shareName,
   shareUrl,
 }: ShareModelDialogProps) {
+  const hasShareUrl = shareUrl !== null;
+
   return (
     <div className="absolute inset-0 z-50 grid place-items-center bg-background/40 p-4 backdrop-blur-[2px]" role="presentation">
       <form
@@ -47,7 +49,7 @@ export function ShareModelDialog({
               Share model
             </h2>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Create a public link for this selected revision.
+              {hasShareUrl ? "Copy the public link for this model." : "Create a public link for this selected model revision."}
             </p>
           </div>
           <button
@@ -61,14 +63,12 @@ export function ShareModelDialog({
           </button>
         </div>
 
-        {shareUrl ? (
+        {hasShareUrl ? (
           <div className="grid gap-2">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="share-model-link">
-              Public link
-            </label>
             <div className="flex min-w-0 gap-2">
               <input
                 id="share-model-link"
+                aria-label="Public link"
                 className={inputClass}
                 readOnly
                 value={shareUrl}
@@ -103,7 +103,7 @@ export function ShareModelDialog({
 
         {shareError ? <p className="text-xs text-error">{shareError}</p> : null}
 
-        {shareUrl ? null : (
+        {hasShareUrl ? null : (
           <div className="flex justify-end gap-2">
             <button
               type="submit"

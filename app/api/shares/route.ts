@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
 import {
-  createOrGetSharedModel,
-  getSharedModelForRevision,
+  createOrGetSharedArtifact,
+  getSharedArtifactForRevision,
   parseShareInput,
   parseShareRevisionInput,
   validateShareBlob,
@@ -11,6 +11,21 @@ import {
 } from "@/app/lib/server/shared-models";
 
 export const runtime = "nodejs";
+
+function sharedArtifactResponse(sharedArtifact: Awaited<ReturnType<typeof getSharedArtifactForRevision>>) {
+  return {
+    sharedArtifact,
+    sharedModel: sharedArtifact,
+  };
+}
+
+function shareResultResponse(result: Awaited<ReturnType<typeof createOrGetSharedArtifact>>) {
+  return {
+    alreadyShared: result.alreadyShared,
+    sharedArtifact: result.sharedArtifact,
+    sharedModel: result.sharedArtifact,
+  };
+}
 
 export async function GET(request: Request) {
   const { userId } = await auth();
@@ -40,10 +55,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const sharedModel = await getSharedModelForRevision(userId, safeInput);
-    return NextResponse.json({ sharedModel });
+    const sharedArtifact = await getSharedArtifactForRevision(userId, safeInput);
+    return NextResponse.json(sharedArtifactResponse(sharedArtifact));
   } catch (error) {
-    console.error("Failed to look up shared model:", error);
+    console.error("Failed to look up shared artifact:", error);
     return NextResponse.json({ error: "Could not look up the selected revision." }, { status: 500 });
   }
 }
@@ -60,7 +75,7 @@ export async function POST(request: Request) {
   }
 
   if (!validateShareName(input.name)) {
-    return NextResponse.json({ error: "Enter a model name up to 80 characters." }, { status: 400 });
+    return NextResponse.json({ error: "Enter a share name up to 80 characters." }, { status: 400 });
   }
 
   const safeInput = validateShareBlob(userId, input);
@@ -69,13 +84,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await createOrGetSharedModel(userId, {
+    const result = await createOrGetSharedArtifact(userId, {
       ...safeInput,
       name: input.name,
     });
-    return NextResponse.json(result);
+    return NextResponse.json(shareResultResponse(result));
   } catch (error) {
-    console.error("Failed to share model:", error);
+    console.error("Failed to share artifact:", error);
     return NextResponse.json({ error: "Could not share the selected revision." }, { status: 500 });
   }
 }

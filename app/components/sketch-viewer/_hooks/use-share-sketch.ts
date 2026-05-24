@@ -6,8 +6,9 @@ import type { FormEvent } from "react";
 import type { ShareSketchRevision, SketchSource } from "@/app/types/sketch-viewer";
 
 interface ShareResponse {
-  alreadyShared: boolean;
-  sharedModel: SharedSketchResponse;
+  alreadyShared?: boolean;
+  sharedArtifact?: SharedSketchResponse;
+  sharedModel?: SharedSketchResponse;
 }
 
 interface SharedSketchResponse {
@@ -24,6 +25,10 @@ interface UseShareSketchOptions {
   activeRevisionKey: string | null;
   shareRevision: ShareSketchRevision | null;
   source: SketchSource | null;
+}
+
+function getSharedArtifact(data: Pick<ShareResponse, "sharedArtifact" | "sharedModel"> | null) {
+  return data?.sharedArtifact ?? data?.sharedModel ?? null;
 }
 
 function defaultShareName(source: SketchSource | null) {
@@ -59,15 +64,16 @@ export function useShareSketch({ activeRevisionKey, shareRevision, source }: Use
 
     void fetch(`/api/shares?${params.toString()}`)
       .then(async (response) => {
-        const data = (await response.json().catch(() => null)) as { sharedModel?: SharedSketchResponse | null; error?: string } | null;
+        const data = (await response.json().catch(() => null)) as ShareResponse & { error?: string } | null;
         if (!response.ok) {
           throw new Error(data?.error ?? "Could not check this sketch.");
         }
 
-        if (data?.sharedModel?.shareUrl) {
+        const sharedArtifact = getSharedArtifact(data);
+        if (sharedArtifact?.shareUrl) {
           setShareResult({
             revisionKey: activeRevisionKey,
-            url: data.sharedModel.shareUrl,
+            url: sharedArtifact.shareUrl,
           });
           return;
         }
@@ -114,13 +120,14 @@ export function useShareSketch({ activeRevisionKey, shareRevision, source }: Use
     })
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as Partial<ShareResponse> & { error?: string } | null;
-        if (!response.ok || !data?.sharedModel?.shareUrl) {
+        const sharedArtifact = getSharedArtifact(data ?? null);
+        if (!response.ok || !sharedArtifact?.shareUrl) {
           throw new Error(data?.error ?? "Could not share this sketch.");
         }
 
         setShareResult({
           revisionKey: activeRevisionKey,
-          url: data.sharedModel.shareUrl,
+          url: sharedArtifact.shareUrl,
         });
       })
       .catch((error: unknown) => {

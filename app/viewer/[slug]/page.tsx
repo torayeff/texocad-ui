@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Header } from "@/app/components/header";
-import { getSharedModelBySlug } from "@/app/lib/server/shared-models";
+import { getSharedArtifactBySlug } from "@/app/lib/server/shared-models";
 import { SITE_NAME } from "@/app/lib/site";
 import { SharedModelViewer } from "@/app/viewer/[slug]/_components/shared-model-viewer";
 import { SharedSketchViewer } from "@/app/viewer/[slug]/_components/shared-sketch-viewer";
@@ -15,28 +15,28 @@ interface ViewerPageProps {
 
 export async function generateMetadata({ params }: ViewerPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const sharedModel = await getSharedModelBySlug(slug);
+  const sharedArtifact = await getSharedArtifactBySlug(slug);
 
-  if (!sharedModel) {
+  if (!sharedArtifact) {
     return {
-      title: "Shared model",
+      title: "Shared artifact",
     };
   }
 
   return {
-    title: sharedModel.name,
-    description: `View ${sharedModel.name} on ${SITE_NAME}.`,
+    title: sharedArtifact.name,
+    description: `View ${sharedArtifact.name} on ${SITE_NAME}.`,
     alternates: {
-      canonical: `/viewer/${sharedModel.slug}`,
+      canonical: `/viewer/${sharedArtifact.slug}`,
     },
   };
 }
 
 export default async function ViewerPage({ params }: ViewerPageProps) {
   const { slug } = await params;
-  const sharedModel = await getSharedModelBySlug(slug);
+  const sharedArtifact = await getSharedArtifactBySlug(slug);
 
-  if (!sharedModel) {
+  if (!sharedArtifact) {
     notFound();
   }
 
@@ -44,20 +44,20 @@ export default async function ViewerPage({ params }: ViewerPageProps) {
     <main className="fixed left-0 top-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground">
       <Header />
       <div className="min-h-0 flex-1">
-        {sharedModel.kind === "sketch" ? (
+        {sharedArtifact.kind === "sketch" ? (
           <SharedSketchViewer
             source={{
               kind: "url",
-              label: sharedModel.filename,
-              url: sharedModel.modelUrl,
+              label: sharedArtifact.filename,
+              url: sharedArtifact.artifactUrl,
             }}
           />
         ) : (
           <SharedModelViewer
             source={{
               kind: "url",
-              label: sharedModel.filename,
-              url: sharedModel.modelUrl,
+              label: sharedArtifact.filename,
+              url: sharedArtifact.artifactUrl,
             }}
           />
         )}

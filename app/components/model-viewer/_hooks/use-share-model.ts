@@ -6,11 +6,12 @@ import type { FormEvent } from "react";
 import type { ModelSource, ShareRevision } from "@/app/types/model-viewer";
 
 interface ShareResponse {
-  alreadyShared: boolean;
-  sharedModel: SharedModelResponse;
+  alreadyShared?: boolean;
+  sharedArtifact?: SharedArtifactResponse;
+  sharedModel?: SharedArtifactResponse;
 }
 
-interface SharedModelResponse {
+interface SharedArtifactResponse {
   shareUrl: string;
   slug: string;
 }
@@ -24,6 +25,10 @@ interface UseShareModelOptions {
   activeRevisionKey: string | null;
   shareRevision: ShareRevision | null;
   source: ModelSource | null;
+}
+
+function getSharedArtifact(data: Pick<ShareResponse, "sharedArtifact" | "sharedModel"> | null) {
+  return data?.sharedArtifact ?? data?.sharedModel ?? null;
 }
 
 function defaultShareName(source: ModelSource | null) {
@@ -60,15 +65,16 @@ export function useShareModel({ activeRevisionKey, shareRevision, source }: UseS
 
     void fetch(`/api/shares?${params.toString()}`)
       .then(async (response) => {
-        const data = (await response.json().catch(() => null)) as { sharedModel?: SharedModelResponse | null; error?: string } | null;
+        const data = (await response.json().catch(() => null)) as ShareResponse & { error?: string } | null;
         if (!response.ok) {
           throw new Error(data?.error ?? "Could not check this model.");
         }
 
-        if (data?.sharedModel?.shareUrl) {
+        const sharedArtifact = getSharedArtifact(data);
+        if (sharedArtifact?.shareUrl) {
           setShareResult({
             revisionKey: activeRevisionKey,
-            url: data.sharedModel.shareUrl,
+            url: sharedArtifact.shareUrl,
           });
           return;
         }
@@ -114,13 +120,14 @@ export function useShareModel({ activeRevisionKey, shareRevision, source }: UseS
     })
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as Partial<ShareResponse> & { error?: string } | null;
-        if (!response.ok || !data?.sharedModel?.shareUrl) {
+        const sharedArtifact = getSharedArtifact(data ?? null);
+        if (!response.ok || !sharedArtifact?.shareUrl) {
           throw new Error(data?.error ?? "Could not share this model.");
         }
 
         setShareResult({
           revisionKey: activeRevisionKey,
-          url: data.sharedModel.shareUrl,
+          url: sharedArtifact.shareUrl,
         });
       })
       .catch((error: unknown) => {

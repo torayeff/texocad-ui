@@ -8,5 +8,5 @@ interface SharedSketchViewerProps {
 }
 
 export function SharedSketchViewer({ source }: SharedSketchViewerProps) {
-  return <SketchViewer source={source} />;
+  return <SketchViewer source={source} variant="shared" />;
 }
