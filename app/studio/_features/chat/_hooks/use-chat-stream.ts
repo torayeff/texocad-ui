@@ -22,10 +22,80 @@ import type {
 } from "@/app/studio/_features/chat/_types/chat";
 
 const EMPTY_TODOS: TodoItem[] = [];
+const ACTIVE_RUN_STORAGE_KEY = "texocad.activeAgentRun.v1";
+
+interface ActiveRunRecord {
+  assistantId: StudioAssistantId;
+  runId: string;
+  threadId: string;
+}
+
+interface CreatedRun {
+  run_id?: string;
+  runId?: string;
+  thread_id?: string;
+  threadId?: string;
+}
+
+interface JoinableStream {
+  joinStream?: (runId: string) => unknown;
+  stop?: () => void;
+}
+
+interface CancellableRunsClient {
+  runs?: {
+    cancel?: (threadId: string, runId: string) => unknown;
+  };
+}
 
 interface UseChatStreamEvents {
   onDesignRevisionEvent?: (revision: DesignRevisionArtifact) => void;
   onSketchRevisionEvent?: (revision: SketchRevisionArtifact) => void;
+}
+
+function isActiveRunRecord(value: unknown): value is ActiveRunRecord {
+  if (value === null || typeof value !== "object") return false;
+  const record = value as Partial<ActiveRunRecord>;
+  return (
+    (record.assistantId === "cad" || record.assistantId === "sketch") &&
+    typeof record.runId === "string" &&
+    record.runId.length > 0 &&
+    typeof record.threadId === "string" &&
+    record.threadId.length > 0
+  );
+}
+
+function readStoredActiveRun(): ActiveRunRecord | null {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ACTIVE_RUN_STORAGE_KEY) ?? "null");
+    return isActiveRunRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredActiveRun(record: ActiveRunRecord) {
+  localStorage.setItem(ACTIVE_RUN_STORAGE_KEY, JSON.stringify(record));
+}
+
+function clearStoredActiveRun(record?: ActiveRunRecord | null) {
+  if (!record) {
+    localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+    return;
+  }
+
+  const stored = readStoredActiveRun();
+  if (
+    stored?.assistantId === record.assistantId &&
+    stored.threadId === record.threadId &&
+    stored.runId === record.runId
+  ) {
+    localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+  }
+}
+
+function activeRunMatches(record: ActiveRunRecord | null, assistantId: StudioAssistantId, threadId: string | null) {
+  return record?.assistantId === assistantId && record.threadId === threadId;
 }
 
 export function useChatStream(assistantId: StudioAssistantId, events: UseChatStreamEvents = {}) {
@@ -38,18 +108,41 @@ export function useChatStream(assistantId: StudioAssistantId, events: UseChatStr
 
   const onDesignRevisionEventRef = useRef(events.onDesignRevisionEvent);
   const onSketchRevisionEventRef = useRef(events.onSketchRevisionEvent);
+  const assistantIdRef = useRef(assistantId);
+  const hasJoinedRunRef = useRef<string | null>(null);
+  const pendingRunIdRef = useRef<string | null>(null);
+  const urlThreadIdRef = useRef(urlThreadId);
   useEffect(() => {
     onDesignRevisionEventRef.current = events.onDesignRevisionEvent;
     onSketchRevisionEventRef.current = events.onSketchRevisionEvent;
   }, [events.onDesignRevisionEvent, events.onSketchRevisionEvent]);
+
+  useEffect(() => {
+    assistantIdRef.current = assistantId;
+    urlThreadIdRef.current = urlThreadId;
+  }, [assistantId, urlThreadId]);
+
+  const clearActiveRun = useCallback((record?: ActiveRunRecord | null) => {
+    hasJoinedRunRef.current = null;
+    clearStoredActiveRun(record);
+  }, []);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
       const params = new URLSearchParams(searchParams.toString());
       if (nextThreadId) {
         params.set("thread_id", nextThreadId);
+        if (pendingRunIdRef.current) {
+          writeStoredActiveRun({
+            assistantId: assistantIdRef.current,
+            runId: pendingRunIdRef.current,
+            threadId: nextThreadId,
+          });
+          pendingRunIdRef.current = null;
+        }
       } else {
         params.delete("thread_id");
+        clearStoredActiveRun();
       }
 
       const nextQuery = params.toString();
@@ -60,12 +153,31 @@ export function useChatStream(assistantId: StudioAssistantId, events: UseChatStr
     [pathname, router, searchParams],
   );
 
+  const handleRunCreated = useCallback((run: unknown) => {
+    const createdRun = run as CreatedRun;
+    const runId = createdRun.run_id ?? createdRun.runId;
+    if (!runId) return;
+
+    const threadId = createdRun.thread_id ?? createdRun.threadId ?? urlThreadIdRef.current;
+    if (!threadId) {
+      pendingRunIdRef.current = runId;
+      return;
+    }
+
+    writeStoredActiveRun({
+      assistantId: assistantIdRef.current,
+      runId,
+      threadId,
+    });
+  }, []);
+
   const streamOptions = useMemo(() => ({
     client,
     assistantId,
     threadId: isAuthReady ? (urlThreadId ?? undefined) : undefined,
     fetchStateHistory: true,
     filterSubagentMessages: true,
+    onCreated: handleRunCreated,
     onThreadId: (id: string) => handleThreadIdChange(id),
     onCustomEvent: (data: unknown) => {
       if (isDesignRevisionArtifact(data)) {
@@ -78,6 +190,7 @@ export function useChatStream(assistantId: StudioAssistantId, events: UseChatStr
   }), [
     assistantId,
     client,
+    handleRunCreated,
     handleThreadIdChange,
     isAuthReady,
     urlThreadId,
@@ -99,6 +212,55 @@ export function useChatStream(assistantId: StudioAssistantId, events: UseChatStr
   const latestRevision = latestDesignRevision(designRevisions);
   const latestSketch = latestSketchRevision(sketchRevisions);
   const isBusy = isLoading || isHydrating || !isAuthReady;
+
+  const joinActiveRun = useCallback((record: ActiveRunRecord) => {
+    if (hasJoinedRunRef.current === record.runId) return;
+    const joinStream = (stream as unknown as JoinableStream).joinStream;
+    if (typeof joinStream !== "function") return;
+
+    hasJoinedRunRef.current = record.runId;
+    try {
+      void Promise.resolve(joinStream.call(stream, record.runId)).catch(() => {
+        hasJoinedRunRef.current = null;
+        clearActiveRun(record);
+      });
+    } catch {
+      hasJoinedRunRef.current = null;
+      clearActiveRun(record);
+    }
+  }, [clearActiveRun, stream]);
+
+  const cancelActiveRun = useCallback(async () => {
+    const record = readStoredActiveRun();
+    if (!record) {
+      (stream as unknown as JoinableStream).stop?.();
+      return;
+    }
+
+    const runs = (client as unknown as CancellableRunsClient).runs;
+    const cancel = runs?.cancel;
+    if (typeof cancel === "function") {
+      try {
+        await Promise.resolve(cancel.call(runs, record.threadId, record.runId));
+      } catch {
+        return;
+      }
+    } else {
+      (stream as unknown as JoinableStream).stop?.();
+    }
+
+    hasJoinedRunRef.current = null;
+    clearActiveRun(record);
+  }, [clearActiveRun, client, stream]);
+
+  useEffect(() => {
+    if (!isAuthReady || !urlThreadId || isLoading || isHydrating) return;
+
+    const stored = readStoredActiveRun();
+    if (stored && activeRunMatches(stored, assistantId, urlThreadId)) {
+      joinActiveRun(stored);
+    }
+  }, [assistantId, isAuthReady, isHydrating, isLoading, joinActiveRun, urlThreadId]);
 
   useEffect(() => {
     if (latestRevision) {
@@ -132,6 +294,8 @@ export function useChatStream(assistantId: StudioAssistantId, events: UseChatStr
     isAuthReady,
     isBusy,
     error,
+    cancelActiveRun,
+    clearActiveRun,
     todos,
     designRevisions,
     sketchRevisions,

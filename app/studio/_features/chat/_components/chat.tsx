@@ -60,6 +60,8 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     isAuthReady,
     isBusy,
     error,
+    cancelActiveRun,
+    clearActiveRun,
     todos,
     designRevisions,
     urlThreadId,
@@ -163,6 +165,8 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       { messages: [{ type: "human", content: trimmed }] },
       {
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        onDisconnect: "continue",
+        streamResumable: true,
       },
     );
 
@@ -186,13 +190,14 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     timer.reset();
     setDraftConversationKey((key) => key + 1);
     setHasChosenMode(true);
+    clearActiveRun();
     handleThreadIdChange(null);
     onClearViewerRef.current();
     onModeChange(mode);
     requestAnimationFrame(() => {
       chatInputRef.current?.focus();
     });
-  }, [timer, onModeChange, handleThreadIdChange]);
+  }, [timer, clearActiveRun, onModeChange, handleThreadIdChange]);
 
   const hasStartedChat = !isEmpty || urlThreadId !== null;
 
@@ -221,9 +226,10 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     setPendingHumanMessage(null);
     setHasChosenMode(true);
     timer.reset();
+    clearActiveRun();
     handleThreadIdChange(threadId);
     onClearViewerRef.current();
-  }, [timer, handleThreadIdChange]);
+  }, [timer, clearActiveRun, handleThreadIdChange]);
 
   const handleDeleteThread = useCallback((threadId: string) => {
     history.deleteThread(threadId);
@@ -231,11 +237,12 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       timer.reset();
       setDraftConversationKey((key) => key + 1);
       setHasChosenMode(false);
+      clearActiveRun();
       onModeChange(CAD_ASSISTANT_ID);
       handleThreadIdChange(null);
       onClearViewerRef.current();
     }
-  }, [timer, history, urlThreadId, onModeChange, handleThreadIdChange]);
+  }, [timer, clearActiveRun, history, urlThreadId, onModeChange, handleThreadIdChange]);
 
   const handleNewChat = useCallback(() => {
     if (!hasStartedChat) {
@@ -327,7 +334,9 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
             isBusy={isBusy}
             maskComposer={maskComposer}
             onSubmit={sendMessage}
-            stopGeneration={() => stream.stop()}
+            stopGeneration={() => {
+              void cancelActiveRun();
+            }}
             model={selectedModel}
             onModelChange={handleModelChange}
           />
