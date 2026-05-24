@@ -6,6 +6,7 @@ import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgra
 import { AgentModePicker } from "@/app/studio/_features/chat/_components/agent-mode-picker";
 import {
   activeControlClass,
+  chatContentRailClass,
   chatHeaderClass,
   chatHeaderTooltipClass,
   toolButtonClass,
@@ -48,46 +49,48 @@ export function ChatHeader({
 }: ChatHeaderProps) {
   return (
     <div className={chatHeaderClass}>
-      <div className="flex min-w-0 items-center gap-2">
-        {historyOpen || !activeMode ? (
-          <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
-            {historyOpen ? "Chat History" : "Choose Agent"}
-          </span>
-        ) : (
-          <AgentModePicker activeMode={activeMode} onModeChange={onModeChange} />
-        )}
-      </div>
-      <div className="flex items-center gap-0.5">
-        <ChatHeaderActionButton
-          type="button"
-          onClick={onNewChat}
-          aria-label="New chat"
-          tooltip="New chat"
-          className={toolButtonClass}
-        >
-          <MessageSquarePlus size={14} strokeWidth={1.75} />
-        </ChatHeaderActionButton>
-        <ChatHeaderActionButton
-          type="button"
-          onClick={onToggleHistory}
-          aria-label={historyOpen ? "Close history" : "Open history"}
-          aria-pressed={historyOpen}
-          tooltip={historyOpen ? "Close history" : "History"}
-          className={cn(toolButtonClass, historyOpen && activeControlClass)}
-        >
-          {historyOpen ? <X size={14} strokeWidth={1.75} /> : <FileClock size={14} strokeWidth={1.75} />}
-        </ChatHeaderActionButton>
-        <ChatHeaderActionButton
-          type="button"
-          onClick={onToggleCollapse}
-          aria-label="Hide chat panel"
-          aria-expanded
-          tooltip="Hide chat"
-          className={toolButtonClass}
-        >
-          <PanelBottomClose size={14} strokeWidth={1.75} className="md:hidden" />
-          <PanelRightClose size={14} strokeWidth={1.75} className="hidden md:block" />
-        </ChatHeaderActionButton>
+      <div className={cn(chatContentRailClass, "flex h-full items-center justify-between")}>
+        <div className="flex min-w-0 items-center gap-2">
+          {historyOpen || !activeMode ? (
+            <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
+              {historyOpen ? "Chat History" : "Choose Agent"}
+            </span>
+          ) : (
+            <AgentModePicker activeMode={activeMode} onModeChange={onModeChange} />
+          )}
+        </div>
+        <div className="flex items-center gap-0.5">
+          <ChatHeaderActionButton
+            type="button"
+            onClick={onNewChat}
+            aria-label="New chat"
+            tooltip="New chat"
+            className={toolButtonClass}
+          >
+            <MessageSquarePlus size={14} strokeWidth={1.75} />
+          </ChatHeaderActionButton>
+          <ChatHeaderActionButton
+            type="button"
+            onClick={onToggleHistory}
+            aria-label={historyOpen ? "Close history" : "Open history"}
+            aria-pressed={historyOpen}
+            tooltip={historyOpen ? "Close history" : "History"}
+            className={cn(toolButtonClass, historyOpen && activeControlClass)}
+          >
+            {historyOpen ? <X size={14} strokeWidth={1.75} /> : <FileClock size={14} strokeWidth={1.75} />}
+          </ChatHeaderActionButton>
+          <ChatHeaderActionButton
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label="Hide chat panel"
+            aria-expanded
+            tooltip="Hide chat"
+            className={toolButtonClass}
+          >
+            <PanelBottomClose size={14} strokeWidth={1.75} className="md:hidden" />
+            <PanelRightClose size={14} strokeWidth={1.75} className="hidden md:block" />
+          </ChatHeaderActionButton>
+        </div>
       </div>
     </div>
   );

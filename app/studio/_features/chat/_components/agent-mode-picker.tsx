@@ -76,7 +76,7 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
         onClick={() => setIsOpen((value) => !value)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="flex h-8 items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+        className="-ml-2.5 flex h-8 items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
       >
         <SelectedIcon size={14} strokeWidth={1.75} className="text-muted-foreground" />
         <span>{selected.label}</span>

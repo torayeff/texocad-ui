@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/app/components/theme-toggle";
 import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
 
 const headerGlassClass =
-  "relative z-10 flex h-12 shrink-0 select-none items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-3 text-sm shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12] md:px-8";
+  "relative z-10 flex h-12 shrink-0 select-none items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_48%,transparent)] bg-[var(--viewer-glass-background)] px-[var(--app-chrome-gutter)] text-sm shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] backdrop-blur-[16px] backdrop-saturate-[1.12]";
 
 const headerLinkClass =
   "rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
@@ -43,7 +43,7 @@ export function Header() {
         </Link>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 md:gap-5">
+      <div className="flex shrink-0 items-center gap-0.5">
         {isSignedIn && !hasAccess && (
           <Link
             href={SITE_ROUTES.pricing}
@@ -53,7 +53,9 @@ export function Header() {
           </Link>
         )}
         {isSignedIn ? (
-          <UserButton appearance={{ elements: { avatarBox: "w-7 h-7" } }} />
+          <div className="grid size-[1.875rem] place-items-center">
+            <UserButton appearance={{ elements: { avatarBox: "w-7 h-7" } }} />
+          </div>
         ) : (
           <button
             type="button"

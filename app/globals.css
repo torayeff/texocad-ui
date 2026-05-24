@@ -17,6 +17,7 @@
   --viewer-glass-background: rgb(255 255 255 / 0.62);
   --viewer-modal-background: rgb(255 255 255 / 0.78);
   --viewer-field-background: rgb(255 255 255 / 0.5);
+  --app-chrome-gutter: 1rem;
 }
 
 .dark {
@@ -34,6 +35,12 @@
   --viewer-glass-background: rgb(24 24 27 / 0.76);
   --viewer-modal-background: rgb(24 24 27 / 0.9);
   --viewer-field-background: rgb(9 9 11 / 0.46);
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --app-chrome-gutter: 1.5rem;
+  }
 }
 
 @theme inline {

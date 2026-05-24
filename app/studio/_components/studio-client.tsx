@@ -345,16 +345,18 @@ export default function StudioClient() {
         </div>
 
         {isChatCollapsed ? (
-          <button
-            type="button"
-            onClick={toggleChatCollapsed}
-            aria-label="Show chat panel"
-            aria-expanded={false}
-            className="flex h-9 shrink-0 items-center justify-center gap-1.5 border-t border-border bg-background text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:h-full md:w-10 md:border-l md:border-t-0"
-          >
-            <PanelBottomOpen size={14} strokeWidth={1.75} className="md:hidden" />
-            <PanelRightOpen size={14} strokeWidth={1.75} className="hidden md:block" />
-          </button>
+          <div className="flex h-11 shrink-0 items-center justify-end border-t border-border bg-background px-[var(--app-chrome-gutter)] md:h-full md:w-10 md:items-start md:justify-center md:border-l md:border-t-0 md:px-0 md:pt-[0.4375rem]">
+            <button
+              type="button"
+              onClick={toggleChatCollapsed}
+              aria-label="Show chat panel"
+              aria-expanded={false}
+              className="grid size-[1.875rem] place-items-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <PanelBottomOpen size={14} strokeWidth={1.75} className="md:hidden" />
+              <PanelRightOpen size={14} strokeWidth={1.75} className="hidden md:block" />
+            </button>
+          </div>
         ) : null}
 
         <div

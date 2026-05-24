@@ -10,6 +10,7 @@ import type { TodoItem } from "@/app/studio/_features/chat/_types/chat";
 import EmptyChatState from "@/app/studio/_features/chat/_components/empty-chat-state";
 import { MessageWithSubagents } from "@/app/studio/_features/chat/_components/message-with-subagents";
 import { TodoList } from "@/app/studio/_features/chat/_components/todo-list";
+import { chatContentRailClass } from "@/app/studio/_features/chat/_lib/chat-styles";
 
 interface ChatMessagesPanelProps {
   activeMode: StudioAssistantId | null;
@@ -59,10 +60,10 @@ export function ChatMessagesPanel({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-on-hover px-4 pb-6 pt-6"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-on-hover px-[var(--app-chrome-gutter)] pb-6 pt-6"
       >
         <div
-          className={`mx-auto flex w-full max-w-4xl flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-center" : ""}`}
+          className={`${chatContentRailClass} flex flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-center" : ""}`}
         >
           {isEmpty && !isHydrating && (
             <EmptyChatState

@@ -5,7 +5,9 @@ import { useAuth } from "@clerk/nextjs";
 import { Brush, Eraser, Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_features/chat/_hooks/use-file-upload";
 import ModelPicker from "@/app/studio/_features/chat/_components/model-picker";
+import { MODELS } from "@/app/studio/_features/chat/_lib/models";
 import {
+  chatContentRailClass,
   composerButtonClass,
   composerTooltipClass,
 } from "@/app/studio/_features/chat/_lib/chat-styles";
@@ -116,6 +118,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const { sessionClaims } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
+  const shouldShowModelPicker = isVip && MODELS.length > 1;
 
   const onFileUploaded = useCallback((file: UploadedFile) => {
     setAttachments((prev) => [...prev, file]);
@@ -211,13 +214,13 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   );
 
   return (
-    <div className="shrink-0 p-4">
+    <div className="shrink-0 px-[var(--app-chrome-gutter)] py-4">
       <div
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative rounded-3xl border bg-[var(--viewer-glass-background)] px-2 py-2 shadow-[0_12px_40px_rgb(0_0_0_/_0.10)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors focus-within:border-border/80 focus-within:ring-1 focus-within:ring-border/40 ${isDragging
+        className={`${chatContentRailClass} relative rounded-3xl border bg-[var(--viewer-glass-background)] px-2 py-2 shadow-[0_12px_40px_rgb(0_0_0_/_0.10)] backdrop-blur-[16px] backdrop-saturate-[1.12] transition-colors focus-within:border-border/80 focus-within:ring-1 focus-within:ring-border/40 ${isDragging
           ? "border-dashed border-primary/60 bg-primary/5"
           : "border-[color-mix(in_srgb,var(--border)_58%,transparent)]"
           }`}
@@ -299,7 +302,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
               </ComposerIconButton>
-              {isVip && (
+              {shouldShowModelPicker && (
                 <ModelPicker
                   value={model}
                   onChange={onModelChange}

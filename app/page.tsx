@@ -46,7 +46,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="flex min-h-dvh flex-col bg-background text-foreground">
-        <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 text-sm sm:px-10 lg:px-12">
+        <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-[var(--app-chrome-gutter)] py-6 text-sm">
           <div className="flex items-center gap-2">
             <details className="relative sm:hidden">
               <summary
@@ -159,7 +159,7 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="mx-auto flex w-full max-w-7xl justify-center gap-6 px-6 pb-8 text-xs font-normal text-foreground/35 sm:justify-end sm:px-10 lg:px-12">
+        <footer className="mx-auto flex w-full max-w-7xl justify-center gap-6 px-[var(--app-chrome-gutter)] pb-8 text-xs font-normal text-foreground/35 sm:justify-end">
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
             className="transition-colors hover:text-foreground/60"
