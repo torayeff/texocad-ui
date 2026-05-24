@@ -230,7 +230,6 @@ export const SubagentCard = React.memo(function SubagentCard({
                       <ToolCallCard
                         key={toolCall.id}
                         toolCall={toolCall}
-                        isStreaming={isStreaming}
                       />
                     ))}
                   </div>

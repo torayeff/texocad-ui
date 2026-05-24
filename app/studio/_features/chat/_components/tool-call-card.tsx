@@ -39,15 +39,12 @@ function getToolCallState(toolCall: StreamToolCall): ToolCallState {
 
 export const ToolCallCard = React.memo(function ToolCallCard({
   toolCall,
-  isStreaming = false,
 }: {
   toolCall: StreamToolCall;
-  isStreaming?: boolean;
 }) {
   const state = getToolCallState(toolCall);
   const cls = `flex-shrink-0 ${STATUS_CLASS[state]}`;
-  const shouldAutoOpen = state === "pending" && isStreaming;
-  const { isOpen, handleToggle } = useAutoOpenDetails(shouldAutoOpen);
+  const { isOpen, handleToggle } = useAutoOpenDetails(false);
   const shouldRenderBody = isOpen;
   const resultText = React.useMemo(
     () => shouldRenderBody ? getToolResultText(toolCall.result) : "",

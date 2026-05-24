@@ -228,7 +228,6 @@ function AIMessageView({
             <ToolCallCard
               key={tc.id}
               toolCall={tc}
-              isStreaming={isStreaming}
             />
           ))}
         </div>
