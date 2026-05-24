@@ -111,10 +111,10 @@ export default function Home() {
         <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-12 px-6 py-12 sm:px-10 lg:grid-cols-[0.72fr_1fr] lg:px-12 lg:py-16">
           <div className="max-w-xl">
             <h1 className="text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
-              Build products from text.
+              Turn ideas into physical products.
             </h1>
             <p className="mt-5 text-lg leading-7 text-muted-foreground sm:text-xl">
-              Describe what you want to make and turn it into editable CAD with AI.
+              Generate sketches, 3D models, and editable CAD from a text description.
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
