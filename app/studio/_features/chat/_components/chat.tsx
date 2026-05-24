@@ -9,14 +9,14 @@ import { useChatStream } from "@/app/studio/_features/chat/_hooks/use-chat-strea
 import { useAssistantTimer } from "@/app/studio/_features/chat/_hooks/use-assistant-timer";
 import { useMessageRows } from "@/app/studio/_features/chat/_hooks/use-message-rows";
 import { useChatScroll } from "@/app/studio/_features/chat/_hooks/use-chat-scroll";
+import { useChatSessionController } from "@/app/studio/_features/chat/_hooks/use-chat-session-controller";
 import { getMessageTextContent } from "@/app/studio/_features/chat/_lib/message-content";
-import type { SubagentView } from "@/app/studio/_features/chat/_lib/message-rows";
+import { streamRowAccessors } from "@/app/studio/_features/chat/_lib/langgraph-stream";
 import { DEFAULT_MODEL_ID, MODELS } from "@/app/studio/_features/chat/_lib/models";
-import { CAD_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import { THREAD_MODE_METADATA_KEY } from "@/app/studio/_features/chat/_lib/thread-mode";
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
-import type { ChatHandle, ChatInputHandle, ThreadSummary } from "@/app/studio/_features/chat/_types/chat";
-import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
+import type { ChatHandle, ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
 import { trackMessageSubmitted } from "@/app/studio/_features/chat/_lib/analytics";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 
@@ -25,10 +25,7 @@ import ThreadHistoryPanel from "@/app/studio/_features/chat/_components/thread-h
 import ChatInput from "@/app/studio/_features/chat/_components/chat-input";
 import { ChatErrorBanner, ChatNotFoundState } from "@/app/studio/_features/chat/_components/chat-error-state";
 import { ChatMessagesPanel } from "@/app/studio/_features/chat/_components/chat-messages-panel";
-import {
-  NewChatConfirmationDialog,
-  type NewChatConfirmationIntent,
-} from "@/app/studio/_features/chat/_components/new-chat-confirmation-dialog";
+import { NewChatConfirmationDialog } from "@/app/studio/_features/chat/_components/new-chat-confirmation-dialog";
 
 interface ChatProps {
   assistantId: StudioAssistantId;
@@ -41,22 +38,6 @@ interface ChatProps {
   onSketchRevisionsChange: (revisions: SketchRevisionArtifact[]) => void;
   onClearViewer: () => void;
   onToggleCollapse: () => void;
-}
-
-interface StreamSubagent {
-  id: string;
-  status: SubagentView["status"];
-  toolCall: SubagentView["toolCall"];
-  messages: SubagentView["messages"];
-  result?: string | null;
-  startedAt?: Date | null;
-  completedAt?: Date | null;
-  toolCalls: StreamToolCall[];
-}
-
-interface StreamRowMethods {
-  getToolCalls: (message: Parameters<typeof getMessageTextContent>[0]) => StreamToolCall[];
-  getSubagentsByMessage: (messageId: string) => StreamSubagent[];
 }
 
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
@@ -94,15 +75,9 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   });
 
   const timer = useAssistantTimer();
-  const resetTimer = timer.reset;
   const { sessionClaims, userId } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
-  const [pendingHumanMessage, setPendingHumanMessage] = useState<HumanMessage | null>(null);
-  const [draftConversationKey, setDraftConversationKey] = useState(0);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
-  const [hasChosenMode, setHasChosenMode] = useState(urlThreadId !== null);
-  const [newChatConfirmationIntent, setNewChatConfirmationIntent] = useState<NewChatConfirmationIntent | null>(null);
 
   const handleModelChange = useCallback((modelId: string) => {
     if (!MODELS.some((m) => m.id === modelId)) return;
@@ -110,16 +85,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   }, []);
 
   const chatInputRef = useRef<ChatInputHandle>(null);
-
-  const onClearViewerRef = useRef(onClearViewer);
-  useEffect(() => {
-    onClearViewerRef.current = onClearViewer;
-  }, [onClearViewer]);
-
-  useEffect(() => {
-    setPendingHumanMessage(null);
-    resetTimer();
-  }, [resetTimer, urlThreadId]);
 
   useEffect(() => {
     onDesignRevisionsChange(designRevisions);
@@ -130,26 +95,35 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   }, [sketchRevisions, onSketchRevisionsChange]);
 
   const history = useThreadHistory(client, isAuthReady);
+  const {
+    conversationScope,
+    handleCancelNewChat,
+    handleConfirmNewChat,
+    handleDeleteThread,
+    handleModeSelect,
+    handleNewChat,
+    handleSelectThread,
+    hasActiveMode,
+    historyOpen,
+    newChatConfirmationIntent,
+    pendingHumanMessage,
+    resetAfterNotFound,
+    setHasChosenMode,
+    setPendingHumanMessage,
+    toggleHistory,
+  } = useChatSessionController({
+    assistantId,
+    chatInputRef,
+    history,
+    messageCount: messages.length,
+    onClearViewer,
+    onModeChange,
+    switchThread,
+    timer,
+    urlThreadId,
+  });
 
-  const conversationScope = urlThreadId ?? `draft-${draftConversationKey}`;
-  const streamRowMethods = stream as unknown as StreamRowMethods;
-  const rowStreamAccessors = useMemo(() => ({
-    getToolCalls: (message: Parameters<typeof getMessageTextContent>[0]) => streamRowMethods.getToolCalls(message),
-    getSubagentsByMessage: (messageId: string): SubagentView[] => streamRowMethods.getSubagentsByMessage(messageId).map((subagent) => ({
-      id: subagent.id,
-      status: subagent.status,
-      toolCall: {
-        id: subagent.toolCall.id,
-        name: subagent.toolCall.name,
-        args: subagent.toolCall.args,
-      },
-      messages: subagent.messages,
-      result: subagent.result,
-      startedAt: subagent.startedAt,
-      completedAt: subagent.completedAt,
-      toolCalls: subagent.toolCalls,
-    })),
-  }), [streamRowMethods]);
+  const rowStreamAccessors = useMemo(() => streamRowAccessors(stream), [stream]);
 
   const lastHumanMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -176,7 +150,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   });
 
   const isEmpty = messageRows.length === 0 && !shouldRenderPendingHumanMessage;
-  const hasActiveMode = hasChosenMode || urlThreadId !== null;
   const lastMessageType = shouldRenderPendingHumanMessage
     ? "human"
     : messageRows[messageRows.length - 1]?.messageType;
@@ -221,7 +194,18 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       scrollToBottom();
     });
     return true;
-  }, [assistantId, isBusy, isVip, markNearBottom, scrollToBottom, selectedModel, stream, userId]);
+  }, [
+    assistantId,
+    isBusy,
+    isVip,
+    markNearBottom,
+    scrollToBottom,
+    selectedModel,
+    setHasChosenMode,
+    setPendingHumanMessage,
+    stream,
+    userId,
+  ]);
 
   React.useImperativeHandle(ref, () => ({
     focusInput: () => {
@@ -230,35 +214,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     submitMessage: (content: string) => sendMessage(content),
   }), [sendMessage]);
 
-  const startNewChat = useCallback((mode: StudioAssistantId) => {
-    setHistoryOpen(false);
-    setPendingHumanMessage(null);
-    timer.reset();
-    setDraftConversationKey((key) => key + 1);
-    setHasChosenMode(true);
-    switchThread(null);
-    onClearViewerRef.current();
-    onModeChange(mode);
-    requestAnimationFrame(() => {
-      chatInputRef.current?.focus();
-    });
-  }, [timer, onModeChange, switchThread]);
-
-  const hasStartedChat = !isEmpty || urlThreadId !== null;
-
-  const handleModeSelect = useCallback((mode: StudioAssistantId) => {
-    if (mode === assistantId && hasActiveMode) return;
-    if (!hasStartedChat) {
-      onModeChange(mode);
-      setHasChosenMode(true);
-      requestAnimationFrame(() => {
-        chatInputRef.current?.focus();
-      });
-      return;
-    }
-    setNewChatConfirmationIntent({ kind: "mode", mode });
-  }, [assistantId, hasActiveMode, hasStartedChat, onModeChange]);
-
   const handlePromptSelect = useCallback((prompt: string) => {
     chatInputRef.current?.setPrompt(prompt);
     requestAnimationFrame(() => {
@@ -266,52 +221,10 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     });
   }, []);
 
-  const handleSelectThread = useCallback((thread: ThreadSummary) => {
-    setHistoryOpen(false);
-    setPendingHumanMessage(null);
-    setHasChosenMode(true);
-    timer.reset();
-    if (thread.mode) onModeChange(thread.mode);
-    switchThread(thread.threadId);
-    onClearViewerRef.current();
-  }, [timer, switchThread, onModeChange]);
-
-  const handleDeleteThread = useCallback((threadId: string) => {
-    history.deleteThread(threadId);
-    if (threadId === urlThreadId) {
-      timer.reset();
-      setDraftConversationKey((key) => key + 1);
-      setHasChosenMode(false);
-      onModeChange(CAD_ASSISTANT_ID);
-      switchThread(null);
-      onClearViewerRef.current();
-    }
-  }, [timer, history, urlThreadId, onModeChange, switchThread]);
-
-  const handleNewChat = useCallback(() => {
-    if (!hasStartedChat) {
-      startNewChat(hasActiveMode ? assistantId : CAD_ASSISTANT_ID);
-      return;
-    }
-    setNewChatConfirmationIntent({ kind: "new" });
-  }, [assistantId, hasActiveMode, hasStartedChat, startNewChat]);
-
-  const handleConfirmNewChat = useCallback(() => {
-    const intent = newChatConfirmationIntent;
-    setNewChatConfirmationIntent(null);
-    startNewChat(intent?.kind === "mode" ? intent.mode : (hasActiveMode ? assistantId : CAD_ASSISTANT_ID));
-  }, [assistantId, hasActiveMode, newChatConfirmationIntent, startNewChat]);
-
-  const handleCancelNewChat = useCallback(() => {
-    setNewChatConfirmationIntent(null);
-  }, []);
-
-  const toggleHistory = useCallback(() => {
-    setHistoryOpen((v) => {
-      if (!v) history.refresh();
-      return !v;
-    });
-  }, [history]);
+  const handleStartAfterNotFound = useCallback(() => {
+    resetAfterNotFound();
+    router.replace(pathname);
+  }, [pathname, resetAfterNotFound, router]);
 
   const errorMessage = error
     ? (error instanceof Error ? error.message : String(error))
@@ -319,7 +232,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   const isNotFound = errorMessage?.includes("HTTP 404");
 
   if (isNotFound) {
-    return <ChatNotFoundState onStartNew={() => router.replace(pathname)} />;
+    return <ChatNotFoundState onStartNew={handleStartAfterNotFound} />;
   }
 
   return (

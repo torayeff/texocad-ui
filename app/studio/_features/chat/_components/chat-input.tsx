@@ -2,20 +2,21 @@
 
 import React, { useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Brush, Eraser, Plus, Square, ArrowUp, Loader2, Paperclip, X } from "lucide-react";
+import { Plus, Square, ArrowUp, Loader2 } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_features/chat/_hooks/use-file-upload";
 import ModelPicker from "@/app/studio/_features/chat/_components/model-picker";
+import { AttachmentPill } from "@/app/studio/_features/chat/_components/attachment-pill";
+import {
+  MaskComposerBanner,
+  maskComposerDisabledReason,
+} from "@/app/studio/_features/chat/_components/mask-composer-banner";
 import { MODELS } from "@/app/studio/_features/chat/_lib/models";
 import {
   chatContentRailClass,
   composerButtonClass,
   composerTooltipClass,
 } from "@/app/studio/_features/chat/_lib/chat-styles";
-import {
-  attachmentMarkdown,
-  isImageAttachment,
-} from "@/app/studio/_features/chat/_lib/message-attachments";
-import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_lib/signed-attachment-url";
+import { attachmentMarkdown } from "@/app/studio/_features/chat/_lib/message-attachments";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 import type { ChatInputHandle, UploadedFile } from "@/app/studio/_features/chat/_types/chat";
 
@@ -23,7 +24,7 @@ interface ChatInputProps {
   isBusy: boolean;
   isLoading: boolean;
   maskComposer: SketchMaskComposerState | null;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string) => boolean;
   stopGeneration: () => void;
   model: string;
   onModelChange: (modelId: string) => void;
@@ -51,50 +52,6 @@ function resizeTextarea(textarea: HTMLTextAreaElement | null) {
   if (!textarea) return;
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px";
-}
-
-function maskComposerDisabledReason(maskComposer: SketchMaskComposerState | null) {
-  if (!maskComposer) return null;
-  if (maskComposer.isSubmitting) return "Submitting masked edit...";
-  if (!maskComposer.canSubmit) return "Brush an area in the sketch first.";
-  return null;
-}
-
-function AttachmentPill({
-  attachment,
-  onRemove,
-}: {
-  attachment: UploadedFile;
-  onRemove: (url: string) => void;
-}) {
-  const signedUrl = useSignedAttachmentUrl(attachment.url);
-
-  return (
-    <span
-      className="inline-flex items-center gap-1 rounded-xl bg-muted px-2 py-1 text-xs text-foreground"
-    >
-      {isImageAttachment(attachment) ? (
-        // eslint-disable-next-line @next/next/no-img-element -- Uploaded private blob URLs are user-scoped and not configured for Next image optimization.
-        <img
-          src={signedUrl}
-          alt=""
-          className="size-8 rounded-lg object-cover"
-          loading="lazy"
-          decoding="async"
-        />
-      ) : (
-        <Paperclip size={12} className="text-muted-foreground" />
-      )}
-      <span className="max-w-[180px] truncate">{attachment.filename}</span>
-      <button
-        type="button"
-        onClick={() => onRemove(attachment.url)}
-        className="ml-0.5 rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      >
-        <X size={12} />
-      </button>
-    </span>
-  );
 }
 
 const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
@@ -188,7 +145,9 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
       const links = attachments.map(attachmentMarkdown).join("\n");
       parts.push(`Attachments:\n${links}`);
     }
-    onSubmit(parts.join("\n\n"));
+    const didSubmit = onSubmit(parts.join("\n\n"));
+    if (!didSubmit) return;
+
     setInput("");
     setAttachments([]);
     if (textareaRef.current) {
@@ -227,34 +186,11 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
         />
 
         {maskComposer ? (
-          <div className="mx-1 mb-2 flex items-center justify-between gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--border)_58%,transparent)] bg-muted/35 px-2.5 py-1.5 text-xs text-muted-foreground">
-            <div className="flex min-w-0 items-center gap-2">
-              <Brush size={14} strokeWidth={1.75} className="shrink-0 text-foreground" />
-              <span className="truncate">
-                {maskComposer.error ?? maskSubmitDisabledReason ?? "Editing masked area"}
-              </span>
-            </div>
-            <div className="flex shrink-0 items-center gap-0.5">
-              <button
-                type="button"
-                onClick={maskComposer.clear}
-                disabled={isComposerBusy || !maskComposer.canSubmit}
-                className={composerButtonClass}
-                aria-label="Clear mask"
-              >
-                <Eraser size={14} strokeWidth={1.75} />
-              </button>
-              <button
-                type="button"
-                onClick={maskComposer.close}
-                disabled={isComposerBusy}
-                className={composerButtonClass}
-                aria-label="Cancel mask edit"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </div>
+          <MaskComposerBanner
+            disabledReason={maskSubmitDisabledReason}
+            isComposerBusy={isComposerBusy}
+            maskComposer={maskComposer}
+          />
         ) : null}
 
         {attachments.length > 0 && (

@@ -2,7 +2,7 @@ import type { CSSProperties, RefObject } from "react";
 import { Loader2, MoveDiagonal, Rotate3d, Undo2 } from "lucide-react";
 
 import { viewLabels, viewPresets } from "@/app/components/model-viewer/_lib/model-viewer-state";
-import { countModelBrowserNodes, ModelBrowserTree } from "@/app/components/model-viewer/_components/model-browser-tree";
+import { ModelBrowserTree } from "@/app/components/model-viewer/_components/model-browser-tree";
 import {
   activeControlClass,
   controlFloatingPanelClass,
@@ -252,5 +252,3 @@ export function TransformMenu({
     </div>
   );
 }
-
-export { countModelBrowserNodes };

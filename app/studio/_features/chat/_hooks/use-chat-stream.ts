@@ -19,6 +19,11 @@ import type {
   TexocadGraphState,
   TodoItem,
 } from "@/app/studio/_features/chat/_types/chat";
+import {
+  createdRunIds,
+  latestActiveRunId,
+  streamThreadControls,
+} from "@/app/studio/_features/chat/_lib/langgraph-stream";
 
 const EMPTY_TODOS: TodoItem[] = [];
 
@@ -29,42 +34,6 @@ interface UseChatStreamEvents {
 
 interface UseChatStreamOptions extends UseChatStreamEvents {
   initialThreadId?: string | null;
-}
-
-interface StreamThreadControls {
-  switchThread?: (threadId: string | null) => void | Promise<void>;
-  joinStream?: (runId: string) => void | Promise<void>;
-}
-
-interface CreatedRun {
-  run_id?: string;
-  runId?: string;
-  thread_id?: string;
-  threadId?: string;
-}
-
-interface ThreadRun {
-  run_id?: string;
-  runId?: string;
-  status?: string;
-  created_at?: string;
-  createdAt?: string;
-}
-
-function runId(run: ThreadRun) {
-  return run.run_id ?? run.runId ?? null;
-}
-
-function runCreatedAt(run: ThreadRun) {
-  const value = run.created_at ?? run.createdAt;
-  return value ? Date.parse(value) : 0;
-}
-
-function latestActiveRunId(runs: ThreadRun[]) {
-  return runs
-    .filter((run) => run.status === "pending" || run.status === "running")
-    .sort((a, b) => runCreatedAt(b) - runCreatedAt(a))
-    .map(runId)[0] ?? null;
 }
 
 function replaceUrlThreadId(pathname: string, currentSearchParams: URLSearchParams, threadId: string | null) {
@@ -116,9 +85,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   );
 
   const handleRunCreated = useCallback((run: unknown) => {
-    const createdRun = run as CreatedRun;
-    const createdThreadId = createdRun.thread_id ?? createdRun.threadId ?? threadIdRef.current;
-    const createdRunId = createdRun.run_id ?? createdRun.runId ?? null;
+    const { runId: createdRunId, threadId: createdThreadId } = createdRunIds(run, threadIdRef.current);
     if (!createdThreadId) return;
     setThreadId(createdThreadId);
     if (createdRunId) {
@@ -157,7 +124,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
 
   const switchThread = useCallback(
     (nextThreadId: string | null) => {
-      const streamSwitchThread = (stream as unknown as StreamThreadControls).switchThread;
+      const { switchThread: streamSwitchThread } = streamThreadControls(stream);
       if (typeof streamSwitchThread === "function") {
         void streamSwitchThread(nextThreadId);
       }
@@ -184,7 +151,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   useEffect(() => {
     if (!isAuthReady || !activeRunId || isLoading) return;
 
-    const joinStream = (stream as unknown as StreamThreadControls).joinStream;
+    const { joinStream } = streamThreadControls(stream);
     if (typeof joinStream !== "function") return;
 
     void Promise.resolve(joinStream(activeRunId)).catch(() => {
@@ -199,7 +166,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
 
     void client.runs.list(threadId)
       .then((runs) => {
-        const nextRunId = latestActiveRunId(runs as ThreadRun[]);
+        const nextRunId = latestActiveRunId(runs);
         if (nextRunId) setActiveRunId(nextRunId);
       })
       .catch(() => {

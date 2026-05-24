@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface ShareArtifact {
   blobName: string;
@@ -75,6 +75,7 @@ export function useShareArtifact<TSource>({
   const [shareResult, setShareResult] = useState<ShareResult | null>(null);
   const [currentShareError, setShareError] = useState<string | null>(null);
   const [didCopyShareUrl, setDidCopyShareUrl] = useState(false);
+  const requestVersionRef = useRef(0);
   const shareUrl = shareResult?.revisionKey === activeRevisionKey ? shareResult.url : null;
 
   const handleOpenShareDialog = useCallback(() => {
@@ -84,6 +85,10 @@ export function useShareArtifact<TSource>({
 
     setIsShareDialogOpen(true);
 
+    const requestVersion = requestVersionRef.current + 1;
+    requestVersionRef.current = requestVersion;
+    const requestRevisionKey = activeRevisionKey;
+    const requestDefaultName = defaultShareName(source);
     const params = new URLSearchParams(shareRevisionParams(artifactKind, shareRevision));
 
     void fetch(`/api/shares?${params.toString()}`)
@@ -94,17 +99,22 @@ export function useShareArtifact<TSource>({
         }
 
         if (data?.sharedArtifact?.shareUrl) {
+          if (requestVersionRef.current !== requestVersion) return;
           setShareResult({
-            revisionKey: activeRevisionKey,
+            revisionKey: requestRevisionKey,
             url: data.sharedArtifact.shareUrl,
           });
           return;
         }
 
-        setShareName((currentName) => currentName || defaultShareName(source));
+        if (requestVersionRef.current === requestVersion) {
+          setShareName((currentName) => currentName || requestDefaultName);
+        }
       })
       .catch(() => {
-        setShareName((currentName) => currentName || defaultShareName(source));
+        if (requestVersionRef.current === requestVersion) {
+          setShareName((currentName) => currentName || requestDefaultName);
+        }
       });
   }, [activeRevisionKey, artifactKind, defaultShareName, shareError, shareRevision, source]);
 
@@ -127,6 +137,9 @@ export function useShareArtifact<TSource>({
     setIsSharing(true);
     setShareError(null);
     setDidCopyShareUrl(false);
+    const requestVersion = requestVersionRef.current + 1;
+    requestVersionRef.current = requestVersion;
+    const requestRevisionKey = activeRevisionKey;
 
     void fetch("/api/shares", {
       method: "POST",
@@ -147,15 +160,19 @@ export function useShareArtifact<TSource>({
           throw new Error(data?.error ?? shareError);
         }
 
+        if (requestVersionRef.current !== requestVersion) return;
         setShareResult({
-          revisionKey: activeRevisionKey,
+          revisionKey: requestRevisionKey,
           url: data.sharedArtifact.shareUrl,
         });
       })
       .catch((error: unknown) => {
+        if (requestVersionRef.current !== requestVersion) return;
         setShareError(error instanceof Error ? error.message : shareError);
       })
-      .finally(() => setIsSharing(false));
+      .finally(() => {
+        if (requestVersionRef.current === requestVersion) setIsSharing(false);
+      });
   }, [activeRevisionKey, artifactKind, emptyNameError, isSharing, shareError, shareName, shareRevision]);
 
   const handleCopyShareUrl = useCallback(() => {

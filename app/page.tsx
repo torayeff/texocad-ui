@@ -3,7 +3,7 @@ import Link from "next/link";
 import { FaLinkedin, FaXTwitter } from "react-icons/fa6";
 
 import { ExpertNetworkBanner } from "@/app/_components/expert-network-banner";
-import { SiteHeader } from "@/app/_components/site-header";
+import { SiteHeader } from "@/app/components/site-header";
 import { ThemeHeroImage } from "@/app/_components/theme-hero-image";
 import {
   SITE_DESCRIPTION,

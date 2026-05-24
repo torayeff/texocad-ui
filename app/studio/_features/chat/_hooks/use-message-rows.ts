@@ -95,10 +95,6 @@ export function useMessageRows({
       const rowKey = getMessageRowKey(rows.length, conversationScope, message.id);
       const isActive = index === activeAssistantIndex;
 
-      if (isActive) {
-        timer.markStart(rowKey);
-      }
-
       const textContent = getMessageTextContent(message);
       const thinkingContent = getReasoningContent(message);
       const runtimeSeconds = timer.runtimeSecondsByRow[rowKey];
@@ -131,7 +127,7 @@ export function useMessageRows({
     }
 
     return rows;
-    // timer.markStart/getStartedAtMs are ref-based and intentionally omitted.
+    // timer.getStartedAtMs is ref-based and intentionally omitted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     conversationScope,
@@ -152,6 +148,9 @@ export function useMessageRows({
 
   useEffect(() => {
     const prev = prevActiveRowKeyRef.current;
+    if (activeAssistantRowKey) {
+      timer.markStart(activeAssistantRowKey);
+    }
     if (prev && prev !== activeAssistantRowKey) {
       timer.finalize(prev);
     }

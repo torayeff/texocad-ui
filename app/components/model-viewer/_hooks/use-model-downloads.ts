@@ -13,6 +13,7 @@ interface UseModelDownloadsOptions {
 export function useModelDownloads({ source, sourceCode }: UseModelDownloadsOptions) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingSource, setIsDownloadingSource] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const downloadAbortRef = useRef<AbortController | null>(null);
   const sourceDownloadAbortRef = useRef<AbortController | null>(null);
 
@@ -29,6 +30,7 @@ export function useModelDownloads({ source, sourceCode }: UseModelDownloadsOptio
   const handleDownload = useCallback(() => {
     if (!source || isDownloading) return;
 
+    setDownloadError(null);
     setIsDownloading(true);
     abortDownload();
     const abortController = new AbortController();
@@ -37,7 +39,7 @@ export function useModelDownloads({ source, sourceCode }: UseModelDownloadsOptio
     void saveSourceModelFile(source, abortController.signal)
       .catch(() => {
         if (!abortController.signal.aborted) {
-          window.alert("Could not download the current model.");
+          setDownloadError("Could not download the current model.");
         }
       })
       .finally(() => {
@@ -51,6 +53,7 @@ export function useModelDownloads({ source, sourceCode }: UseModelDownloadsOptio
   const handleSourceDownload = useCallback(() => {
     if (!sourceCode || isDownloadingSource) return;
 
+    setDownloadError(null);
     setIsDownloadingSource(true);
     abortSourceDownload();
     const abortController = new AbortController();
@@ -59,7 +62,7 @@ export function useModelDownloads({ source, sourceCode }: UseModelDownloadsOptio
     void saveSourceModelFile(sourceCode, abortController.signal)
       .catch(() => {
         if (!abortController.signal.aborted) {
-          window.alert("Could not download the source code.");
+          setDownloadError("Could not download the source code.");
         }
       })
       .finally(() => {
@@ -78,6 +81,7 @@ export function useModelDownloads({ source, sourceCode }: UseModelDownloadsOptio
   }, [abortDownload, abortSourceDownload]);
 
   return {
+    downloadError,
     handleDownload,
     handleSourceDownload,
     isDownloading,

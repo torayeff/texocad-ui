@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { SiteHeader } from "@/app/_components/site-header";
+import { SiteHeader } from "@/app/components/site-header";
 import { SITE_ROUTES } from "@/app/lib/site";
 
 const TALLY_FORM_URL =

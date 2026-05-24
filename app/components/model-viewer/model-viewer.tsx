@@ -78,7 +78,13 @@ export default function ModelViewer({
     visibleBrowserNodeIds,
     wireframe,
   } = useModelViewerScene({ source });
-  const { handleDownload, handleSourceDownload, isDownloading, isDownloadingSource } = useModelDownloads({
+  const {
+    downloadError,
+    handleDownload,
+    handleSourceDownload,
+    isDownloading,
+    isDownloadingSource,
+  } = useModelDownloads({
     source,
     sourceCode: downloads?.sourceCode ?? null,
   });
@@ -141,6 +147,14 @@ export default function ModelViewer({
       {!canUseLocalFiles && source && loadState === "error" ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <p className="text-sm text-error">{status}</p>
+        </div>
+      ) : null}
+
+      {downloadError ? (
+        <div className="pointer-events-none absolute inset-x-4 bottom-16 z-20 flex justify-center">
+          <p className="rounded-xl border border-error/30 bg-background/90 px-3 py-2 text-xs text-error shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] backdrop-blur">
+            {downloadError}
+          </p>
         </div>
       ) : null}
 

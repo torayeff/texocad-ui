@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useState } from "react";
+import { memo } from "react";
 import {
   Camera,
   CircleX,
@@ -24,13 +24,10 @@ import {
   toolRailClass,
 } from "@/app/components/viewer/viewer-styles";
 import { cn } from "@/app/lib/cn";
-import { useFloatingPanel } from "@/app/components/viewer/use-floating-panel";
-import { countModelBrowserNodes } from "@/app/components/model-viewer/_components/model-browser-tree";
+import { useViewerControlPanels } from "@/app/components/model-viewer/_hooks/use-viewer-control-panels";
 import { ViewerToolButton } from "@/app/components/viewer/viewer-tool-button";
 import { ViewerControlPopovers } from "@/app/components/model-viewer/_components/viewer-control-popovers";
 import type { ViewerControlsProps } from "@/app/components/model-viewer/_types/viewer-controls";
-
-type OpenPanel = "components" | "download" | "explode" | "revisions" | "transform" | "views";
 
 export const ViewerControls = memo(function ViewerControls({
   activeView,
@@ -69,50 +66,34 @@ export const ViewerControls = memo(function ViewerControls({
   onToggleAutoRotate,
   onToggleWireframe,
 }: ViewerControlsProps) {
-  const [openPanel, setOpenPanel] = useState<OpenPanel | null>(null);
-  const componentCount = useMemo(() => countModelBrowserNodes(modelBrowserNodes), [modelBrowserNodes]);
-  const canShowComponents = modelBrowserNodes.length > 0;
-  const canShowRevisions = revisions.length > 0 && onSelectLatestRevision !== undefined && onSelectRevision !== undefined;
-  const activeRevision = activeRevisionKey
-    ? revisions.find((revision) => revision.key === activeRevisionKey) ?? null
-    : null;
-  const visibleOpenPanel =
-    (openPanel === "components" && !canShowComponents) ||
-      (openPanel === "download" && !canDownload && !canDownloadSource) ||
-      (openPanel === "explode" && !canExplode) ||
-      (openPanel === "revisions" && !canShowRevisions)
-      ? null
-      : openPanel;
-  const { activeTriggerRef, panelRef, panelStyle, railRef, resetPanelPosition } = useFloatingPanel(
-    visibleOpenPanel !== null,
-    [
-      activeRevisionKey,
-      canDownload,
-      canDownloadSource,
-      componentCount,
-      explodeAmount,
-      hasTransforms,
-      isLatestRevisionSelected,
-      revisions.length,
-      transformMode,
-      visibleOpenPanel,
-    ],
-  );
-
-  const togglePanel = (panel: OpenPanel, trigger: HTMLButtonElement) => {
-    const nextPanel = openPanel === panel ? null : panel;
-    activeTriggerRef.current = nextPanel ? trigger : null;
-    resetPanelPosition();
-    setOpenPanel(nextPanel);
-  };
-  const closePanel = () => setOpenPanel(null);
-
-  const viewMenuOpen = visibleOpenPanel === "views";
-  const downloadOpen = visibleOpenPanel === "download";
-  const explodeOpen = visibleOpenPanel === "explode";
-  const componentsOpen = visibleOpenPanel === "components";
-  const revisionsOpen = visibleOpenPanel === "revisions";
-  const transformOpen = visibleOpenPanel === "transform";
+  const {
+    activeRevision,
+    canShowComponents,
+    canShowRevisions,
+    closePanel,
+    componentCount,
+    componentsOpen,
+    downloadOpen,
+    explodeOpen,
+    panelRef,
+    panelStyle,
+    railRef,
+    revisionsOpen,
+    togglePanel,
+    transformOpen,
+    viewMenuOpen,
+  } = useViewerControlPanels({
+    activeRevisionKey,
+    canDownload,
+    canDownloadSource,
+    canExplode,
+    hasTransforms,
+    isLatestRevisionSelected,
+    modelBrowserNodes,
+    revisions,
+    transformMode,
+  });
+  const canUseRevisions = canShowRevisions && onSelectLatestRevision !== undefined && onSelectRevision !== undefined;
 
   return (
     <div ref={railRef} className={toolRailClass} aria-label="Viewer controls">
@@ -205,7 +186,7 @@ export const ViewerControls = memo(function ViewerControls({
         </ViewerToolButton>
       ) : null}
 
-      {canDownload || canDownloadSource || canShare || canShowRevisions ? (
+      {canDownload || canDownloadSource || canShare || canUseRevisions ? (
         <>
           {canShare ? (
             <ViewerToolButton
@@ -242,7 +223,7 @@ export const ViewerControls = memo(function ViewerControls({
               )}
             </ViewerToolButton>
           ) : null}
-          {canShowRevisions ? (
+          {canUseRevisions ? (
             <ViewerToolButton
               type="button"
               onClick={(event) => togglePanel("revisions", event.currentTarget)}

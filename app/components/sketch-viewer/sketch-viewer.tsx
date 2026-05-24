@@ -67,6 +67,7 @@ export default function SketchViewer({
   const [maskError, setMaskError] = useState<string | null>(null);
   const [revisionsOpen, setRevisionsOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const maskEditorRef = useRef<SketchMaskEditorHandle | null>(null);
   const {
     didCopyShareUrl,
@@ -104,9 +105,10 @@ export default function SketchViewer({
   const handleDownload = () => {
     if (!source || isDownloading) return;
 
+    setDownloadError(null);
     setIsDownloading(true);
     void downloadSketchSource(source)
-      .catch(() => window.alert("Could not download the sketch."))
+      .catch(() => setDownloadError("Could not download the sketch."))
       .finally(() => setIsDownloading(false));
   };
 
@@ -219,6 +221,14 @@ export default function SketchViewer({
           </p>
         )}
       </div>
+
+      {downloadError ? (
+        <div className="pointer-events-none absolute inset-x-4 bottom-16 z-20 flex justify-center">
+          <p className="rounded-xl border border-error/30 bg-background/90 px-3 py-2 text-xs text-error shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] backdrop-blur">
+            {downloadError}
+          </p>
+        </div>
+      ) : null}
 
       {hasSource ? (
         <SketchViewerControls
