@@ -11,6 +11,10 @@ import {
   composerButtonClass,
   composerTooltipClass,
 } from "@/app/studio/_features/chat/_lib/chat-styles";
+import {
+  attachmentMarkdown,
+  isImageAttachment,
+} from "@/app/studio/_features/chat/_lib/message-attachments";
 import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_lib/signed-attachment-url";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 import type { ChatInputHandle, UploadedFile } from "@/app/studio/_features/chat/_types/chat";
@@ -47,17 +51,6 @@ function resizeTextarea(textarea: HTMLTextAreaElement | null) {
   if (!textarea) return;
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px";
-}
-
-function isImageAttachment(attachment: UploadedFile) {
-  return attachment.contentType.startsWith("image/");
-}
-
-function attachmentMarkdown(attachment: UploadedFile) {
-  if (isImageAttachment(attachment)) {
-    return `![${attachment.filename}](${attachment.url})`;
-  }
-  return `[${attachment.filename}](${attachment.url})`;
 }
 
 function maskComposerDisabledReason(maskComposer: SketchMaskComposerState | null) {

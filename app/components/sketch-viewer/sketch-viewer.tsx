@@ -11,7 +11,7 @@ import { SketchViewerShareDialogs } from "@/app/components/sketch-viewer/_compon
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
 import { useFloatingPanel } from "@/app/components/viewer/use-floating-panel";
 import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
-import { saveModelFile } from "@/app/components/model-viewer/_lib/model-viewer-actions";
+import { saveBrowserFile } from "@/app/lib/browser-downloads";
 import type {
   ShareSketchRevision,
   SketchMaskComposerState,
@@ -50,7 +50,7 @@ async function downloadSketchSource(source: SketchSource) {
   }
 
   const buffer = await response.arrayBuffer();
-  saveModelFile(buffer, source.label, response.headers.get("Content-Type") ?? "application/octet-stream");
+  saveBrowserFile(buffer, source.label, response.headers.get("Content-Type") ?? "application/octet-stream", "sketch");
 }
 
 export default function SketchViewer({

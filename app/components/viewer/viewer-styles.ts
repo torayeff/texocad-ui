@@ -60,3 +60,6 @@ export const controlMenuItemClass = cn(
 
 export const inputClass =
   "h-[2.625rem] w-full min-w-0 rounded-[0.8125rem] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[var(--viewer-field-background)] px-[0.8rem] py-[0.675rem] text-sm text-foreground outline-none transition-[border-color,box-shadow] duration-150 ease-in-out focus:border-accent focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_18%,transparent)]";
+
+export const hintClass =
+  "pointer-events-none absolute bottom-7 left-3 right-3 z-10 flex select-none items-center justify-center gap-[0.35rem] whitespace-normal text-center text-[0.625rem] text-[color-mix(in_srgb,var(--muted-foreground)_60%,transparent)] sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:gap-3 sm:whitespace-nowrap";

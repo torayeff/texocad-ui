@@ -7,12 +7,13 @@ import {
   maxLocalModelShareNameChars,
   maxLocalModelShareUploadBytes,
   slugifyLocalModelShareName,
-  type LocalModelShareApiResponse,
-  type LocalModelShareFinalizeRequest,
-  type LocalModelShareSuccessResponse,
-  type LocalModelShareUploadRequest,
-  type LocalModelShareUploadResponse,
-} from "@/app/types/local-model-share";
+} from "@/app/lib/model-formats";
+import {
+  createLocalModelShareUpload,
+  finalizeLocalModelShareUpload,
+  uploadFileToSharedModelBlob,
+} from "@/app/components/model-viewer/_lib/local-model-share-client";
+import type { LocalModelShareUploadRequest } from "@/app/types/local-model-share";
 
 interface UseLocalModelShareOptions {
   source: ModelSource | null;
@@ -39,103 +40,6 @@ function defaultShareName(source: ModelSource | null) {
   const dotIndex = name.lastIndexOf(".");
 
   return (dotIndex > 0 ? name.slice(0, dotIndex) : name).replace(/[-_]+/g, " ").trim();
-}
-
-function isShareUploadResponse(result: LocalModelShareApiResponse): result is LocalModelShareUploadResponse {
-  return "uploadUrl" in result && typeof result.uploadUrl === "string";
-}
-
-function isShareSuccessResponse(result: LocalModelShareApiResponse): result is LocalModelShareSuccessResponse {
-  return "shareUrl" in result && typeof result.shareUrl === "string";
-}
-
-async function readShareApiResponse(response: Response): Promise<LocalModelShareApiResponse> {
-  const contentType = response.headers.get("content-type") ?? "";
-
-  if (contentType.includes("application/json")) {
-    return (await response.json()) as LocalModelShareApiResponse;
-  }
-
-  const message = (await response.text()).trim() || response.statusText || "Failed to share model.";
-  return { error: message };
-}
-
-async function uploadFileToBlob(
-  file: File,
-  upload: LocalModelShareUploadResponse,
-  signal?: AbortSignal,
-) {
-  await new Promise<void>((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    const cleanup = () => {
-      signal?.removeEventListener("abort", abort);
-    };
-    const abort = () => {
-      request.abort();
-    };
-
-    if (signal?.aborted) {
-      reject(new Error("Model upload was canceled."));
-      return;
-    }
-
-    request.open("PUT", upload.uploadUrl);
-    request.setRequestHeader("If-None-Match", "*");
-    request.setRequestHeader("x-ms-blob-type", "BlockBlob");
-    request.addEventListener("load", () => {
-      cleanup();
-      if (request.status >= 200 && request.status < 300) {
-        resolve();
-        return;
-      }
-
-      reject(new Error("Failed to upload model file."));
-    });
-    request.addEventListener("error", () => {
-      cleanup();
-      reject(new Error("Failed to upload model file."));
-    });
-    request.addEventListener("abort", () => {
-      cleanup();
-      reject(new Error("Model upload was canceled."));
-    });
-    signal?.addEventListener("abort", abort, { once: true });
-    request.send(file);
-  });
-}
-
-async function finalizeBlobUpload(
-  upload: LocalModelShareUploadResponse,
-  file: File,
-  shareName: string,
-  signal?: AbortSignal,
-) {
-  const payload: LocalModelShareFinalizeRequest = {
-    action: "finalizeUpload",
-    extension: upload.extension,
-    fileName: file.name,
-    shareName,
-    slug: upload.slug,
-  };
-  const response = await fetch("/api/local-model-shares", {
-    body: JSON.stringify(payload),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-    signal,
-  });
-  const result = await readShareApiResponse(response);
-
-  if ("error" in result) {
-    throw new Error(result.error);
-  }
-
-  if (!response.ok || !isShareSuccessResponse(result)) {
-    throw new Error("Failed to validate uploaded model.");
-  }
-
-  return result;
 }
 
 export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShareOptions) {
@@ -220,26 +124,9 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
         fileSize: file.size,
         shareName: trimmedName,
       };
-      const response = await fetch("/api/local-model-shares", {
-        body: JSON.stringify(payload),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        signal: abortController.signal,
-      });
-      const result = await readShareApiResponse(response);
-
-      if ("error" in result) {
-        throw new Error(result.error);
-      }
-
-      if (!response.ok || !isShareUploadResponse(result)) {
-        throw new Error("Share upload URL was not returned.");
-      }
-
-      await uploadFileToBlob(file, result, abortController.signal);
-      const finalizedShare = await finalizeBlobUpload(result, file, trimmedName, abortController.signal);
+      const upload = await createLocalModelShareUpload(payload, abortController.signal);
+      await uploadFileToSharedModelBlob(file, upload, abortController.signal);
+      const finalizedShare = await finalizeLocalModelShareUpload(upload, file, trimmedName, abortController.signal);
       if (abortController.signal.aborted) {
         return;
       }

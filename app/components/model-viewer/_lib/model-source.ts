@@ -1,16 +1,11 @@
-import type { ModelFormat, ModelSource } from "@/app/types/model-viewer";
 import { assertSourceByteLength } from "@/app/components/model-viewer/_lib/geometry-budget";
+import { modelFormatFromName } from "@/app/lib/model-formats";
+import type { ModelFormat, ModelSource } from "@/app/types/model-viewer";
 
 type SourceBufferProgress = (percent: number) => void;
 
 function assertNever(value: never, message: string): never {
   throw new Error(`${message}: ${String(value)}`);
-}
-
-function extensionFromName(name: string) {
-  const cleanName = name.split(/[?#]/)[0];
-  const dotIndex = cleanName.lastIndexOf(".");
-  return dotIndex >= 0 ? cleanName.slice(dotIndex + 1).toLowerCase() : "";
 }
 
 function sourceName(source: ModelSource) {
@@ -140,18 +135,5 @@ export async function getSourceBuffer(source: ModelSource, onProgress?: SourceBu
 }
 
 export function sourceFormat(source: ModelSource): ModelFormat {
-  const extension = extensionFromName(sourceName(source));
-
-  switch (extension) {
-    case "step":
-    case "stp":
-      return "step";
-    case "stl":
-      return "stl";
-    case "glb":
-    case "gltf":
-      return "glb";
-    default:
-      throw new Error("Unsupported model format. Use STEP, STP, STL, GLB, or self-contained GLTF.");
-  }
+  return modelFormatFromName(sourceName(source));
 }

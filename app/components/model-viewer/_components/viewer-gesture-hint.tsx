@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-import { hintClass } from "@/app/components/model-viewer/_lib/viewer-styles";
+import { hintClass } from "@/app/components/viewer/viewer-styles";
 
 interface ViewerGestureHintProps {
   showGestures: boolean;

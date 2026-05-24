@@ -5,6 +5,10 @@ import { AIPanel } from "@/app/studio/_features/chat/_components/ai-panel";
 import { ToolCallCard } from "@/app/studio/_features/chat/_components/tool-call-card";
 import { ToolPreviewCard } from "@/app/studio/_features/chat/_components/tool-preview-card";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_features/chat/_components/inline-blocks";
+import {
+  humanMessageDisplayParts,
+  type HumanAttachment,
+} from "@/app/studio/_features/chat/_lib/message-attachments";
 import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_lib/signed-attachment-url";
 import type { ChatMessageType, StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 
@@ -23,88 +27,6 @@ interface ChatMessageProps {
 }
 
 const REMARK_PLUGINS = [remarkGfm];
-const HIDDEN_HUMAN_MESSAGE_LINE_PREFIXES = ["Input image:", "Mask:"];
-const MARKDOWN_IMAGE_LINE = /^!\[([^\]]*)\]\(([^)]+)\)$/;
-const MARKDOWN_LINK_LINE = /^\[([^\]]+)\]\(([^)]+)\)$/;
-const MASK_LINE_PREFIX = "Mask:";
-
-interface HumanAttachment {
-  filename: string;
-  isImage: boolean;
-  url: string;
-}
-
-interface HumanMessageParts {
-  attachments: HumanAttachment[];
-  text: string;
-}
-
-function isHiddenHumanMessageLine(line: string) {
-  return HIDDEN_HUMAN_MESSAGE_LINE_PREFIXES.some((prefix) => line.startsWith(prefix));
-}
-
-function parseMaskLine(line: string): HumanAttachment | null {
-  if (!line.startsWith(MASK_LINE_PREFIX)) return null;
-  const url = line.slice(MASK_LINE_PREFIX.length).trim();
-  if (!url) return null;
-
-  return {
-    filename: "Mask",
-    isImage: true,
-    url,
-  };
-}
-
-function parseAttachmentLine(line: string): HumanAttachment | null {
-  const imageMatch = line.match(MARKDOWN_IMAGE_LINE);
-  if (imageMatch) {
-    return {
-      filename: imageMatch[1] || "Attachment image",
-      isImage: true,
-      url: imageMatch[2],
-    };
-  }
-
-  const linkMatch = line.match(MARKDOWN_LINK_LINE);
-  if (!linkMatch) return null;
-
-  return {
-    filename: linkMatch[1],
-    isImage: false,
-    url: linkMatch[2],
-  };
-}
-
-function humanMessageDisplayParts(content: string): HumanMessageParts {
-  const attachments: HumanAttachment[] = [];
-  const lines = content
-    .split("\n")
-    .filter((line) => {
-      const maskAttachment = parseMaskLine(line);
-      if (maskAttachment) {
-        attachments.push(maskAttachment);
-        return false;
-      }
-
-      if (isHiddenHumanMessageLine(line)) return false;
-
-      const attachment = parseAttachmentLine(line.trim());
-      if (attachment) {
-        attachments.push(attachment);
-        return false;
-      }
-
-      return line.trim() !== "Attachments:";
-    });
-
-  return {
-    attachments,
-    text: lines
-      .join("\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim(),
-  };
-}
 
 function HumanAttachmentPreview({ attachment }: { attachment: HumanAttachment }) {
   const signedUrl = useSignedAttachmentUrl(attachment.url);

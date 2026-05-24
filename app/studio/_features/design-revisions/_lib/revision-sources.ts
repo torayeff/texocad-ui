@@ -36,66 +36,81 @@ export function isSketchImageExport(artifact: StoredBlobArtifact) {
   );
 }
 
-export function revisionKey(revision: DesignRevisionArtifact) {
+interface RevisionLike {
+  designId: string;
+  revisionNumber: number;
+  source: StoredBlobArtifact;
+  exports: StoredBlobArtifact[];
+}
+
+function artifactRevisionKey(revision: RevisionLike) {
   return `${revision.designId}:${revision.revisionNumber}`;
+}
+
+function artifactRevisionsMatch(a: RevisionLike, b: RevisionLike) {
+  return (
+    artifactRevisionKey(a) === artifactRevisionKey(b) &&
+    a.source.checksum === b.source.checksum &&
+    a.exports.length === b.exports.length &&
+    a.exports.every((artifact, index) => {
+      const otherArtifact = b.exports[index];
+      return otherArtifact !== undefined && artifact.blobName === otherArtifact.blobName && artifact.checksum === otherArtifact.checksum;
+    })
+  );
+}
+
+function mergeRevisionLists<TRevision extends RevisionLike>(
+  key: (revision: TRevision) => string,
+  ...revisionLists: TRevision[][]
+) {
+  const revisionsByKey = new Map<string, TRevision>();
+  for (const revisions of revisionLists) {
+    for (const revision of revisions) {
+      revisionsByKey.set(key(revision), revision);
+    }
+  }
+  return Array.from(revisionsByKey.values());
+}
+
+function revisionListsMatchBy<TRevision extends RevisionLike>(
+  match: (a: TRevision, b: TRevision) => boolean,
+  a: TRevision[],
+  b: TRevision[],
+) {
+  if (a.length !== b.length) return false;
+  return a.every((revision, index) => match(revision, b[index]));
+}
+
+export function revisionKey(revision: DesignRevisionArtifact) {
+  return artifactRevisionKey(revision);
 }
 
 export function sketchRevisionKey(revision: SketchRevisionArtifact) {
-  return `${revision.designId}:${revision.revisionNumber}`;
+  return artifactRevisionKey(revision);
 }
 
 export function mergeDesignRevisions(...revisionLists: DesignRevisionArtifact[][]) {
-  const revisionsByKey = new Map<string, DesignRevisionArtifact>();
-  for (const revisions of revisionLists) {
-    for (const revision of revisions) {
-      revisionsByKey.set(revisionKey(revision), revision);
-    }
-  }
-  return Array.from(revisionsByKey.values());
+  return mergeRevisionLists(revisionKey, ...revisionLists);
 }
 
 export function revisionsMatch(a: DesignRevisionArtifact, b: DesignRevisionArtifact) {
-  return (
-    revisionKey(a) === revisionKey(b) &&
-    a.source.checksum === b.source.checksum &&
-    a.exports.length === b.exports.length &&
-    a.exports.every((artifact, index) => {
-      const otherArtifact = b.exports[index];
-      return otherArtifact !== undefined && artifact.blobName === otherArtifact.blobName && artifact.checksum === otherArtifact.checksum;
-    })
-  );
+  return artifactRevisionsMatch(a, b);
 }
 
 export function revisionListsMatch(a: DesignRevisionArtifact[], b: DesignRevisionArtifact[]) {
-  if (a.length !== b.length) return false;
-  return a.every((revision, index) => revisionsMatch(revision, b[index]));
+  return revisionListsMatchBy(revisionsMatch, a, b);
 }
 
 export function mergeSketchRevisions(...revisionLists: SketchRevisionArtifact[][]) {
-  const revisionsByKey = new Map<string, SketchRevisionArtifact>();
-  for (const revisions of revisionLists) {
-    for (const revision of revisions) {
-      revisionsByKey.set(sketchRevisionKey(revision), revision);
-    }
-  }
-  return Array.from(revisionsByKey.values());
+  return mergeRevisionLists(sketchRevisionKey, ...revisionLists);
 }
 
 export function sketchRevisionsMatch(a: SketchRevisionArtifact, b: SketchRevisionArtifact) {
-  return (
-    sketchRevisionKey(a) === sketchRevisionKey(b) &&
-    a.source.checksum === b.source.checksum &&
-    a.exports.length === b.exports.length &&
-    a.exports.every((artifact, index) => {
-      const otherArtifact = b.exports[index];
-      return otherArtifact !== undefined && artifact.blobName === otherArtifact.blobName && artifact.checksum === otherArtifact.checksum;
-    })
-  );
+  return artifactRevisionsMatch(a, b);
 }
 
 export function sketchRevisionListsMatch(a: SketchRevisionArtifact[], b: SketchRevisionArtifact[]) {
-  if (a.length !== b.length) return false;
-  return a.every((revision, index) => sketchRevisionsMatch(revision, b[index]));
+  return revisionListsMatchBy(sketchRevisionsMatch, a, b);
 }
 
 export function revisionOptionsFromArtifacts(revisions: DesignRevisionArtifact[]): ViewerRevisionOption[] {

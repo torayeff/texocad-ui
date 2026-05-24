@@ -1,5 +1,6 @@
 import type { ModelSource } from "@/app/types/model-viewer";
 import { getSourceBuffer } from "@/app/components/model-viewer/_lib/model-source";
+import { saveBrowserFile } from "@/app/lib/browser-downloads";
 
 function decodeFileName(fileName: string) {
   try {
@@ -7,10 +8,6 @@ function decodeFileName(fileName: string) {
   } catch {
     return fileName;
   }
-}
-
-function safeDownloadFileName(fileName: string) {
-  return fileName.replace(/[<>:"/\\|?*\x00-\x1F]/g, "_").trim().slice(0, 255) || "model";
 }
 
 export function downloadNameFromSource(source: ModelSource) {
@@ -31,17 +28,8 @@ export function downloadNameFromSource(source: ModelSource) {
   }
 }
 
-export function saveModelFile(buffer: ArrayBuffer, fileName: string, type: string) {
-  const objectUrl = URL.createObjectURL(new Blob([buffer], { type }));
-  const link = document.createElement("a");
-  link.href = objectUrl;
-  link.download = safeDownloadFileName(fileName);
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
-}
-
 export async function saveSourceModelFile(source: ModelSource, signal?: AbortSignal) {
   const buffer = await getSourceBuffer(source, undefined, signal);
   const mimeType = source.kind === "file" ? source.file.type || "application/octet-stream" : "application/octet-stream";
-  saveModelFile(buffer, downloadNameFromSource(source), mimeType);
+  saveBrowserFile(buffer, downloadNameFromSource(source), mimeType, "model");
 }
