@@ -21,11 +21,11 @@ import {
   loadingIconClass,
   toolButtonClass,
   toolRailClass,
-} from "@/app/components/model-viewer/_lib/viewer-styles";
+} from "@/app/components/viewer/viewer-styles";
 import { cn } from "@/app/lib/cn";
-import { useFloatingPanel } from "@/app/components/model-viewer/_hooks/use-floating-panel";
+import { useFloatingPanel } from "@/app/components/viewer/use-floating-panel";
 import { countModelBrowserNodes } from "@/app/components/model-viewer/_components/model-browser-tree";
-import { ViewerToolButton } from "@/app/components/model-viewer/_components/viewer-tool-button";
+import { ViewerToolButton } from "@/app/components/viewer/viewer-tool-button";
 import { ViewerControlPopovers } from "@/app/components/model-viewer/_components/viewer-control-popovers";
 import type { ViewerControlsProps } from "@/app/components/model-viewer/_types/viewer-controls";
 

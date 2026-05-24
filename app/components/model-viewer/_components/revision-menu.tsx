@@ -7,7 +7,7 @@ import {
   activeControlClass,
   controlMenuItemClass,
   controlMenuPopoverClass,
-} from "@/app/components/model-viewer/_lib/viewer-styles";
+} from "@/app/components/viewer/viewer-styles";
 import { cn } from "@/app/lib/cn";
 
 interface RevisionMenuProps {

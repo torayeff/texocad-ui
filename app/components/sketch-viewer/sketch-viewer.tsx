@@ -1,25 +1,16 @@
 "use client";
 
-import { Brush, Download, History, Loader2, Share2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   SketchMaskEditor,
   type SketchMaskEditorHandle,
 } from "@/app/components/sketch-viewer/_components/sketch-mask-editor";
-import { SketchRevisionMenu } from "@/app/components/sketch-viewer/_components/sketch-revision-menu";
-import { SketchShareDialog } from "@/app/components/sketch-viewer/_components/sketch-share-dialog";
+import { SketchViewerControls } from "@/app/components/sketch-viewer/_components/sketch-viewer-controls";
+import { SketchViewerShareDialogs } from "@/app/components/sketch-viewer/_components/sketch-viewer-share-dialogs";
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
-import {
-  sketchViewerActiveControlClass,
-  sketchViewerToolButtonClass,
-  sketchViewerToolRailClass,
-} from "@/app/components/sketch-viewer/_lib/sketch-viewer-styles";
-import { ViewerToolButton } from "@/app/components/model-viewer/_components/viewer-tool-button";
-import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
-import { useFloatingPanel } from "@/app/components/model-viewer/_hooks/use-floating-panel";
+import { useFloatingPanel } from "@/app/components/viewer/use-floating-panel";
 import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
-import { cn } from "@/app/lib/cn";
 import type {
   ShareSketchRevision,
   SketchMaskComposerState,
@@ -215,93 +206,33 @@ export default function SketchViewer({
       </div>
 
       {hasSource ? (
-        <div ref={railRef} className={sketchViewerToolRailClass} aria-label="Sketch controls">
-          {isSharedView ? (
-            <ViewerToolButton
-              type="button"
-              onClick={publicShareDialog.handleOpenShareDialog}
-              tooltip="Share"
-              aria-label="Share sketch"
-              className={sketchViewerToolButtonClass}
-            >
-              <Share2 size={14} strokeWidth={1.75} />
-            </ViewerToolButton>
-          ) : (
-            <ViewerToolButton
-              type="button"
-              disabled={!canMask || isMaskSubmitting}
-              onClick={handleOpenMaskEditor}
-              tooltip="Edit"
-              aria-label="Edit sketch with mask"
-              className={cn(sketchViewerToolButtonClass, isMaskEditorOpen && sketchViewerActiveControlClass)}
-            >
-              {isMaskSubmitting ? (
-                <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
-              ) : (
-                <Brush size={14} strokeWidth={1.75} />
-              )}
-            </ViewerToolButton>
-          )}
-
-          {canShare && !isSharedView ? (
-            <ViewerToolButton
-              type="button"
-              onClick={handleOpenShareDialog}
-              disabled={isSharing}
-              tooltip="Share"
-              aria-label="Share sketch"
-              className={sketchViewerToolButtonClass}
-            >
-              {isSharing ? (
-                <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
-              ) : (
-                <Share2 size={14} strokeWidth={1.75} />
-              )}
-            </ViewerToolButton>
-          ) : null}
-
-          {canDownload ? (
-            <ViewerToolButton
-              type="button"
-              onClick={handleDownload}
-              tooltip="Download"
-              aria-label="Download sketch"
-              className={sketchViewerToolButtonClass}
-            >
-              <Download size={14} strokeWidth={1.75} />
-            </ViewerToolButton>
-          ) : null}
-
-          {canShowRevisions ? (
-            <ViewerToolButton
-              type="button"
-              onClick={(event) => toggleRevisions(event.currentTarget)}
-              tooltip="Revisions"
-              tooltipDisabled={revisionsOpen}
-              aria-label={activeRevision ? `Revisions, viewing revision ${activeRevision.revisionNumber}` : "Revisions"}
-              aria-expanded={revisionsOpen}
-              aria-haspopup="menu"
-              aria-controls="sketch-revision-menu"
-              className={cn(sketchViewerToolButtonClass, (revisionsOpen || !revisions.isLatestRevisionSelected) && sketchViewerActiveControlClass)}
-            >
-              <History size={14} strokeWidth={1.75} />
-            </ViewerToolButton>
-          ) : null}
-
-          {revisionsOpen && canShowRevisions ? (
-            <SketchRevisionMenu
-              ref={panelRef}
-              activeRevisionKey={revisions.activeRevisionKey}
-              isLatestRevisionSelected={revisions.isLatestRevisionSelected}
-              latestRevisionKey={latestRevisionKey}
-              revisions={revisionOptions}
-              style={panelStyle}
-              onClose={closeRevisions}
-              onSelectLatestRevision={revisions.onSelectLatestRevision}
-              onSelectRevision={revisions.onSelectRevision}
-            />
-          ) : null}
-        </div>
+        <SketchViewerControls
+          activeRevision={activeRevision}
+          activeRevisionKey={revisions?.activeRevisionKey ?? null}
+          canDownload={canDownload}
+          canMask={canMask}
+          canShare={canShare}
+          canShowRevisions={canShowRevisions}
+          isLatestRevisionSelected={revisions?.isLatestRevisionSelected ?? true}
+          isMaskEditorOpen={isMaskEditorOpen}
+          isMaskSubmitting={isMaskSubmitting}
+          isSharedView={isSharedView}
+          isSharing={isSharing}
+          latestRevisionKey={latestRevisionKey}
+          panelRef={panelRef}
+          panelStyle={panelStyle}
+          railRef={railRef}
+          revisions={revisionOptions}
+          revisionsOpen={revisionsOpen}
+          onCloseRevisions={closeRevisions}
+          onDownload={handleDownload}
+          onOpenMaskEditor={handleOpenMaskEditor}
+          onPublicShare={publicShareDialog.handleOpenShareDialog}
+          onSelectLatestRevision={revisions?.onSelectLatestRevision ?? closeRevisions}
+          onSelectRevision={revisions?.onSelectRevision ?? closeRevisions}
+          onShare={handleOpenShareDialog}
+          onToggleRevisions={toggleRevisions}
+        />
       ) : null}
 
       {source ? (
@@ -315,33 +246,28 @@ export default function SketchViewer({
         />
       ) : null}
 
-      {isShareDialogOpen ? (
-        <SketchShareDialog
-          didCopyShareUrl={didCopyShareUrl}
-          isSharing={isSharing}
-          onClose={handleCloseShareDialog}
-          onCopyShareUrl={handleCopyShareUrl}
-          onShareNameChange={setShareName}
-          onSubmit={handleShareSubmit}
-          shareError={shareError}
-          shareName={shareName}
-          shareUrl={shareUrl}
-        />
-      ) : null}
-
-      {publicShareDialog.isShareDialogOpen ? (
-        <SketchShareDialog
-          didCopyShareUrl={publicShareDialog.didCopyShareUrl}
-          isSharing={false}
-          onClose={publicShareDialog.handleCloseShareDialog}
-          onCopyShareUrl={publicShareDialog.handleCopyShareUrl}
-          onShareNameChange={() => undefined}
-          onSubmit={(event) => event.preventDefault()}
-          shareError={publicShareDialog.shareError}
-          shareName={source?.label ?? ""}
-          shareUrl={publicShareDialog.shareUrl}
-        />
-      ) : null}
+      <SketchViewerShareDialogs
+        createDialog={{
+          didCopyShareUrl,
+          isOpen: isShareDialogOpen,
+          isSharing,
+          onClose: handleCloseShareDialog,
+          onCopyShareUrl: handleCopyShareUrl,
+          onShareNameChange: setShareName,
+          onSubmit: handleShareSubmit,
+          shareError,
+          shareName,
+          shareUrl,
+        }}
+        publicDialog={{
+          didCopyShareUrl: publicShareDialog.didCopyShareUrl,
+          isOpen: publicShareDialog.isShareDialogOpen,
+          onClose: publicShareDialog.handleCloseShareDialog,
+          onCopyShareUrl: publicShareDialog.handleCopyShareUrl,
+          shareError: publicShareDialog.shareError,
+          shareUrl: publicShareDialog.shareUrl,
+        }}
+      />
     </section>
   );
 }

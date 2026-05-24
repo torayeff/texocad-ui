@@ -15,7 +15,6 @@ export const runtime = "nodejs";
 function sharedArtifactResponse(sharedArtifact: Awaited<ReturnType<typeof getSharedArtifactForRevision>>) {
   return {
     sharedArtifact,
-    sharedModel: sharedArtifact,
   };
 }
 
@@ -23,7 +22,6 @@ function shareResultResponse(result: Awaited<ReturnType<typeof createOrGetShared
   return {
     alreadyShared: result.alreadyShared,
     sharedArtifact: result.sharedArtifact,
-    sharedModel: result.sharedArtifact,
   };
 }
 

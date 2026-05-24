@@ -3,7 +3,7 @@
 import { Loader2 } from "lucide-react";
 
 import type { ModelSource, ShareRevision, ViewerRevisionOption } from "@/app/types/model-viewer";
-import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
+import { loadingIconClass } from "@/app/components/viewer/viewer-styles";
 import { ShareModelDialog } from "@/app/components/model-viewer/_components/share-model-dialog";
 import { ViewerControls } from "@/app/components/model-viewer/_components/viewer-controls";
 import { ViewerGestureHint } from "@/app/components/model-viewer/_components/viewer-gesture-hint";
@@ -165,6 +165,7 @@ export default function ModelViewer({
 
       {isShareDialogOpen ? (
         <ShareModelDialog
+          mode="create"
           didCopyShareUrl={didCopyShareUrl}
           isSharing={isSharing}
           onClose={handleCloseShareDialog}
@@ -179,14 +180,12 @@ export default function ModelViewer({
 
       {publicShareDialog.isShareDialogOpen ? (
         <ShareModelDialog
+          mode="copy"
           didCopyShareUrl={publicShareDialog.didCopyShareUrl}
           isSharing={false}
           onClose={publicShareDialog.handleCloseShareDialog}
           onCopyShareUrl={publicShareDialog.handleCopyShareUrl}
-          onShareNameChange={() => undefined}
-          onSubmit={(event) => event.preventDefault()}
           shareError={publicShareDialog.shareError}
-          shareName={source?.label ?? ""}
           shareUrl={publicShareDialog.shareUrl}
         />
       ) : null}

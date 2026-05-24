@@ -1,59 +1,41 @@
 import { ShareDialog } from "@/app/components/share-dialog";
-import {
-  sketchViewerGlassClass,
-  sketchViewerInputClass,
-  sketchViewerPrimaryButtonClass,
-  sketchViewerShareButtonClass,
-  sketchViewerToolButtonClass,
-} from "@/app/components/sketch-viewer/_lib/sketch-viewer-styles";
 
-interface SketchShareDialogProps {
+type SketchShareDialogProps = CreateSketchShareDialogProps | CopySketchShareDialogProps;
+
+interface SketchShareDialogBaseProps {
   didCopyShareUrl: boolean;
   isSharing: boolean;
   onClose: () => void;
   onCopyShareUrl: () => void;
-  onShareNameChange: (name: string) => void;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   shareError: string | null;
-  shareName: string;
   shareUrl: string | null;
 }
 
-export function SketchShareDialog({
-  didCopyShareUrl,
-  isSharing,
-  onClose,
-  onCopyShareUrl,
-  onShareNameChange,
-  onSubmit,
-  shareError,
-  shareName,
-  shareUrl,
-}: SketchShareDialogProps) {
+interface CreateSketchShareDialogProps extends SketchShareDialogBaseProps {
+  mode: "create";
+  onShareNameChange: (name: string) => void;
+  onSubmit: (event: SubmitEvent) => void;
+  shareName: string;
+}
+
+interface CopySketchShareDialogProps extends SketchShareDialogBaseProps {
+  mode: "copy";
+}
+
+const shareSketchCopy = {
+  createDescription: "Create a public link for this selected sketch revision.",
+  nameLabel: "Sketch name",
+  placeholder: "My Example Sketch",
+  title: "Share sketch",
+  urlDescription: "Copy the public link for this sketch.",
+};
+
+export function SketchShareDialog(props: SketchShareDialogProps) {
   return (
     <ShareDialog
-      copy={{
-        createDescription: "Create a public link for this selected sketch revision.",
-        nameLabel: "Sketch name",
-        placeholder: "My Example Sketch",
-        title: "Share sketch",
-        urlDescription: "Copy the public link for this sketch.",
-      }}
-      didCopyShareUrl={didCopyShareUrl}
-      inputClassName={sketchViewerInputClass}
-      isSharing={isSharing}
-      onClose={onClose}
-      onCopyShareUrl={onCopyShareUrl}
-      onShareNameChange={onShareNameChange}
-      onSubmit={onSubmit}
-      primaryButtonClassName={sketchViewerPrimaryButtonClass}
-      shareButtonClassName={sketchViewerShareButtonClass}
-      shareError={shareError}
-      shareName={shareName}
-      shareUrl={shareUrl}
-      shellClassName={sketchViewerGlassClass}
+      copy={shareSketchCopy}
+      {...props}
       titleId="share-sketch-title"
-      toolButtonClassName={sketchViewerToolButtonClass}
     />
   );
 }

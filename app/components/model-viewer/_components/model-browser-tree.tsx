@@ -4,7 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
 
 import type { ModelBrowserNode } from "@/app/types/model-viewer";
-import { viewerGlassClass } from "@/app/components/model-viewer/_lib/viewer-styles";
+import { viewerGlassClass } from "@/app/components/viewer/viewer-styles";
 import { cn } from "@/app/lib/cn";
 
 interface ModelBrowserTreeProps {

@@ -1,7 +1,7 @@
 import { AlertCircle, Loader2, Upload } from "lucide-react";
 
 import type { LoadState } from "@/app/types/model-viewer";
-import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
+import { loadingIconClass } from "@/app/components/viewer/viewer-styles";
 import { cn } from "@/app/lib/cn";
 
 interface StatusContentProps {

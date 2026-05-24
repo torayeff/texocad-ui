@@ -10,7 +10,7 @@ import {
   controlMenuPopoverClass,
   controlPanelPopoverClass,
   loadingIconClass,
-} from "@/app/components/model-viewer/_lib/viewer-styles";
+} from "@/app/components/viewer/viewer-styles";
 import type { ModelBrowserNode, TransformMode, ViewPreset } from "@/app/types/model-viewer";
 import { cn } from "@/app/lib/cn";
 

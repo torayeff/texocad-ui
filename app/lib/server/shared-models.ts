@@ -279,7 +279,3 @@ export async function getSharedArtifactBySlug(slug: string) {
   const entity = await getShareEntity(SLUG_PARTITION_KEY, slug);
   return entity ? sharedArtifactFromShare(entity) : null;
 }
-
-export const createOrGetSharedModel = createOrGetSharedArtifact;
-export const getSharedModelForRevision = getSharedArtifactForRevision;
-export const getSharedModelBySlug = getSharedArtifactBySlug;
