@@ -1,3 +1,4 @@
+import { isSketchImageExport as isSketchImageExportByName, isStepExport as isStepExportByName } from "@/app/lib/artifact-formats";
 import type { DesignRevisionArtifact, SketchRevisionArtifact, StoredBlobArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type { ModelSource, ViewerRevisionOption } from "@/app/types/model-viewer";
 import type { SketchRevisionOption, SketchSource } from "@/app/types/sketch-viewer";
@@ -14,8 +15,7 @@ export interface SignedSketchRevisionSources {
 }
 
 export function isStepExport(artifact: StoredBlobArtifact) {
-  const filename = artifact.filename.toLowerCase();
-  return filename.endsWith(".step") || filename.endsWith(".stp") || artifact.contentType === "application/step";
+  return isStepExportByName(artifact.filename, artifact.contentType);
 }
 
 export function isSourceCode(artifact: StoredBlobArtifact) {
@@ -24,16 +24,7 @@ export function isSourceCode(artifact: StoredBlobArtifact) {
 }
 
 export function isSketchImageExport(artifact: StoredBlobArtifact) {
-  const filename = artifact.filename.toLowerCase();
-  return (
-    filename.endsWith(".png") ||
-    filename.endsWith(".jpg") ||
-    filename.endsWith(".jpeg") ||
-    filename.endsWith(".webp") ||
-    artifact.contentType === "image/png" ||
-    artifact.contentType === "image/jpeg" ||
-    artifact.contentType === "image/webp"
-  );
+  return isSketchImageExportByName(artifact.filename, artifact.contentType);
 }
 
 interface RevisionLike {

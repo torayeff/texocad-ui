@@ -12,12 +12,12 @@ import {
 } from "@/app/lib/server/shared-artifact-storage";
 import { makeShareSlug, slugifyShareName } from "@/app/lib/server/shared-artifact-slugs";
 import { hashUserId } from "@/app/lib/server/storage-auth";
-import type { ShareModelInput } from "@/app/lib/server/shared-model-validation";
+import type { ShareArtifactInput } from "@/app/lib/server/shared-artifact-validation";
 import type { ShareEntity } from "@/app/lib/server/shared-artifact-types";
 
 export type { SharedArtifact } from "@/app/lib/server/shared-artifact-types";
 
-export async function createOrGetSharedArtifact(userId: string, input: ShareModelInput) {
+export async function createOrGetSharedArtifact(userId: string, input: ShareArtifactInput) {
   const ownerHash = hashUserId(userId);
   const kind = input.kind ?? "model";
   const privateBlobName = input.exportArtifact.blobName.replace(/^\/+/, "");
@@ -108,7 +108,7 @@ export async function createSharedArtifactForLocalModel(input: {
   return sharedArtifactFromShare(entity);
 }
 
-export async function getSharedArtifactForRevision(userId: string, input: Omit<ShareModelInput, "name">) {
+export async function getSharedArtifactForRevision(userId: string, input: Omit<ShareArtifactInput, "name">) {
   const ownerHash = hashUserId(userId);
   const kind = input.kind ?? "model";
   const ownerKey = ownerPartitionKey(ownerHash);

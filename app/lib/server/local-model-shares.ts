@@ -18,7 +18,7 @@ import {
   normalizeLocalModelShareExtension,
   slugifyLocalModelShareName,
 } from "@/app/lib/model-formats";
-import { createSharedArtifactForLocalModel } from "@/app/lib/server/shared-models";
+import { createSharedArtifactForLocalModel } from "@/app/lib/server/shared-artifacts";
 import { validateSharedModelBlob } from "@/app/lib/server/local-model-share-validation";
 import { publicStorageConfig } from "@/app/lib/server/storage-auth";
 import type {

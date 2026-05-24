@@ -2,6 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 
+import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
+
 interface ShareArtifact {
   blobName: string;
   checksum: string;
@@ -69,21 +71,28 @@ export function useShareArtifact<TSource>({
   shareRevision,
   source,
 }: UseShareArtifactOptions<TSource>) {
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const {
+    closeShareDialog,
+    copyShareUrl,
+    didCopyShareUrl,
+    isShareDialogOpen,
+    openShareDialog,
+    resetShareDialogStatus,
+    setShareError,
+    setShareUrl,
+    shareError: currentShareError,
+  } = useShareDialogState();
   const [isSharing, setIsSharing] = useState(false);
   const [shareName, setShareName] = useState("");
   const [shareResult, setShareResult] = useState<ShareResult | null>(null);
-  const [currentShareError, setShareError] = useState<string | null>(null);
-  const [didCopyShareUrl, setDidCopyShareUrl] = useState(false);
   const requestVersionRef = useRef(0);
   const shareUrl = shareResult?.revisionKey === activeRevisionKey ? shareResult.url : null;
 
   const handleOpenShareDialog = useCallback(() => {
-    setShareError(null);
-    setDidCopyShareUrl(false);
     if (!shareRevision) return;
 
-    setIsShareDialogOpen(true);
+    setShareUrl(null);
+    openShareDialog();
 
     const requestVersion = requestVersionRef.current + 1;
     requestVersionRef.current = requestVersion;
@@ -104,6 +113,7 @@ export function useShareArtifact<TSource>({
             revisionKey: requestRevisionKey,
             url: data.sharedArtifact.shareUrl,
           });
+          setShareUrl(data.sharedArtifact.shareUrl);
           return;
         }
 
@@ -116,13 +126,12 @@ export function useShareArtifact<TSource>({
           setShareName((currentName) => currentName || requestDefaultName);
         }
       });
-  }, [activeRevisionKey, artifactKind, defaultShareName, shareError, shareRevision, source]);
+  }, [activeRevisionKey, artifactKind, defaultShareName, openShareDialog, setShareUrl, shareError, shareRevision, source]);
 
   const handleCloseShareDialog = useCallback(() => {
     if (isSharing) return;
-    setIsShareDialogOpen(false);
-    setShareError(null);
-  }, [isSharing]);
+    closeShareDialog();
+  }, [closeShareDialog, isSharing]);
 
   const handleShareSubmit = useCallback((event: SubmitEvent) => {
     event.preventDefault();
@@ -135,8 +144,7 @@ export function useShareArtifact<TSource>({
     }
 
     setIsSharing(true);
-    setShareError(null);
-    setDidCopyShareUrl(false);
+    resetShareDialogStatus();
     const requestVersion = requestVersionRef.current + 1;
     requestVersionRef.current = requestVersion;
     const requestRevisionKey = activeRevisionKey;
@@ -165,6 +173,7 @@ export function useShareArtifact<TSource>({
           revisionKey: requestRevisionKey,
           url: data.sharedArtifact.shareUrl,
         });
+        setShareUrl(data.sharedArtifact.shareUrl);
       })
       .catch((error: unknown) => {
         if (requestVersionRef.current !== requestVersion) return;
@@ -173,15 +182,12 @@ export function useShareArtifact<TSource>({
       .finally(() => {
         if (requestVersionRef.current === requestVersion) setIsSharing(false);
       });
-  }, [activeRevisionKey, artifactKind, emptyNameError, isSharing, shareError, shareName, shareRevision]);
+  }, [activeRevisionKey, artifactKind, emptyNameError, isSharing, resetShareDialogStatus, setShareError, setShareUrl, shareError, shareName, shareRevision]);
 
   const handleCopyShareUrl = useCallback(() => {
     if (!shareUrl) return;
-
-    void navigator.clipboard.writeText(shareUrl)
-      .then(() => setDidCopyShareUrl(true))
-      .catch(() => setShareError("Could not copy the link."));
-  }, [shareUrl]);
+    copyShareUrl(shareUrl);
+  }, [copyShareUrl, shareUrl]);
 
   return {
     didCopyShareUrl,

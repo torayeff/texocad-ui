@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import type { ModelSource, ShareRevision, ViewerRevisionOption } from "@/app/types/model-viewer";
 import { ModelLoadPanel } from "@/app/components/model-viewer/_components/model-load-panel";
 import { loadingIconClass } from "@/app/components/viewer/viewer-styles";
-import { ShareModelDialog } from "@/app/components/model-viewer/_components/share-model-dialog";
+import { ModelViewerShareDialogs } from "@/app/components/model-viewer/_components/model-viewer-share-dialogs";
 import { ViewerControls } from "@/app/components/model-viewer/_components/viewer-controls";
 import { ViewerGestureHint } from "@/app/components/model-viewer/_components/viewer-gesture-hint";
 import { useLocalModelShare } from "@/app/components/model-viewer/_hooks/use-local-model-share";
@@ -214,47 +214,40 @@ export default function ModelViewer({
         />
       ) : null}
 
-      {canUseLocalFiles && localShare.isShareDialogOpen ? (
-        <ShareModelDialog
-          mode="create"
-          didCopyShareUrl={localShare.didCopyShareUrl}
-          isSharing={localShare.isSharing}
-          onClose={localShare.handleCloseShareDialog}
-          onCopyShareUrl={localShare.handleCopyShareUrl}
-          onShareNameChange={localShare.setShareName}
-          onSubmit={localShare.handleShareSubmit}
-          shareError={localShare.shareError}
-          shareName={localShare.shareName}
-          shareUrl={localShare.shareUrl}
-        />
-      ) : null}
-
-      {!canUseLocalFiles && isShareDialogOpen ? (
-        <ShareModelDialog
-          mode="create"
-          didCopyShareUrl={didCopyShareUrl}
-          isSharing={isSharing}
-          onClose={handleCloseShareDialog}
-          onCopyShareUrl={handleCopyShareUrl}
-          onShareNameChange={setShareName}
-          onSubmit={handleShareSubmit}
-          shareError={shareError}
-          shareName={shareName}
-          shareUrl={shareUrl}
-        />
-      ) : null}
-
-      {publicShareDialog.isShareDialogOpen ? (
-        <ShareModelDialog
-          mode="copy"
-          didCopyShareUrl={publicShareDialog.didCopyShareUrl}
-          isSharing={false}
-          onClose={publicShareDialog.handleCloseShareDialog}
-          onCopyShareUrl={publicShareDialog.handleCopyShareUrl}
-          shareError={publicShareDialog.shareError}
-          shareUrl={publicShareDialog.shareUrl}
-        />
-      ) : null}
+      <ModelViewerShareDialogs
+        generatedDialog={{
+          didCopyShareUrl,
+          isOpen: !canUseLocalFiles && isShareDialogOpen,
+          isSharing,
+          onClose: handleCloseShareDialog,
+          onCopyShareUrl: handleCopyShareUrl,
+          onShareNameChange: setShareName,
+          onSubmit: handleShareSubmit,
+          shareError,
+          shareName,
+          shareUrl,
+        }}
+        localDialog={{
+          didCopyShareUrl: localShare.didCopyShareUrl,
+          isOpen: canUseLocalFiles && localShare.isShareDialogOpen,
+          isSharing: localShare.isSharing,
+          onClose: localShare.handleCloseShareDialog,
+          onCopyShareUrl: localShare.handleCopyShareUrl,
+          onShareNameChange: localShare.setShareName,
+          onSubmit: localShare.handleShareSubmit,
+          shareError: localShare.shareError,
+          shareName: localShare.shareName,
+          shareUrl: localShare.shareUrl,
+        }}
+        publicDialog={{
+          didCopyShareUrl: publicShareDialog.didCopyShareUrl,
+          isOpen: publicShareDialog.isShareDialogOpen,
+          onClose: publicShareDialog.handleCloseShareDialog,
+          onCopyShareUrl: publicShareDialog.handleCopyShareUrl,
+          shareError: publicShareDialog.shareError,
+          shareUrl: publicShareDialog.shareUrl,
+        }}
+      />
 
       <ViewerGestureHint showGestures={loadState === "ready"} />
     </section>

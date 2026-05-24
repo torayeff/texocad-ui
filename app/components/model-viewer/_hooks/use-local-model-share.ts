@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
 import type { ModelSource } from "@/app/types/model-viewer";
 import {
   maxLocalModelShareNameChars,
@@ -43,12 +44,20 @@ function defaultShareName(source: ModelSource | null) {
 }
 
 export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShareOptions) {
-  const [didCopyShareUrl, setDidCopyShareUrl] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const {
+    closeShareDialog,
+    copyShareUrl,
+    didCopyShareUrl,
+    isShareDialogOpen,
+    openShareDialog,
+    resetShareDialogStatus,
+    setShareError,
+    setShareUrl,
+    shareError,
+    shareUrl,
+  } = useShareDialogState();
   const [isSharing, setIsSharing] = useState(false);
-  const [shareError, setShareError] = useState<string | null>(null);
   const [shareName, setShareName] = useState("");
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const shareAbortRef = useRef<AbortController | null>(null);
 
   const handleOpenShareDialog = useCallback(() => {
@@ -56,30 +65,17 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
       return;
     }
 
-    setShareError(null);
-    setDidCopyShareUrl(false);
     setShareName((currentName) => currentName || defaultShareName(source));
-    setIsShareDialogOpen(true);
-  }, [source]);
+    openShareDialog();
+  }, [openShareDialog, source]);
 
   const handleCloseShareDialog = useCallback(() => {
     if (isSharing) {
       return;
     }
 
-    setIsShareDialogOpen(false);
-    setShareError(null);
-  }, [isSharing]);
-
-  const handleCopyShareUrl = useCallback(() => {
-    if (!shareUrl) {
-      return;
-    }
-
-    void navigator.clipboard.writeText(shareUrl)
-      .then(() => setDidCopyShareUrl(true))
-      .catch(() => setShareError("Could not copy the link."));
-  }, [shareUrl]);
+    closeShareDialog();
+  }, [closeShareDialog, isSharing]);
 
   const handleShareSubmit = useCallback((event: SubmitEvent) => {
     event.preventDefault();
@@ -111,8 +107,7 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
     }
 
     setIsSharing(true);
-    setShareError(null);
-    setDidCopyShareUrl(false);
+    resetShareDialogStatus();
     shareAbortRef.current?.abort();
     const abortController = new AbortController();
     shareAbortRef.current = abortController;
@@ -145,7 +140,7 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
           setIsSharing(false);
         }
       });
-  }, [isSharing, onShareCreated, shareName, source]);
+  }, [isSharing, onShareCreated, resetShareDialogStatus, setShareError, setShareUrl, shareName, source]);
 
   useEffect(() => {
     return () => {
@@ -156,7 +151,7 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
   return {
     didCopyShareUrl,
     handleCloseShareDialog,
-    handleCopyShareUrl,
+    handleCopyShareUrl: copyShareUrl,
     handleOpenShareDialog,
     handleShareSubmit,
     isShareDialogOpen,

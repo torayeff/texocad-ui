@@ -4,7 +4,7 @@ import { absoluteSiteUrl } from "@/app/lib/site";
 import { publicBlobUrl } from "@/app/lib/server/shared-artifact-storage";
 import { safeTableKey } from "@/app/lib/server/shared-artifact-slugs";
 import { publicStorageConfig } from "@/app/lib/server/storage-auth";
-import type { ShareModelInput } from "@/app/lib/server/shared-model-validation";
+import type { ShareArtifactInput } from "@/app/lib/server/shared-artifact-validation";
 import type { ShareEntity, SharedArtifact } from "@/app/lib/server/shared-artifact-types";
 
 export const SLUG_PARTITION_KEY = "slug";
@@ -24,7 +24,7 @@ export function ownerPartitionKey(ownerHash: string) {
   return safeTableKey(ownerHash);
 }
 
-export function shareRowKey(input: ShareModelInput) {
+export function shareRowKey(input: ShareArtifactInput) {
   return safeTableKey(`${input.kind ?? "model"}:${input.designId}:${input.revisionNumber}:${input.exportArtifact.checksum}`);
 }
 

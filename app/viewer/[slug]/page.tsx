@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Header } from "@/app/components/header";
-import { getSharedArtifactBySlug } from "@/app/lib/server/shared-models";
+import { getSharedArtifactBySlug } from "@/app/lib/server/shared-artifacts";
 import { SITE_NAME } from "@/app/lib/site";
 import { SharedModelViewer } from "@/app/viewer/[slug]/_components/shared-model-viewer";
 import { SharedSketchViewer } from "@/app/viewer/[slug]/_components/shared-sketch-viewer";

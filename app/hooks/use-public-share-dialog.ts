@@ -1,37 +1,34 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
+
+import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
 
 export function usePublicShareDialog() {
-  const [didCopyShareUrl, setDidCopyShareUrl] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [shareError, setShareError] = useState<string | null>(null);
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const {
+    closeShareDialog,
+    copyShareUrl,
+    didCopyShareUrl,
+    isShareDialogOpen,
+    openShareDialog,
+    setShareUrl,
+    shareError,
+    shareUrl,
+  } = useShareDialogState();
 
   const handleOpenShareDialog = useCallback(() => {
-    setDidCopyShareUrl(false);
-    setShareError(null);
     setShareUrl(window.location.href);
-    setIsShareDialogOpen(true);
-  }, []);
+    openShareDialog();
+  }, [openShareDialog, setShareUrl]);
 
   const handleCloseShareDialog = useCallback(() => {
-    setIsShareDialogOpen(false);
-    setShareError(null);
-  }, []);
-
-  const handleCopyShareUrl = useCallback(() => {
-    if (!shareUrl) return;
-
-    void navigator.clipboard.writeText(shareUrl)
-      .then(() => setDidCopyShareUrl(true))
-      .catch(() => setShareError("Could not copy the link."));
-  }, [shareUrl]);
+    closeShareDialog();
+  }, [closeShareDialog]);
 
   return {
     didCopyShareUrl,
     handleCloseShareDialog,
-    handleCopyShareUrl,
+    handleCopyShareUrl: copyShareUrl,
     handleOpenShareDialog,
     isShareDialogOpen,
     shareError,

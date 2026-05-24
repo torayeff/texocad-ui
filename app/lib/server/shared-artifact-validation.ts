@@ -1,32 +1,32 @@
+import { isSketchImageExport, isStepExport } from "@/app/lib/artifact-formats";
 import { hashUserId, isAuthorizedUserBlob } from "@/app/lib/server/storage-auth";
 
-export interface ShareArtifactInput {
+export interface ShareExportArtifactInput {
   blobName: string;
   checksum: string;
   contentType: string;
   filename: string;
 }
 
-export interface ShareModelInput {
+export interface ShareArtifactInput {
   kind?: ShareKind;
   designId: string;
   revisionNumber: number;
   name: string;
-  exportArtifact: ShareArtifactInput;
+  exportArtifact: ShareExportArtifactInput;
 }
 
-export type ShareRevisionInput = Omit<ShareModelInput, "name">;
+export type ShareArtifactRevisionInput = Omit<ShareArtifactInput, "name">;
 export type ShareKind = "model" | "sketch";
 
 const MAX_SHARE_NAME_LENGTH = 80;
 const MAX_BLOB_NAME_LENGTH = 1024;
-export const STEP_CONTENT_TYPE = "application/step";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function parseShareExportArtifact(value: Record<string, unknown>): ShareArtifactInput | null {
+function parseShareExportArtifact(value: Record<string, unknown>): ShareExportArtifactInput | null {
   const { blobName, checksum, contentType, filename } = value;
 
   if (
@@ -46,7 +46,7 @@ function parseShareExportArtifact(value: Record<string, unknown>): ShareArtifact
   };
 }
 
-export function parseShareInput(value: unknown): ShareModelInput | null {
+export function parseShareInput(value: unknown): ShareArtifactInput | null {
   if (!isRecord(value) || !isRecord(value.exportArtifact)) return null;
 
   const { designId, revisionNumber, name, exportArtifact } = value;
@@ -71,7 +71,7 @@ export function parseShareInput(value: unknown): ShareModelInput | null {
   };
 }
 
-export function parseShareRevisionInput(value: unknown): ShareRevisionInput | null {
+export function parseShareRevisionInput(value: unknown): ShareArtifactRevisionInput | null {
   if (!isRecord(value) || !isRecord(value.exportArtifact)) return null;
 
   const { designId, revisionNumber, exportArtifact } = value;
@@ -94,7 +94,7 @@ export function parseShareRevisionInput(value: unknown): ShareRevisionInput | nu
   };
 }
 
-export function validateShareBlob(userId: string, input: ShareRevisionInput): ShareRevisionInput | null {
+export function validateShareBlob(userId: string, input: ShareArtifactRevisionInput): ShareArtifactRevisionInput | null {
   const blobName = input.exportArtifact.blobName.replace(/^\/+/, "");
   if (!validatePrivateBlobName(blobName) || !isShareExport(input.kind ?? "model", input.exportArtifact.filename, input.exportArtifact.contentType)) {
     return null;
@@ -111,24 +111,6 @@ export function validateShareBlob(userId: string, input: ShareRevisionInput): Sh
       blobName,
     },
   };
-}
-
-export function isStepExport(filename: string, contentType: string) {
-  const lowerFilename = filename.toLowerCase();
-  return lowerFilename.endsWith(".step") || lowerFilename.endsWith(".stp") || contentType === STEP_CONTENT_TYPE;
-}
-
-export function isSketchImageExport(filename: string, contentType: string) {
-  const lowerFilename = filename.toLowerCase();
-  return (
-    lowerFilename.endsWith(".png") ||
-    lowerFilename.endsWith(".jpg") ||
-    lowerFilename.endsWith(".jpeg") ||
-    lowerFilename.endsWith(".webp") ||
-    contentType === "image/png" ||
-    contentType === "image/jpeg" ||
-    contentType === "image/webp"
-  );
 }
 
 export function validateShareName(name: string) {

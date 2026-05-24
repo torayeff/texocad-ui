@@ -4,10 +4,10 @@ import {
   generateBlobSASQueryParameters,
 } from "@azure/storage-blob";
 
+import { isStepExport, STEP_CONTENT_TYPE } from "@/app/lib/artifact-formats";
 import { contentTypeForLocalModelShare, normalizeLocalModelShareExtension } from "@/app/lib/model-formats";
 import { publicStorageConfig } from "@/app/lib/server/storage-auth";
-import { isStepExport, STEP_CONTENT_TYPE } from "@/app/lib/server/shared-model-validation";
-import type { ShareArtifactInput, ShareKind } from "@/app/lib/server/shared-model-validation";
+import type { ShareExportArtifactInput, ShareKind } from "@/app/lib/server/shared-artifact-validation";
 
 const PUBLIC_SHARED_PREFIX = "public/shared";
 const READ_SAS_EXPIRY_MS = 10 * 60 * 1000;
@@ -30,7 +30,7 @@ export function sharedArtifactBlobName(kind: ShareKind, slug: string, filename: 
   return `${PUBLIC_SHARED_PREFIX}/${slug}/${kind}${extensionFromFilename(filename)}`;
 }
 
-function contentTypeForModelArtifact(artifact: ShareArtifactInput) {
+function contentTypeForModelArtifact(artifact: ShareExportArtifactInput) {
   if (isStepExport(artifact.filename, artifact.contentType)) {
     return STEP_CONTENT_TYPE;
   }
@@ -39,7 +39,7 @@ function contentTypeForModelArtifact(artifact: ShareArtifactInput) {
   return extension ? contentTypeForLocalModelShare(extension) : artifact.contentType;
 }
 
-function shareContentType(kind: ShareKind, artifact: ShareArtifactInput) {
+function shareContentType(kind: ShareKind, artifact: ShareExportArtifactInput) {
   switch (kind) {
     case "model":
       return contentTypeForModelArtifact(artifact);
@@ -83,7 +83,7 @@ function privateReadSasUrl(blobName: string) {
 
 export async function copyPrivateArtifactToPublic(input: {
   artifactBlobName: string;
-  exportArtifact: ShareArtifactInput;
+  exportArtifact: ShareExportArtifactInput;
   kind: ShareKind;
   privateBlobName: string;
 }) {

@@ -1,4 +1,4 @@
-import type { ShareKind } from "@/app/lib/server/shared-model-validation";
+import type { ShareKind } from "@/app/lib/server/shared-artifact-validation";
 
 export interface SharedArtifact {
   artifactBlobName: string;

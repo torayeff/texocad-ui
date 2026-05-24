@@ -4,13 +4,13 @@ import { auth } from "@clerk/nextjs/server";
 import {
   createOrGetSharedArtifact,
   getSharedArtifactForRevision,
-} from "@/app/lib/server/shared-models";
+} from "@/app/lib/server/shared-artifacts";
 import {
   parseShareInput,
   parseShareRevisionInput,
   validateShareBlob,
   validateShareName,
-} from "@/app/lib/server/shared-model-validation";
+} from "@/app/lib/server/shared-artifact-validation";
 
 export const runtime = "nodejs";
 
