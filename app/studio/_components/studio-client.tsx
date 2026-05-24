@@ -64,7 +64,6 @@ export default function StudioClient() {
 
   const handleClearViewer = useCallback(() => {
     revisions.clearViewerRevisions();
-    setStudioMode(CAD_ASSISTANT_ID);
   }, [revisions]);
 
   const handleSketchMaskSubmit = useCallback(async ({ prompt, mask }: SketchMaskEditRequest) => {

@@ -85,7 +85,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     urlThreadId,
     pathname,
     router,
-    handleThreadIdChange,
+    switchThread,
     sketchRevisions,
   } = useChatStream(assistantId, {
     initialThreadId,
@@ -94,6 +94,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   });
 
   const timer = useAssistantTimer();
+  const resetTimer = timer.reset;
   const { sessionClaims, userId } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
   const [pendingHumanMessage, setPendingHumanMessage] = useState<HumanMessage | null>(null);
@@ -114,6 +115,11 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   useEffect(() => {
     onClearViewerRef.current = onClearViewer;
   }, [onClearViewer]);
+
+  useEffect(() => {
+    setPendingHumanMessage(null);
+    resetTimer();
+  }, [resetTimer, urlThreadId]);
 
   useEffect(() => {
     onDesignRevisionsChange(designRevisions);
@@ -230,13 +236,13 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     timer.reset();
     setDraftConversationKey((key) => key + 1);
     setHasChosenMode(true);
-    handleThreadIdChange(null);
+    switchThread(null);
     onClearViewerRef.current();
     onModeChange(mode);
     requestAnimationFrame(() => {
       chatInputRef.current?.focus();
     });
-  }, [timer, onModeChange, handleThreadIdChange]);
+  }, [timer, onModeChange, switchThread]);
 
   const hasStartedChat = !isEmpty || urlThreadId !== null;
 
@@ -266,9 +272,9 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     setHasChosenMode(true);
     timer.reset();
     if (thread.mode) onModeChange(thread.mode);
-    handleThreadIdChange(thread.threadId);
+    switchThread(thread.threadId);
     onClearViewerRef.current();
-  }, [timer, handleThreadIdChange, onModeChange]);
+  }, [timer, switchThread, onModeChange]);
 
   const handleDeleteThread = useCallback((threadId: string) => {
     history.deleteThread(threadId);
@@ -277,10 +283,10 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       setDraftConversationKey((key) => key + 1);
       setHasChosenMode(false);
       onModeChange(CAD_ASSISTANT_ID);
-      handleThreadIdChange(null);
+      switchThread(null);
       onClearViewerRef.current();
     }
-  }, [timer, history, urlThreadId, onModeChange, handleThreadIdChange]);
+  }, [timer, history, urlThreadId, onModeChange, switchThread]);
 
   const handleNewChat = useCallback(() => {
     if (!hasStartedChat) {
