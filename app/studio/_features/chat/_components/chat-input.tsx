@@ -44,6 +44,17 @@ function resizeTextarea(textarea: HTMLTextAreaElement | null) {
   textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px";
 }
 
+function isImageAttachment(attachment: UploadedFile) {
+  return attachment.contentType.startsWith("image/");
+}
+
+function attachmentMarkdown(attachment: UploadedFile) {
+  if (isImageAttachment(attachment)) {
+    return `![${attachment.filename}](${attachment.url})`;
+  }
+  return `[${attachment.filename}](${attachment.url})`;
+}
+
 const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
   isBusy,
   isLoading,
@@ -105,7 +116,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
     const parts: string[] = [];
     if (text) parts.push(text);
     if (attachments.length > 0) {
-      const links = attachments.map((a) => `[${a.filename}](${a.url})`).join("\n");
+      const links = attachments.map(attachmentMarkdown).join("\n");
       parts.push(`Attachments:\n${links}`);
     }
     onSubmit(parts.join("\n\n"));
@@ -151,9 +162,20 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
             {attachments.map((a) => (
               <span
                 key={a.url}
-                className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+                className="inline-flex items-center gap-1 rounded-xl bg-muted px-2 py-1 text-xs text-foreground"
               >
-                <Paperclip size={12} className="text-muted-foreground" />
+                {isImageAttachment(a) ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- Uploaded private blob URLs are user-scoped and not configured for Next image optimization.
+                  <img
+                    src={a.url}
+                    alt=""
+                    className="size-8 rounded-lg object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <Paperclip size={12} className="text-muted-foreground" />
+                )}
                 <span className="max-w-[180px] truncate">{a.filename}</span>
                 <button
                   type="button"

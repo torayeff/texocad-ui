@@ -2,19 +2,22 @@
 
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 
 import { Header } from "@/app/components/header";
-import type { ShareSketchRevision } from "@/app/types/sketch-viewer";
+import type { ShareSketchRevision, SketchMaskEditRequest } from "@/app/types/sketch-viewer";
 import type { ShareRevision } from "@/app/types/model-viewer";
 import SketchViewer from "@/app/components/sketch-viewer/sketch-viewer";
 import Chat from "@/app/studio/_features/chat/_components/chat";
+import { uploadFileToBlob } from "@/app/studio/_features/chat/_lib/blob-upload";
 import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import {
   latestDesignRevision,
   latestSketchRevision as getLatestSketchRevision,
 } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
+import type { ChatHandle } from "@/app/studio/_features/chat/_types/chat";
 import {
   isStepExport,
   isSketchImageExport,
@@ -51,6 +54,8 @@ export default function StudioClient() {
   const [studioMode, setStudioMode] = useState<StudioAssistantId>(CAD_ASSISTANT_ID);
   const [splitPct, setSplitPct] = useState(62);
   const [isResizing, setIsResizing] = useState(false);
+  const [isMaskSubmitting, setIsMaskSubmitting] = useState(false);
+  const chatRef = useRef<ChatHandle | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const designRequestVersionRef = useRef(0);
   const sketchRequestVersionRef = useRef(0);
@@ -166,6 +171,33 @@ export default function StudioClient() {
     setSelectedSketchRevisionKey(key);
   }, []);
 
+  const handleSketchMaskSubmit = useCallback(async ({ prompt, mask }: SketchMaskEditRequest) => {
+    if (!activeSketchExport) {
+      throw new Error("No active sketch image is available to edit.");
+    }
+
+    setIsMaskSubmitting(true);
+    try {
+      const uploadedMask = await uploadFileToBlob(mask);
+      flushSync(() => {
+        setStudioMode(SKETCH_ASSISTANT_ID);
+      });
+      const submitted = chatRef.current?.submitMessage([
+        "Edit the active sketch using this mask.",
+        `Input image: ${activeSketchExport.blobName}`,
+        `Mask: ${uploadedMask.url}`,
+        `![${uploadedMask.filename}](${uploadedMask.url})`,
+        `Instructions: ${prompt}`,
+      ].join("\n"));
+
+      if (!submitted) {
+        throw new Error("Chat is not ready to submit the masked edit.");
+      }
+    } finally {
+      setIsMaskSubmitting(false);
+    }
+  }, [activeSketchExport]);
+
   useEffect(() => {
     designRequestVersionRef.current += 1;
     const snapshotVersion = designRequestVersionRef.current;
@@ -244,6 +276,8 @@ export default function StudioClient() {
         >
           {shouldShowSketchViewer ? (
             <SketchViewer
+              isMaskSubmitting={isMaskSubmitting}
+              onSubmitMaskEdit={activeSketchExport ? handleSketchMaskSubmit : undefined}
               source={sketchSource}
               revisions={{
                 activeRevisionKey: activeSketchRevisionKey,
@@ -292,6 +326,7 @@ export default function StudioClient() {
 
         <div className="min-h-0 flex-[3] md:min-w-[320px] md:flex-1 md:border-l md:border-border">
           <Chat
+            ref={chatRef}
             assistantId={studioMode}
             onDesignRevisionEvent={handleDesignRevision}
             onDesignRevisionsChange={handleDesignRevisionsChange}

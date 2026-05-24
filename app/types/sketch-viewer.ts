@@ -4,6 +4,11 @@ export type SketchSource = {
   label: string;
 };
 
+export interface SketchMaskEditRequest {
+  prompt: string;
+  mask: File;
+}
+
 export interface SketchRevisionOption {
   key: string;
   revisionNumber: number;

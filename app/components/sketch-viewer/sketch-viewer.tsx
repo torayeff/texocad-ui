@@ -1,8 +1,9 @@
 "use client";
 
-import { Download, History, Loader2, Pencil, Scan, Share2 } from "lucide-react";
+import { Download, History, Loader2, Paintbrush, Share2 } from "lucide-react";
 import { useRef, useState } from "react";
 
+import { SketchMaskEditor } from "@/app/components/sketch-viewer/_components/sketch-mask-editor";
 import { SketchRevisionMenu } from "@/app/components/sketch-viewer/_components/sketch-revision-menu";
 import { SketchShareDialog } from "@/app/components/sketch-viewer/_components/sketch-share-dialog";
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
@@ -15,7 +16,7 @@ import { ViewerToolButton } from "@/app/components/model-viewer/_components/view
 import { loadingIconClass } from "@/app/components/model-viewer/_lib/viewer-styles";
 import { useFloatingPanel } from "@/app/components/model-viewer/_hooks/use-floating-panel";
 import { cn } from "@/app/lib/cn";
-import type { ShareSketchRevision, SketchRevisionOption, SketchSource } from "@/app/types/sketch-viewer";
+import type { ShareSketchRevision, SketchMaskEditRequest, SketchRevisionOption, SketchSource } from "@/app/types/sketch-viewer";
 
 interface SketchViewerRevisions {
   activeRevisionKey: string | null;
@@ -31,12 +32,21 @@ interface SketchViewerSharing {
 }
 
 interface SketchViewerProps {
+  isMaskSubmitting?: boolean;
+  onSubmitMaskEdit?: (request: SketchMaskEditRequest) => Promise<void> | void;
   revisions?: SketchViewerRevisions;
   sharing?: SketchViewerSharing;
   source: SketchSource | null;
 }
 
-export default function SketchViewer({ revisions, sharing, source }: SketchViewerProps) {
+export default function SketchViewer({
+  isMaskSubmitting = false,
+  onSubmitMaskEdit,
+  revisions,
+  sharing,
+  source,
+}: SketchViewerProps) {
+  const [isMaskEditorOpen, setIsMaskEditorOpen] = useState(false);
   const [revisionsOpen, setRevisionsOpen] = useState(false);
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
   const {
@@ -63,13 +73,16 @@ export default function SketchViewer({ revisions, sharing, source }: SketchViewe
   const canShowRevisions = revisionOptions.length > 0 && revisions !== undefined;
   const latestRevisionKey = revisionOptions[0]?.key ?? null;
   const activeRevision = revisionOptions.find((revision) => revision.key === revisions?.activeRevisionKey) ?? null;
+  const canMask = source !== null && onSubmitMaskEdit !== undefined;
+  const hasSource = source !== null;
   const { activeTriggerRef, panelRef, panelStyle, railRef, resetPanelPosition } = useFloatingPanel(
-    revisionsOpen && canShowRevisions,
+    hasSource && revisionsOpen && canShowRevisions,
     [canShowRevisions, revisionsOpen, revisionOptions.length, revisions?.activeRevisionKey],
   );
 
   const handleDownload = () => {
-    downloadLinkRef.current?.click();
+    if (!source) return;
+    window.open(source.url, "_blank", "noopener,noreferrer");
   };
 
   const toggleRevisions = (trigger: HTMLButtonElement) => {
@@ -81,13 +94,36 @@ export default function SketchViewer({ revisions, sharing, source }: SketchViewe
 
   const closeRevisions = () => setRevisionsOpen(false);
 
+  const handleOpenMaskEditor = () => {
+    closeRevisions();
+    setIsMaskEditorOpen(true);
+  };
+
+  const handleCloseMaskEditor = () => {
+    if (isMaskSubmitting) return;
+    setIsMaskEditorOpen(false);
+  };
+
+  const handleSubmitMaskEdit = async (request: SketchMaskEditRequest) => {
+    if (!onSubmitMaskEdit) return;
+    await onSubmitMaskEdit(request);
+    setIsMaskEditorOpen(false);
+  };
+
   return (
     <section
       className="relative size-full overflow-hidden bg-[var(--viewer-background,var(--muted))] text-foreground"
       aria-label="Generated sketch viewer"
     >
       <div className="absolute inset-0 flex items-center justify-center p-4 py-20 md:p-8 md:py-24">
-        {source ? (
+        {source && isMaskEditorOpen && canMask ? (
+          <SketchMaskEditor
+            isSubmitting={isMaskSubmitting}
+            source={source}
+            onCancel={handleCloseMaskEditor}
+            onSubmit={(prompt, mask) => handleSubmitMaskEdit({ prompt, mask })}
+          />
+        ) : source ? (
           // eslint-disable-next-line @next/next/no-img-element -- signed blob URLs are short-lived and not configured for Next image optimization
           <img
             src={source.url}
@@ -101,85 +137,83 @@ export default function SketchViewer({ revisions, sharing, source }: SketchViewe
         )}
       </div>
 
-      <div ref={railRef} className={sketchViewerToolRailClass} aria-label="Sketch controls">
-        <ViewerToolButton
-          type="button"
-          disabled
-          tooltip="Mask"
-          aria-label="Mask sketch"
-          className={sketchViewerToolButtonClass}
-        >
-          <Scan size={14} strokeWidth={1.75} />
-        </ViewerToolButton>
-        <ViewerToolButton
-          type="button"
-          disabled
-          tooltip="Annotate"
-          aria-label="Annotate sketch"
-          className={sketchViewerToolButtonClass}
-        >
-          <Pencil size={14} strokeWidth={1.75} />
-        </ViewerToolButton>
-
-        {canShare ? (
+      {hasSource ? (
+        <div ref={railRef} className={sketchViewerToolRailClass} aria-label="Sketch controls">
           <ViewerToolButton
             type="button"
-            onClick={handleOpenShareDialog}
-            disabled={isSharing}
-            tooltip="Share sketch"
-            aria-label="Share sketch"
-            className={sketchViewerToolButtonClass}
+            disabled={!canMask || isMaskSubmitting}
+            onClick={handleOpenMaskEditor}
+            tooltip="Mask"
+            aria-label="Mask sketch"
+            className={cn(sketchViewerToolButtonClass, isMaskEditorOpen && sketchViewerActiveControlClass)}
           >
-            {isSharing ? (
+            {isMaskSubmitting ? (
               <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
             ) : (
-              <Share2 size={14} strokeWidth={1.75} />
+              <Paintbrush size={14} strokeWidth={1.75} />
             )}
           </ViewerToolButton>
-        ) : null}
 
-        {canDownload ? (
-          <ViewerToolButton
-            type="button"
-            onClick={handleDownload}
-            tooltip="Download sketch"
-            aria-label="Download sketch"
-            className={sketchViewerToolButtonClass}
-          >
-            <Download size={14} strokeWidth={1.75} />
-          </ViewerToolButton>
-        ) : null}
+          {canShare ? (
+            <ViewerToolButton
+              type="button"
+              onClick={handleOpenShareDialog}
+              disabled={isSharing}
+              tooltip="Share sketch"
+              aria-label="Share sketch"
+              className={sketchViewerToolButtonClass}
+            >
+              {isSharing ? (
+                <Loader2 size={14} strokeWidth={1.75} className={loadingIconClass} />
+              ) : (
+                <Share2 size={14} strokeWidth={1.75} />
+              )}
+            </ViewerToolButton>
+          ) : null}
 
-        {canShowRevisions ? (
-          <ViewerToolButton
-            type="button"
-            onClick={(event) => toggleRevisions(event.currentTarget)}
-            tooltip="Revisions"
-            tooltipDisabled={revisionsOpen}
-            aria-label={activeRevision ? `Revisions, viewing revision ${activeRevision.revisionNumber}` : "Revisions"}
-            aria-expanded={revisionsOpen}
-            aria-haspopup="menu"
-            aria-controls="sketch-revision-menu"
-            className={cn(sketchViewerToolButtonClass, (revisionsOpen || !revisions.isLatestRevisionSelected) && sketchViewerActiveControlClass)}
-          >
-            <History size={14} strokeWidth={1.75} />
-          </ViewerToolButton>
-        ) : null}
+          {canDownload ? (
+            <ViewerToolButton
+              type="button"
+              onClick={handleDownload}
+              tooltip="Open sketch"
+              aria-label="Open sketch in a new window"
+              className={sketchViewerToolButtonClass}
+            >
+              <Download size={14} strokeWidth={1.75} />
+            </ViewerToolButton>
+          ) : null}
 
-        {revisionsOpen && canShowRevisions ? (
-          <SketchRevisionMenu
-            ref={panelRef}
-            activeRevisionKey={revisions.activeRevisionKey}
-            isLatestRevisionSelected={revisions.isLatestRevisionSelected}
-            latestRevisionKey={latestRevisionKey}
-            revisions={revisionOptions}
-            style={panelStyle}
-            onClose={closeRevisions}
-            onSelectLatestRevision={revisions.onSelectLatestRevision}
-            onSelectRevision={revisions.onSelectRevision}
-          />
-        ) : null}
-      </div>
+          {canShowRevisions ? (
+            <ViewerToolButton
+              type="button"
+              onClick={(event) => toggleRevisions(event.currentTarget)}
+              tooltip="Revisions"
+              tooltipDisabled={revisionsOpen}
+              aria-label={activeRevision ? `Revisions, viewing revision ${activeRevision.revisionNumber}` : "Revisions"}
+              aria-expanded={revisionsOpen}
+              aria-haspopup="menu"
+              aria-controls="sketch-revision-menu"
+              className={cn(sketchViewerToolButtonClass, (revisionsOpen || !revisions.isLatestRevisionSelected) && sketchViewerActiveControlClass)}
+            >
+              <History size={14} strokeWidth={1.75} />
+            </ViewerToolButton>
+          ) : null}
+
+          {revisionsOpen && canShowRevisions ? (
+            <SketchRevisionMenu
+              ref={panelRef}
+              activeRevisionKey={revisions.activeRevisionKey}
+              isLatestRevisionSelected={revisions.isLatestRevisionSelected}
+              latestRevisionKey={latestRevisionKey}
+              revisions={revisionOptions}
+              style={panelStyle}
+              onClose={closeRevisions}
+              onSelectLatestRevision={revisions.onSelectLatestRevision}
+              onSelectRevision={revisions.onSelectRevision}
+            />
+          ) : null}
+        </div>
+      ) : null}
 
       {source ? (
         <a

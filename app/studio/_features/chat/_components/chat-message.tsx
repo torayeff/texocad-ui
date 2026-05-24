@@ -22,8 +22,24 @@ interface ChatMessageProps {
 }
 
 const REMARK_PLUGINS = [remarkGfm];
+const HIDDEN_HUMAN_MESSAGE_LINE_PREFIXES = ["Input image:", "Mask:"];
+
+function isHiddenHumanMessageLine(line: string) {
+  return HIDDEN_HUMAN_MESSAGE_LINE_PREFIXES.some((prefix) => line.startsWith(prefix));
+}
+
+function humanMessageDisplayContent(content: string) {
+  return content
+    .split("\n")
+    .filter((line) => !isHiddenHumanMessageLine(line))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 function HumanMessageBubble({ content }: { content: string }) {
+  const displayContent = humanMessageDisplayContent(content);
+
   return (
     <div className="flex justify-end">
       <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
@@ -41,9 +57,19 @@ function HumanMessageBubble({ content }: { content: string }) {
                   {children}
                 </p>
               ),
+              img: ({ src, alt }) => (
+                // eslint-disable-next-line @next/next/no-img-element -- Chat attachments use user-scoped blob URLs that are not configured for Next image optimization.
+                <img
+                  src={src ?? ""}
+                  alt={alt ?? "Attachment image"}
+                  className="mt-2 max-h-40 max-w-full rounded-xl border border-border/40 object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ),
             }}
           >
-            {content}
+            {displayContent}
           </ReactMarkdown>
         </div>
       </div>

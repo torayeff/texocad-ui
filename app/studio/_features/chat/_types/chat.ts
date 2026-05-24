@@ -7,9 +7,14 @@ export interface ChatInputHandle {
   setPrompt: (prompt: string) => void;
 }
 
+export interface ChatHandle {
+  submitMessage: (content: string) => boolean;
+}
+
 export type ChatMessageType = "human" | "ai";
 
 export interface UploadedFile {
+  contentType: string;
   url: string;
   filename: string;
 }

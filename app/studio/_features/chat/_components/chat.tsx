@@ -13,7 +13,7 @@ import { getMessageTextContent } from "@/app/studio/_features/chat/_lib/message-
 import { DEFAULT_MODEL_ID, MODELS } from "@/app/studio/_features/chat/_lib/models";
 import { CAD_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
-import type { ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
+import type { ChatHandle, ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
 import { trackMessageSubmitted } from "@/app/studio/_features/chat/_lib/analytics";
 
 import { ChatHeader } from "@/app/studio/_features/chat/_components/chat-header";
@@ -32,7 +32,7 @@ interface ChatProps {
   onClearViewer: () => void;
 }
 
-export default function Chat({
+const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   assistantId,
   onDesignRevisionEvent,
   onDesignRevisionsChange,
@@ -40,7 +40,7 @@ export default function Chat({
   onSketchRevisionEvent,
   onSketchRevisionsChange,
   onClearViewer,
-}: ChatProps) {
+}: ChatProps, ref) {
   const {
     client,
     stream,
@@ -134,10 +134,11 @@ export default function Chat({
     showScrollButton,
   } = useChatScroll({ dependencies: [messages, isLoading, shouldRenderPendingHumanMessage] });
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (isBusy) return;
+  const sendMessage = useCallback((content: string) => {
+    if (isBusy) return false;
     const trimmed = content.trim();
-    if (!trimmed) return;
+    if (!trimmed) return false;
+    setHasChosenMode(true);
     trackMessageSubmitted({
       hasAttachments: trimmed.includes("Attachments:"),
     });
@@ -158,7 +159,12 @@ export default function Chat({
     requestAnimationFrame(() => {
       scrollToBottom();
     });
+    return true;
   }, [isBusy, isVip, markNearBottom, scrollToBottom, selectedModel, stream, userId]);
+
+  React.useImperativeHandle(ref, () => ({
+    submitMessage: (content: string) => sendMessage(content),
+  }), [sendMessage]);
 
   const handleModeSelect = useCallback((mode: StudioAssistantId) => {
     onModeChange(mode);
@@ -281,4 +287,6 @@ export default function Chat({
       </div>
     </div>
   );
-}
+});
+
+export default Chat;
