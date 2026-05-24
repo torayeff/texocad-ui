@@ -1,74 +1,16 @@
 "use client";
 
 import React from "react";
-import { AIMessage, ToolMessage } from "@langchain/core/messages";
-import type { AIMessageChunk } from "@langchain/core/messages";
+import { AIMessage } from "@langchain/core/messages";
 import { Bot, ChevronDown, CircleCheck, CircleDot, CircleX } from "lucide-react";
 import { ToolCallCard } from "@/app/studio/_features/chat/_components/tool-call-card";
 import { getMessageTextContent, getReasoningContent } from "@/app/studio/_features/chat/_lib/message-content";
 import { AIPanel } from "@/app/studio/_features/chat/_components/ai-panel";
 import { InlineThinkingBlock, InlineTextContent } from "@/app/studio/_features/chat/_components/inline-blocks";
 import { useAutoOpenDetails } from "@/app/studio/_features/chat/_hooks/use-auto-open-details";
-import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
-import type { SubagentStatus, SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
+import type { SubagentStatus, SubagentView } from "@/app/studio/_features/chat/_lib/message-rows";
 
-function getSubagentToolCalls(subagent: SubagentStream): StreamToolCall[] {
-  const allToolCalls: StreamToolCall[] = [];
-  const knownIds = new Set<string>();
-
-  for (const message of subagent.messages) {
-    if (AIMessage.isInstance(message) && message.tool_calls) {
-      for (const tc of message.tool_calls) {
-        if (!tc.id || tc.name === "task" || tc.name === "write_todos") continue;
-        knownIds.add(tc.id);
-        allToolCalls.push({
-          id: tc.id,
-          state: "completed",
-          call: {
-            id: tc.id,
-            name: tc.name,
-            args: tc.args as Record<string, unknown>,
-          },
-          result: "",
-        });
-      }
-    }
-
-    if (ToolMessage.isInstance(message)) {
-      const tc = allToolCalls.find((t) => t.id === message.tool_call_id);
-      if (tc) {
-        tc.result = { content: message.content, status: message.status };
-        tc.state = message.status === "error" ? "error" : "completed";
-      }
-    }
-
-    const chunk = message as AIMessageChunk;
-    if (AIMessage.isInstance(message) && chunk.tool_call_chunks) {
-      for (const tcc of chunk.tool_call_chunks) {
-        if (!tcc.id || tcc.name === "task" || tcc.name === "write_todos") continue;
-        if (knownIds.has(tcc.id)) continue;
-        knownIds.add(tcc.id);
-        let parsedArgs = {};
-        if (tcc.args) {
-          try { parsedArgs = JSON.parse(tcc.args); } catch { /* partial JSON */ }
-        }
-        allToolCalls.push({
-          id: tcc.id,
-          state: "pending",
-          call: {
-            id: tcc.id,
-            name: tcc.name!,
-            args: parsedArgs,
-          },
-        });
-      }
-    }
-  }
-
-  return allToolCalls;
-}
-
-function getDisplayContent(subagent: SubagentStream): { text: string; thinking: string } {
+function getDisplayContent(subagent: SubagentView): { text: string; thinking: string } {
   let text = "";
   let thinking = "";
 
@@ -124,7 +66,7 @@ export const SubagentCard = React.memo(function SubagentCard({
   status,
   parentIsStreaming,
 }: {
-  subagent: SubagentStream;
+  subagent: SubagentView;
   status?: SubagentStatus;
   parentIsStreaming?: boolean;
 }) {
@@ -141,7 +83,8 @@ export const SubagentCard = React.memo(function SubagentCard({
 
   const cachedDetails = React.useMemo(() => {
     const { text: displayContent, thinking } = getDisplayContent(subagent);
-    const visibleToolCalls = getSubagentToolCalls(subagent);
+    const visibleToolCalls = subagent.toolCalls.filter((toolCall) =>
+      toolCall.call.name !== "task" && toolCall.call.name !== "write_todos");
     return { displayContent, thinking, visibleToolCalls };
   }, [subagent]);
 

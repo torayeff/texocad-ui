@@ -3,8 +3,8 @@
 import React from "react";
 import { ChatMessage } from "@/app/studio/_features/chat/_components/chat-message";
 import { SubagentCard } from "@/app/studio/_features/chat/_components/subagent-card";
+import type { SubagentStatus, SubagentView } from "@/app/studio/_features/chat/_lib/message-rows";
 import type { ChatMessageType, StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
-import type { SubagentStatus, SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
 
 function getVisibleToolCalls(
   toolCalls: StreamToolCall[],
@@ -16,7 +16,7 @@ function getVisibleToolCalls(
 }
 
 function getSubagentStatus(
-  subagent: SubagentStream,
+  subagent: SubagentView,
   toolCalls: StreamToolCall[],
 ): SubagentStatus {
   const parentTask = toolCalls.find((toolCall) =>
@@ -37,7 +37,7 @@ interface MessageWithSubagentsProps {
   runtimeSeconds?: number;
   startedAtMs?: number;
   toolCalls?: StreamToolCall[];
-  subagents?: SubagentStream[];
+  subagents?: SubagentView[];
   toolCallsSignature?: string;
   subagentsSignature?: string;
   renderMarkdown?: boolean;

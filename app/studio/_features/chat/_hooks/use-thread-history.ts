@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import type { Client, Thread } from "@langchain/langgraph-sdk";
 
 import type { ThreadSummary } from "@/app/studio/_features/chat/_types/chat";
+import { modeFromThread } from "@/app/studio/_features/chat/_lib/thread-mode";
 
 const PAGE_SIZE = 20;
 
@@ -39,7 +40,7 @@ function toThreadSummary(thread: Thread): ThreadSummary {
     : "Untitled conversation";
   const updatedAt = new Date(thread.updated_at);
 
-  return { threadId, title, updatedAt };
+  return { threadId, title, updatedAt, mode: modeFromThread(thread) };
 }
 
 export function useThreadHistory(client: Client, isReady: boolean) {

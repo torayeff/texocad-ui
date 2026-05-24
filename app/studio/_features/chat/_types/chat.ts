@@ -1,6 +1,4 @@
 import type { Message } from "@langchain/langgraph-sdk";
-import type { BaseMessage } from "@langchain/core/messages";
-import type { SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
 
 export interface ChatInputHandle {
   focus: () => void;
@@ -39,6 +37,7 @@ export interface TodoItem {
 }
 
 export interface TexocadGraphState {
+  [key: string]: unknown;
   messages: Message[];
   todos?: TodoItem[];
   product?: PartEntry[];
@@ -85,11 +84,7 @@ export interface ThreadSummary {
   threadId: string;
   title: string;
   updatedAt: Date;
-}
-
-export interface StreamAccessors {
-  getToolCalls?: (message: BaseMessage) => StreamToolCall[];
-  getSubagentsByMessage?: (messageId: string) => SubagentStream[];
+  mode: "cad" | "sketch" | null;
 }
 
 export interface AssistantTimer {

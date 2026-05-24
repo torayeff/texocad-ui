@@ -12,22 +12,28 @@ import {
   getSubagentsSignature,
   getToolCallsSignature,
 } from "@/app/studio/_features/chat/_lib/message-rows";
-import type { MessageRow } from "@/app/studio/_features/chat/_lib/message-rows";
-import type { AssistantTimer, StreamAccessors } from "@/app/studio/_features/chat/_types/chat";
+import type { MessageRow, SubagentView } from "@/app/studio/_features/chat/_lib/message-rows";
+import type { AssistantTimer } from "@/app/studio/_features/chat/_types/chat";
+import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
+
+interface StreamRowAccessors {
+  getToolCalls: (message: BaseMessage) => StreamToolCall[];
+  getSubagentsByMessage: (messageId: string) => SubagentView[];
+}
 
 export function useMessageRows({
   messages,
   isLoading,
   conversationScope,
   shouldRenderPendingHumanMessage,
-  streamAccessors,
+  stream,
   timer,
 }: {
   messages: BaseMessage[];
   isLoading: boolean;
   conversationScope: string;
   shouldRenderPendingHumanMessage: boolean;
-  streamAccessors: StreamAccessors;
+  stream: StreamRowAccessors;
   timer: AssistantTimer;
 }): { messageRows: MessageRow[]; activeAssistantRowKey: string | null } {
   const prevActiveRowKeyRef = useRef<string | null>(null);
@@ -41,8 +47,6 @@ export function useMessageRows({
   }, [isLoading, timer]);
 
   const messageRows = useMemo(() => {
-    const accessors = streamAccessors;
-
     let lastHumanIndex = -1;
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       if (HumanMessage.isInstance(messages[index])) {
@@ -100,14 +104,12 @@ export function useMessageRows({
       const runtimeSeconds = timer.runtimeSecondsByRow[rowKey];
       let toolCalls = EMPTY_TOOL_CALLS;
 
-      if (accessors.getToolCalls) {
-        const nextToolCalls = accessors.getToolCalls(message);
-        if (nextToolCalls.length > 0) toolCalls = nextToolCalls;
-      }
+      const nextToolCalls = stream.getToolCalls(message);
+      if (nextToolCalls.length > 0) toolCalls = nextToolCalls;
 
       let subagents = EMPTY_SUBAGENTS;
-      if (message.id && accessors.getSubagentsByMessage) {
-        const nextSubagents = accessors.getSubagentsByMessage(message.id);
+      if (message.id) {
+        const nextSubagents = stream.getSubagentsByMessage(message.id);
         if (nextSubagents.length > 0) subagents = nextSubagents;
       }
 
@@ -136,7 +138,7 @@ export function useMessageRows({
     isLoading,
     messages,
     shouldRenderPendingHumanMessage,
-    streamAccessors,
+    stream,
     timer.runtimeSecondsByRow,
   ]);
 

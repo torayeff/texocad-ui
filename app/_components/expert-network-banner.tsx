@@ -2,20 +2,17 @@
 
 import { X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { SITE_ROUTES } from "@/app/lib/site";
 
 const DISMISS_STORAGE_KEY = "texocad-expert-network-banner-dismissed";
 
 export function ExpertNetworkBanner() {
-  const [isVisible, setIsVisible] = useState(true);
-
-  useEffect(() => {
-    if (window.localStorage.getItem(DISMISS_STORAGE_KEY) === "true") {
-      setIsVisible(false);
-    }
-  }, []);
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem(DISMISS_STORAGE_KEY) !== "true";
+  });
 
   function dismissBanner() {
     window.localStorage.setItem(DISMISS_STORAGE_KEY, "true");

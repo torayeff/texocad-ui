@@ -1,17 +1,20 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { PanelBottomOpen, PanelRightOpen } from "lucide-react";
 
 import { Header } from "@/app/components/header";
 import SketchViewer from "@/app/components/sketch-viewer/sketch-viewer";
 import { cn } from "@/app/lib/cn";
 import Chat from "@/app/studio/_features/chat/_components/chat";
+import { useLanggraphAuth } from "@/app/studio/_features/chat/_hooks/use-langgraph-auth";
 import { uploadFileToBlob } from "@/app/studio/_features/chat/_lib/blob-upload";
 import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import { readThreadMode } from "@/app/studio/_features/chat/_lib/thread-mode";
 import type { ChatHandle } from "@/app/studio/_features/chat/_types/chat";
 import { useStudioRevisions } from "@/app/studio/_hooks/use-studio-revisions";
 import { useStudioSplitLayout } from "@/app/studio/_hooks/use-studio-split-layout";
@@ -26,10 +29,38 @@ export default function StudioClient() {
   const [studioMode, setStudioMode] = useState<StudioAssistantId>(CAD_ASSISTANT_ID);
   const [isMaskSubmitting, setIsMaskSubmitting] = useState(false);
   const [maskComposer, setMaskComposer] = useState<SketchMaskComposerState | null>(null);
+  const searchParams = useSearchParams();
+  const [initialThreadId] = useState(() => searchParams.get("thread_id"));
+  const [isInitialThreadModeResolved, setIsInitialThreadModeResolved] = useState(() => initialThreadId === null);
+  const { client, isReady: isAuthReady } = useLanggraphAuth();
   const chatRef = useRef<ChatHandle | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const splitLayout = useStudioSplitLayout({ contentRef });
   const revisions = useStudioRevisions(studioMode, setStudioMode);
+  const shouldMountChat = initialThreadId === null || isInitialThreadModeResolved;
+
+  useEffect(() => {
+    if (!initialThreadId) {
+      return;
+    }
+    if (!isAuthReady) return;
+
+    let cancelled = false;
+    void readThreadMode(client, initialThreadId)
+      .then((mode) => {
+        if (cancelled) return;
+        if (mode) setStudioMode(mode);
+        setIsInitialThreadModeResolved(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIsInitialThreadModeResolved(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [client, initialThreadId, isAuthReady]);
 
   const handleClearViewer = useCallback(() => {
     revisions.clearViewerRevisions();
@@ -159,18 +190,25 @@ export default function StudioClient() {
             splitLayout.isChatCollapsed && "hidden",
           )}
         >
-          <Chat
-            ref={chatRef}
-            assistantId={studioMode}
-            maskComposer={maskComposer}
-            onDesignRevisionEvent={revisions.handleDesignRevision}
-            onDesignRevisionsChange={revisions.handleDesignRevisionsChange}
-            onModeChange={setStudioMode}
-            onSketchRevisionEvent={revisions.handleSketchRevision}
-            onSketchRevisionsChange={revisions.handleSketchRevisionsChange}
-            onClearViewer={handleClearViewer}
-            onToggleCollapse={splitLayout.toggleChatCollapsed}
-          />
+          {shouldMountChat ? (
+            <Chat
+              ref={chatRef}
+              assistantId={studioMode}
+              initialThreadId={initialThreadId}
+              maskComposer={maskComposer}
+              onDesignRevisionEvent={revisions.handleDesignRevision}
+              onDesignRevisionsChange={revisions.handleDesignRevisionsChange}
+              onModeChange={setStudioMode}
+              onSketchRevisionEvent={revisions.handleSketchRevision}
+              onSketchRevisionsChange={revisions.handleSketchRevisionsChange}
+              onClearViewer={handleClearViewer}
+              onToggleCollapse={splitLayout.toggleChatCollapsed}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-background px-4 text-sm text-muted-foreground">
+              Loading conversation...
+            </div>
+          )}
         </div>
       </div>
     </main>

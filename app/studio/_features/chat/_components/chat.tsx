@@ -10,10 +10,13 @@ import { useAssistantTimer } from "@/app/studio/_features/chat/_hooks/use-assist
 import { useMessageRows } from "@/app/studio/_features/chat/_hooks/use-message-rows";
 import { useChatScroll } from "@/app/studio/_features/chat/_hooks/use-chat-scroll";
 import { getMessageTextContent } from "@/app/studio/_features/chat/_lib/message-content";
+import type { SubagentView } from "@/app/studio/_features/chat/_lib/message-rows";
 import { DEFAULT_MODEL_ID, MODELS } from "@/app/studio/_features/chat/_lib/models";
 import { CAD_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import { THREAD_MODE_METADATA_KEY } from "@/app/studio/_features/chat/_lib/thread-mode";
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
-import type { ChatHandle, ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
+import type { ChatHandle, ChatInputHandle, ThreadSummary } from "@/app/studio/_features/chat/_types/chat";
+import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 import { trackMessageSubmitted } from "@/app/studio/_features/chat/_lib/analytics";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 
@@ -29,6 +32,7 @@ import {
 
 interface ChatProps {
   assistantId: StudioAssistantId;
+  initialThreadId?: string | null;
   maskComposer: SketchMaskComposerState | null;
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
@@ -39,8 +43,25 @@ interface ChatProps {
   onToggleCollapse: () => void;
 }
 
+interface StreamSubagent {
+  id: string;
+  status: SubagentView["status"];
+  toolCall: SubagentView["toolCall"];
+  messages: SubagentView["messages"];
+  result?: string | null;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  toolCalls: StreamToolCall[];
+}
+
+interface StreamRowMethods {
+  getToolCalls: (message: Parameters<typeof getMessageTextContent>[0]) => StreamToolCall[];
+  getSubagentsByMessage: (messageId: string) => StreamSubagent[];
+}
+
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   assistantId,
+  initialThreadId,
   maskComposer,
   onDesignRevisionEvent,
   onDesignRevisionsChange,
@@ -53,15 +74,12 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   const {
     client,
     stream,
-    streamAccessors,
     messages,
     isLoading,
     isHydrating,
     isAuthReady,
     isBusy,
     error,
-    cancelActiveRun,
-    clearActiveRun,
     todos,
     designRevisions,
     urlThreadId,
@@ -70,6 +88,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     handleThreadIdChange,
     sketchRevisions,
   } = useChatStream(assistantId, {
+    initialThreadId,
     onDesignRevisionEvent,
     onSketchRevisionEvent,
   });
@@ -107,6 +126,24 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   const history = useThreadHistory(client, isAuthReady);
 
   const conversationScope = urlThreadId ?? `draft-${draftConversationKey}`;
+  const streamRowMethods = stream as unknown as StreamRowMethods;
+  const rowStreamAccessors = useMemo(() => ({
+    getToolCalls: (message: Parameters<typeof getMessageTextContent>[0]) => streamRowMethods.getToolCalls(message),
+    getSubagentsByMessage: (messageId: string): SubagentView[] => streamRowMethods.getSubagentsByMessage(messageId).map((subagent) => ({
+      id: subagent.id,
+      status: subagent.status,
+      toolCall: {
+        id: subagent.toolCall.id,
+        name: subagent.toolCall.name,
+        args: subagent.toolCall.args,
+      },
+      messages: subagent.messages,
+      result: subagent.result,
+      startedAt: subagent.startedAt,
+      completedAt: subagent.completedAt,
+      toolCalls: subagent.toolCalls,
+    })),
+  }), [streamRowMethods]);
 
   const lastHumanMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -128,7 +165,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     isLoading,
     conversationScope,
     shouldRenderPendingHumanMessage,
-    streamAccessors,
+    stream: rowStreamAccessors,
     timer,
   });
 
@@ -158,6 +195,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     setPendingHumanMessage(new HumanMessage(trimmed));
 
     const metadata = {
+      [THREAD_MODE_METADATA_KEY]: assistantId,
       ...(userId ? { owner: userId } : {}),
       ...(isVip ? { model: selectedModel } : {}),
     };
@@ -166,7 +204,9 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       {
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         onDisconnect: "continue",
+        streamSubgraphs: true,
         streamResumable: true,
+        config: { recursion_limit: 10000 },
       },
     );
 
@@ -175,7 +215,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       scrollToBottom();
     });
     return true;
-  }, [isBusy, isVip, markNearBottom, scrollToBottom, selectedModel, stream, userId]);
+  }, [assistantId, isBusy, isVip, markNearBottom, scrollToBottom, selectedModel, stream, userId]);
 
   React.useImperativeHandle(ref, () => ({
     focusInput: () => {
@@ -190,14 +230,13 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     timer.reset();
     setDraftConversationKey((key) => key + 1);
     setHasChosenMode(true);
-    clearActiveRun();
     handleThreadIdChange(null);
     onClearViewerRef.current();
     onModeChange(mode);
     requestAnimationFrame(() => {
       chatInputRef.current?.focus();
     });
-  }, [timer, clearActiveRun, onModeChange, handleThreadIdChange]);
+  }, [timer, onModeChange, handleThreadIdChange]);
 
   const hasStartedChat = !isEmpty || urlThreadId !== null;
 
@@ -221,15 +260,15 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     });
   }, []);
 
-  const handleSelectThread = useCallback((threadId: string) => {
+  const handleSelectThread = useCallback((thread: ThreadSummary) => {
     setHistoryOpen(false);
     setPendingHumanMessage(null);
     setHasChosenMode(true);
     timer.reset();
-    clearActiveRun();
-    handleThreadIdChange(threadId);
+    if (thread.mode) onModeChange(thread.mode);
+    handleThreadIdChange(thread.threadId);
     onClearViewerRef.current();
-  }, [timer, clearActiveRun, handleThreadIdChange]);
+  }, [timer, handleThreadIdChange, onModeChange]);
 
   const handleDeleteThread = useCallback((threadId: string) => {
     history.deleteThread(threadId);
@@ -237,12 +276,11 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       timer.reset();
       setDraftConversationKey((key) => key + 1);
       setHasChosenMode(false);
-      clearActiveRun();
       onModeChange(CAD_ASSISTANT_ID);
       handleThreadIdChange(null);
       onClearViewerRef.current();
     }
-  }, [timer, clearActiveRun, history, urlThreadId, onModeChange, handleThreadIdChange]);
+  }, [timer, history, urlThreadId, onModeChange, handleThreadIdChange]);
 
   const handleNewChat = useCallback(() => {
     if (!hasStartedChat) {
@@ -335,7 +373,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
             maskComposer={maskComposer}
             onSubmit={sendMessage}
             stopGeneration={() => {
-              void cancelActiveRun();
+              void stream.stop();
             }}
             model={selectedModel}
             onModelChange={handleModelChange}

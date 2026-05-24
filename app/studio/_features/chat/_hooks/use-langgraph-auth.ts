@@ -20,7 +20,7 @@ const sharedClient = new Client({
   apiUrl: LANGGRAPH_API_URL,
   onRequest: async (_url, init) => {
     const token = authState.isSignedIn
-      ? await authState.getToken({ skipCache: true })
+      ? await authState.getToken()
       : null;
     if (!token) return init;
 

@@ -22,7 +22,7 @@ interface ThreadHistoryPanelProps {
   isLoading: boolean;
   hasMore: boolean;
   activeThreadId: string | null;
-  onSelectThread: (threadId: string) => void;
+  onSelectThread: (thread: ThreadSummary) => void;
   onDeleteThread: (threadId: string) => void;
   onLoadMore: () => void;
 }
@@ -43,9 +43,9 @@ export default function ThreadHistoryPanel({
     setConfirmingId(threadId);
   }, []);
 
-  const handleSelect = useCallback((threadId: string) => {
-    if (threadId !== activeThreadId) {
-      onSelectThread(threadId);
+  const handleSelect = useCallback((thread: ThreadSummary) => {
+    if (thread.threadId !== activeThreadId) {
+      onSelectThread(thread);
     }
   }, [activeThreadId, onSelectThread]);
 
@@ -63,11 +63,11 @@ export default function ThreadHistoryPanel({
                 key={thread.threadId}
                 role="button"
                 tabIndex={0}
-                onClick={() => handleSelect(thread.threadId)}
+                onClick={() => handleSelect(thread)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    handleSelect(thread.threadId);
+                    handleSelect(thread);
                   }
                 }}
                 onBlur={() => {

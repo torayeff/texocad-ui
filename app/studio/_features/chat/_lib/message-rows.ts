@@ -1,7 +1,24 @@
 import { AIMessage } from "@langchain/core/messages";
+import type { BaseMessage } from "@langchain/core/messages";
 import { getMessageTextContent, getReasoningContent } from "@/app/studio/_features/chat/_lib/message-content";
 import type { StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
-import type { SubagentStream } from "@/app/studio/_features/chat/_types/subagent";
+
+export type SubagentStatus = "pending" | "running" | "complete" | "error";
+
+export interface SubagentView {
+  id: string;
+  status: SubagentStatus;
+  toolCall: {
+    id?: string;
+    name: string;
+    args: Record<string, unknown>;
+  };
+  messages: BaseMessage[];
+  result?: string | null;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  toolCalls: StreamToolCall[];
+}
 
 export interface MessageRow {
   rowKey: string;
@@ -14,13 +31,13 @@ export interface MessageRow {
   startedAtMs?: number;
   toolCalls: StreamToolCall[];
   toolCallsSignature: string;
-  subagents: SubagentStream[];
+  subagents: SubagentView[];
   subagentsSignature: string;
   renderMarkdown: boolean;
 }
 
 export const EMPTY_TOOL_CALLS: StreamToolCall[] = [];
-export const EMPTY_SUBAGENTS: SubagentStream[] = [];
+export const EMPTY_SUBAGENTS: SubagentView[] = [];
 
 function serialize(value: unknown): string {
   return JSON.stringify(value) ?? "";
@@ -48,7 +65,7 @@ export function getToolCallsSignature(toolCalls: StreamToolCall[]): string {
     .join("|");
 }
 
-export function getSubagentsSignature(subagents: SubagentStream[]): string {
+export function getSubagentsSignature(subagents: SubagentView[]): string {
   return subagents
     .map((subagent) => {
       const lastMessage = subagent.messages[subagent.messages.length - 1];

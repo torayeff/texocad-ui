@@ -1,18 +1,11 @@
 "use client";
 
-import { useMemo, useCallback, useRef, useEffect } from "react";
+import { useMemo, useCallback, useRef, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_features/chat/_hooks/use-langgraph-auth";
 import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
-import {
-  activeRunMatches,
-  clearStoredActiveRun,
-  readStoredActiveRun,
-  writeStoredActiveRun,
-  type ActiveRunRecord,
-} from "@/app/studio/_features/chat/_lib/active-run-storage";
 import {
   designRevisionsFromMessages,
   isDesignRevisionArtifact,
@@ -21,7 +14,6 @@ import {
   latestSketchRevision,
   sketchRevisionsFromMessages,
 } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
-import type { StreamAccessors } from "@/app/studio/_features/chat/_types/chat";
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type {
   TexocadGraphState,
@@ -30,108 +22,85 @@ import type {
 
 const EMPTY_TODOS: TodoItem[] = [];
 
-interface CreatedRun {
-  run_id?: string;
-  runId?: string;
-  thread_id?: string;
-  threadId?: string;
-}
-
-interface JoinableStream {
-  joinStream?: (runId: string) => unknown;
-  stop?: () => void;
-}
-
-interface CancellableRunsClient {
-  runs?: {
-    cancel?: (threadId: string, runId: string) => unknown;
-  };
-}
-
 interface UseChatStreamEvents {
   onDesignRevisionEvent?: (revision: DesignRevisionArtifact) => void;
   onSketchRevisionEvent?: (revision: SketchRevisionArtifact) => void;
 }
 
-export function useChatStream(assistantId: StudioAssistantId, events: UseChatStreamEvents = {}) {
+interface UseChatStreamOptions extends UseChatStreamEvents {
+  initialThreadId?: string | null;
+}
+
+interface JoinableRun {
+  run_id?: string;
+  runId?: string;
+}
+
+interface RunsClient {
+  runs?: {
+    list?: (threadId: string, options?: { status?: "pending" | "running" | "all"; limit?: number }) => Promise<JoinableRun[]>;
+  };
+}
+
+function replaceUrlThreadId(pathname: string, currentSearchParams: URLSearchParams, threadId: string | null) {
+  const params = new URLSearchParams(currentSearchParams.toString());
+  if (threadId) {
+    params.set("thread_id", threadId);
+  } else {
+    params.delete("thread_id");
+  }
+
+  const nextQuery = params.toString();
+  const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+  window.history.replaceState(window.history.state, "", nextUrl);
+}
+
+export function useChatStream(assistantId: StudioAssistantId, options: UseChatStreamOptions = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlThreadId = searchParams.get("thread_id");
+  const [threadId, setThreadId] = useState(options.initialThreadId ?? null);
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
-  const onDesignRevisionEventRef = useRef(events.onDesignRevisionEvent);
-  const onSketchRevisionEventRef = useRef(events.onSketchRevisionEvent);
+  const onDesignRevisionEventRef = useRef(options.onDesignRevisionEvent);
+  const onSketchRevisionEventRef = useRef(options.onSketchRevisionEvent);
   const assistantIdRef = useRef(assistantId);
-  const hasJoinedRunRef = useRef<string | null>(null);
-  const pendingRunIdRef = useRef<string | null>(null);
-  const urlThreadIdRef = useRef(urlThreadId);
+  const threadIdRef = useRef(threadId);
+  const hasJoinedActiveRunRef = useRef(false);
   useEffect(() => {
-    onDesignRevisionEventRef.current = events.onDesignRevisionEvent;
-    onSketchRevisionEventRef.current = events.onSketchRevisionEvent;
-  }, [events.onDesignRevisionEvent, events.onSketchRevisionEvent]);
+    onDesignRevisionEventRef.current = options.onDesignRevisionEvent;
+    onSketchRevisionEventRef.current = options.onSketchRevisionEvent;
+  }, [options.onDesignRevisionEvent, options.onSketchRevisionEvent]);
 
   useEffect(() => {
     assistantIdRef.current = assistantId;
-    urlThreadIdRef.current = urlThreadId;
-  }, [assistantId, urlThreadId]);
-
-  const clearActiveRun = useCallback((record?: ActiveRunRecord | null) => {
-    hasJoinedRunRef.current = null;
-    clearStoredActiveRun(record);
-  }, []);
+    threadIdRef.current = threadId;
+  }, [assistantId, threadId]);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (nextThreadId) {
-        params.set("thread_id", nextThreadId);
-        if (pendingRunIdRef.current) {
-          writeStoredActiveRun({
-            assistantId: assistantIdRef.current,
-            runId: pendingRunIdRef.current,
-            threadId: nextThreadId,
-          });
-          pendingRunIdRef.current = null;
-        }
-      } else {
-        params.delete("thread_id");
-        clearStoredActiveRun();
-      }
-
-      const nextQuery = params.toString();
-      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
-        scroll: false,
-      });
+      setThreadId(nextThreadId);
+      replaceUrlThreadId(pathname, searchParams, nextThreadId);
     },
-    [pathname, router, searchParams],
+    [pathname, searchParams],
   );
 
   const handleRunCreated = useCallback((run: unknown) => {
-    const createdRun = run as CreatedRun;
-    const runId = createdRun.run_id ?? createdRun.runId;
-    if (!runId) return;
-
-    const threadId = createdRun.thread_id ?? createdRun.threadId ?? urlThreadIdRef.current;
-    if (!threadId) {
-      pendingRunIdRef.current = runId;
-      return;
-    }
-
-    writeStoredActiveRun({
-      assistantId: assistantIdRef.current,
-      runId,
-      threadId,
-    });
-  }, []);
+    const createdRun = run as { thread_id?: string; threadId?: string };
+    const createdThreadId = createdRun.thread_id ?? createdRun.threadId ?? threadIdRef.current;
+    if (!createdThreadId) return;
+    setThreadId(createdThreadId);
+    replaceUrlThreadId(pathname, searchParams, createdThreadId);
+  }, [pathname, searchParams]);
 
   const streamOptions = useMemo(() => ({
     client,
     assistantId,
-    threadId: isAuthReady ? (urlThreadId ?? undefined) : undefined,
+    threadId: isAuthReady ? (threadId ?? undefined) : undefined,
     fetchStateHistory: true,
     filterSubagentMessages: true,
+    reconnectOnMount: true,
     onCreated: handleRunCreated,
     onThreadId: (id: string) => handleThreadIdChange(id),
     onCustomEvent: (data: unknown) => {
@@ -148,7 +117,7 @@ export function useChatStream(assistantId: StudioAssistantId, events: UseChatStr
     handleRunCreated,
     handleThreadIdChange,
     isAuthReady,
-    urlThreadId,
+    threadId,
   ]);
 
   const stream = useStream<TexocadGraphState>(streamOptions);
@@ -168,54 +137,29 @@ export function useChatStream(assistantId: StudioAssistantId, events: UseChatStr
   const latestSketch = latestSketchRevision(sketchRevisions);
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
-  const joinActiveRun = useCallback((record: ActiveRunRecord) => {
-    if (hasJoinedRunRef.current === record.runId) return;
-    const joinStream = (stream as unknown as JoinableStream).joinStream;
-    if (typeof joinStream !== "function") return;
-
-    hasJoinedRunRef.current = record.runId;
-    try {
-      void Promise.resolve(joinStream.call(stream, record.runId)).catch(() => {
-        hasJoinedRunRef.current = null;
-        clearActiveRun(record);
-      });
-    } catch {
-      hasJoinedRunRef.current = null;
-      clearActiveRun(record);
-    }
-  }, [clearActiveRun, stream]);
-
-  const cancelActiveRun = useCallback(async () => {
-    const record = readStoredActiveRun();
-    if (!record) {
-      (stream as unknown as JoinableStream).stop?.();
-      return;
-    }
-
-    const runs = (client as unknown as CancellableRunsClient).runs;
-    const cancel = runs?.cancel;
-    if (typeof cancel === "function") {
-      try {
-        await Promise.resolve(cancel.call(runs, record.threadId, record.runId));
-      } catch {
-        return;
-      }
-    } else {
-      (stream as unknown as JoinableStream).stop?.();
-    }
-
-    hasJoinedRunRef.current = null;
-    clearActiveRun(record);
-  }, [clearActiveRun, client, stream]);
-
   useEffect(() => {
-    if (!isAuthReady || !urlThreadId || isLoading || isHydrating) return;
+    if (!isAuthReady || !threadId || isLoading || isHydrating || hasJoinedActiveRunRef.current) return;
+    const runs = (client as unknown as RunsClient).runs;
+    const listRuns = runs?.list;
+    if (typeof listRuns !== "function") return;
 
-    const stored = readStoredActiveRun();
-    if (stored && activeRunMatches(stored, assistantId, urlThreadId)) {
-      joinActiveRun(stored);
-    }
-  }, [assistantId, isAuthReady, isHydrating, isLoading, joinActiveRun, urlThreadId]);
+    let cancelled = false;
+    void listRuns.call(runs, threadId, { status: "running", limit: 1 })
+      .then((runs) => {
+        if (cancelled || runs.length === 0 || hasJoinedActiveRunRef.current) return;
+        const runId = runs[0]?.run_id ?? runs[0]?.runId;
+        if (!runId) return;
+        hasJoinedActiveRunRef.current = true;
+        void stream.joinStream(runId);
+      })
+      .catch(() => {
+        // Missing or stale active runs should fall back to hydrated thread state.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [client, isAuthReady, isHydrating, isLoading, stream, threadId]);
 
   useEffect(() => {
     if (latestRevision) {
@@ -229,34 +173,21 @@ export function useChatStream(assistantId: StudioAssistantId, events: UseChatStr
     }
   }, [latestSketch]);
 
-  const raw = stream as unknown as Record<string, unknown>;
-  const streamAccessors: StreamAccessors = {
-    getToolCalls: typeof raw.getToolCalls === "function"
-      ? raw.getToolCalls as StreamAccessors["getToolCalls"]
-      : undefined,
-    getSubagentsByMessage: typeof raw.getSubagentsByMessage === "function"
-      ? raw.getSubagentsByMessage as StreamAccessors["getSubagentsByMessage"]
-      : undefined,
-  };
-
   return {
     client,
     stream,
-    streamAccessors,
     messages,
     isLoading,
     isHydrating,
     isAuthReady,
     isBusy,
     error,
-    cancelActiveRun,
-    clearActiveRun,
     todos,
     designRevisions,
     sketchRevisions,
     latestRevision,
     latestSketch,
-    urlThreadId,
+    urlThreadId: threadId,
     pathname,
     router,
     handleThreadIdChange,
