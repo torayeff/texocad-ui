@@ -19,12 +19,12 @@ interface AgentExamplePrompt {
 const MODE_SELECTION_PROMPTS: ExamplePrompt[] = [
   {
     label: "Sketch image",
-    description: "Generate a visual concept first.",
+    description: "Generate a visual sketch image.",
     mode: SKETCH_ASSISTANT_ID,
   },
   {
     label: "CAD model",
-    description: "Generate a measurable STEP model.",
+    description: "Generate a BREP STEP model.",
     mode: CAD_ASSISTANT_ID,
   },
 ];
