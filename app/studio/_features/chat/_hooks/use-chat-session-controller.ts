@@ -17,6 +17,7 @@ interface UseChatSessionControllerOptions {
   assistantId: StudioAssistantId;
   chatInputRef: React.RefObject<ChatInputHandle | null>;
   history: ChatHistoryControls;
+  isHydrating: boolean;
   messageCount: number;
   onClearViewer: () => void;
   onModeChange: (mode: StudioAssistantId) => void;
@@ -35,6 +36,7 @@ export function useChatSessionController({
   assistantId,
   chatInputRef,
   history,
+  isHydrating,
   messageCount,
   onClearViewer,
   onModeChange,
@@ -56,7 +58,10 @@ export function useChatSessionController({
     onClearViewerRef.current = onClearViewer;
   }, [onClearViewer]);
 
-  const pendingHumanMessage = pendingHumanMessageState?.threadId === urlThreadId
+  const pendingHumanMessage = pendingHumanMessageState && (
+    pendingHumanMessageState.threadId === urlThreadId ||
+    (pendingHumanMessageState.threadId === null && isHydrating)
+  )
     ? pendingHumanMessageState.message
     : null;
   const setPendingHumanMessage = useCallback((message: HumanMessage | null) => {

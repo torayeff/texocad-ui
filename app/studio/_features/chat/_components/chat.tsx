@@ -114,6 +114,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     assistantId,
     chatInputRef,
     history,
+    isHydrating,
     messageCount: messages.length,
     onClearViewer,
     onModeChange,
@@ -151,11 +152,12 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     if (isBusy) return false;
     const trimmed = content.trim();
     if (!trimmed) return false;
+    const humanMessage = new HumanMessage(trimmed);
     setHasChosenMode(true);
     trackMessageSubmitted({
       hasAttachments: trimmed.includes("Attachments:"),
     });
-    setPendingHumanMessage(new HumanMessage(trimmed));
+    setPendingHumanMessage(humanMessage);
     const threadMetadata = initialThreadMetadata(trimmed, assistantId, urlThreadId);
 
     const metadata = {
@@ -167,6 +169,10 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       { messages: [{ type: "human", content: trimmed }] },
       {
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        optimisticValues: (prev: Record<string, unknown>) => ({
+          ...prev,
+          messages: [...(Array.isArray(prev.messages) ? prev.messages : []), humanMessage],
+        }),
         onDisconnect: "continue",
         streamSubgraphs: true,
         streamResumable: true,
