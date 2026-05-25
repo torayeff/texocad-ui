@@ -55,7 +55,6 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const searchParams = useSearchParams();
   const [threadId, setThreadId] = useState(options.initialThreadId ?? null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
-  const [streamThreadId, setStreamThreadId] = useState(options.initialThreadId ?? null);
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
@@ -66,6 +65,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const searchParamsRef = useRef(searchParams);
   const loadingRunIdRef = useRef<string | null>(null);
   const activeRunLookupRef = useRef<string | null>(null);
+  const locallyStartedRunIdsRef = useRef(new Set<string>());
   useEffect(() => {
     onDesignRevisionEventRef.current = options.onDesignRevisionEvent;
     onSketchRevisionEventRef.current = options.onSketchRevisionEvent;
@@ -79,7 +79,6 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
 
   const applyThreadId = useCallback((nextThreadId: string | null) => {
     setThreadId(nextThreadId);
-    setStreamThreadId(nextThreadId);
     replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, nextThreadId);
   }, []);
 
@@ -87,7 +86,9 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     (nextThreadId: string | null) => {
       applyThreadId(nextThreadId);
       setActiveRunId(null);
+      loadingRunIdRef.current = null;
       activeRunLookupRef.current = null;
+      locallyStartedRunIdsRef.current.clear();
     },
     [applyThreadId],
   );
@@ -97,6 +98,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     if (!createdThreadId) return;
     applyThreadId(createdThreadId);
     if (createdRunId) {
+      locallyStartedRunIdsRef.current.add(createdRunId);
       setActiveRunId(createdRunId);
     }
   }, [applyThreadId]);
@@ -104,7 +106,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const streamOptions = useMemo(() => ({
     client,
     assistantId,
-    threadId: isAuthReady ? (streamThreadId ?? undefined) : undefined,
+    threadId: isAuthReady ? (threadId ?? undefined) : undefined,
     fetchStateHistory: true,
     filterSubagentMessages: true,
     reconnectOnMount: true,
@@ -124,7 +126,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     client,
     handleRunCreated,
     isAuthReady,
-    streamThreadId,
+    threadId,
   ]);
 
   const stream = useStream<TexocadGraphState>(streamOptions);
@@ -168,6 +170,10 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
 
   useEffect(() => {
     if (!isAuthReady || !activeRunId || isLoading) return;
+    if (
+      loadingRunIdRef.current === activeRunId ||
+      locallyStartedRunIdsRef.current.has(activeRunId)
+    ) return;
 
     const { joinStream } = streamThreadControls(stream);
     if (typeof joinStream !== "function") return;
@@ -198,10 +204,13 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
       return;
     }
 
-    const completedRunId = loadingRunIdRef.current;
+    const completedRunId = loadingRunIdRef.current
+      ?? (activeRunId && locallyStartedRunIdsRef.current.has(activeRunId) ? activeRunId : null);
     if (!isLoading && threadId && completedRunId) {
+      activeRunLookupRef.current = threadId;
       setActiveRunId((currentRunId) => currentRunId === completedRunId ? null : currentRunId);
       loadingRunIdRef.current = null;
+      locallyStartedRunIdsRef.current.delete(completedRunId);
     }
   }, [activeRunId, isLoading, threadId]);
 
