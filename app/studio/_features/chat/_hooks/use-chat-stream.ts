@@ -55,6 +55,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const searchParams = useSearchParams();
   const [threadId, setThreadId] = useState(options.initialThreadId ?? null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [streamThreadId, setStreamThreadId] = useState(options.initialThreadId ?? null);
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
@@ -62,6 +63,8 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const onSketchRevisionEventRef = useRef(options.onSketchRevisionEvent);
   const assistantIdRef = useRef(assistantId);
   const threadIdRef = useRef(threadId);
+  const pathnameRef = useRef(pathname);
+  const searchParamsRef = useRef(searchParams);
   const loadingRunIdRef = useRef<string | null>(null);
   const activeRunLookupRef = useRef<string | null>(null);
   useEffect(() => {
@@ -72,37 +75,45 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   useEffect(() => {
     assistantIdRef.current = assistantId;
     threadIdRef.current = threadId;
-  }, [assistantId, threadId]);
+    pathnameRef.current = pathname;
+    searchParamsRef.current = searchParams;
+  }, [assistantId, pathname, searchParams, threadId]);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
       setThreadId(nextThreadId);
+      setStreamThreadId(nextThreadId);
       setActiveRunId(null);
       activeRunLookupRef.current = null;
-      replaceUrlThreadId(pathname, searchParams, nextThreadId);
+      replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, nextThreadId);
     },
-    [pathname, searchParams],
+    [],
   );
 
   const handleRunCreated = useCallback((run: unknown) => {
     const { runId: createdRunId, threadId: createdThreadId } = createdRunIds(run, threadIdRef.current);
     if (!createdThreadId) return;
     setThreadId(createdThreadId);
+    setStreamThreadId(createdThreadId);
     if (createdRunId) {
       setActiveRunId(createdRunId);
     }
-    replaceUrlThreadId(pathname, searchParams, createdThreadId);
-  }, [pathname, searchParams]);
+    replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, createdThreadId);
+  }, []);
 
   const streamOptions = useMemo(() => ({
     client,
     assistantId,
-    threadId: isAuthReady ? (threadId ?? undefined) : undefined,
+    threadId: isAuthReady ? (streamThreadId ?? undefined) : undefined,
     fetchStateHistory: true,
     filterSubagentMessages: true,
     reconnectOnMount: true,
     onCreated: handleRunCreated,
-    onThreadId: (id: string) => handleThreadIdChange(id),
+    onThreadId: (id: string) => {
+      setThreadId(id);
+      setStreamThreadId(id);
+      replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, id);
+    },
     onCustomEvent: (data: unknown) => {
       if (isDesignRevisionArtifact(data)) {
         onDesignRevisionEventRef.current?.(data);
@@ -115,9 +126,8 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     assistantId,
     client,
     handleRunCreated,
-    handleThreadIdChange,
     isAuthReady,
-    threadId,
+    streamThreadId,
   ]);
 
   const stream = useStream<TexocadGraphState>(streamOptions);
@@ -137,14 +147,16 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const isHydrating = stream.isThreadLoading;
 
   const messages = useMemo(() => {
-    if (threadId === null || isHydrating) return [];
+    if (threadId === null) return [];
+    if (isHydrating && rawMessages.length === 0) return [];
     return rawMessages;
   }, [threadId, isHydrating, rawMessages]);
 
   const todos = useMemo(() => {
-    if (threadId === null || isHydrating) return EMPTY_TODOS;
+    if (threadId === null) return EMPTY_TODOS;
+    if (isHydrating && rawMessages.length === 0) return EMPTY_TODOS;
     return Array.isArray(values.todos) ? values.todos : EMPTY_TODOS;
-  }, [threadId, isHydrating, values.todos]);
+  }, [threadId, isHydrating, rawMessages.length, values.todos]);
   const designRevisions = useMemo(
     () => designRevisionsFromMessages(messages),
     [messages],

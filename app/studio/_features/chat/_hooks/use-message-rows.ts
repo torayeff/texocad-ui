@@ -37,14 +37,6 @@ export function useMessageRows({
   timer: AssistantTimer;
 }): { messageRows: MessageRow[]; activeAssistantRowKey: string | null } {
   const prevActiveRowKeyRef = useRef<string | null>(null);
-  const prevIsLoadingRef = useRef(false);
-
-  useEffect(() => {
-    if (isLoading && !prevIsLoadingRef.current) {
-      timer.reset();
-    }
-    prevIsLoadingRef.current = isLoading;
-  }, [isLoading, timer]);
 
   const messageRows = useMemo(() => {
     let lastHumanIndex = -1;
