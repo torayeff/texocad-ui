@@ -61,7 +61,6 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
 
   const onDesignRevisionEventRef = useRef(options.onDesignRevisionEvent);
   const onSketchRevisionEventRef = useRef(options.onSketchRevisionEvent);
-  const assistantIdRef = useRef(assistantId);
   const threadIdRef = useRef(threadId);
   const pathnameRef = useRef(pathname);
   const searchParamsRef = useRef(searchParams);
@@ -73,33 +72,34 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   }, [options.onDesignRevisionEvent, options.onSketchRevisionEvent]);
 
   useEffect(() => {
-    assistantIdRef.current = assistantId;
     threadIdRef.current = threadId;
     pathnameRef.current = pathname;
     searchParamsRef.current = searchParams;
-  }, [assistantId, pathname, searchParams, threadId]);
+  }, [pathname, searchParams, threadId]);
+
+  const applyThreadId = useCallback((nextThreadId: string | null) => {
+    setThreadId(nextThreadId);
+    setStreamThreadId(nextThreadId);
+    replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, nextThreadId);
+  }, []);
 
   const handleThreadIdChange = useCallback(
     (nextThreadId: string | null) => {
-      setThreadId(nextThreadId);
-      setStreamThreadId(nextThreadId);
+      applyThreadId(nextThreadId);
       setActiveRunId(null);
       activeRunLookupRef.current = null;
-      replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, nextThreadId);
     },
-    [],
+    [applyThreadId],
   );
 
   const handleRunCreated = useCallback((run: unknown) => {
     const { runId: createdRunId, threadId: createdThreadId } = createdRunIds(run, threadIdRef.current);
     if (!createdThreadId) return;
-    setThreadId(createdThreadId);
-    setStreamThreadId(createdThreadId);
+    applyThreadId(createdThreadId);
     if (createdRunId) {
       setActiveRunId(createdRunId);
     }
-    replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, createdThreadId);
-  }, []);
+  }, [applyThreadId]);
 
   const streamOptions = useMemo(() => ({
     client,
@@ -109,11 +109,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     filterSubagentMessages: true,
     reconnectOnMount: true,
     onCreated: handleRunCreated,
-    onThreadId: (id: string) => {
-      setThreadId(id);
-      setStreamThreadId(id);
-      replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, id);
-    },
+    onThreadId: applyThreadId,
     onCustomEvent: (data: unknown) => {
       if (isDesignRevisionArtifact(data)) {
         onDesignRevisionEventRef.current?.(data);
@@ -124,6 +120,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     },
   }), [
     assistantId,
+    applyThreadId,
     client,
     handleRunCreated,
     isAuthReady,
