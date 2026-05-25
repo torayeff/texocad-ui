@@ -25,6 +25,8 @@ import { ChatErrorBanner, ChatNotFoundState } from "@/app/studio/_features/chat/
 import { ChatMessagesPanel } from "@/app/studio/_features/chat/_components/chat-messages-panel";
 import { NewChatConfirmationDialog } from "@/app/studio/_features/chat/_components/new-chat-confirmation-dialog";
 
+const GENERIC_CHAT_ERROR_MESSAGE = "Something went wrong. Please try again.";
+
 interface ChatProps {
   assistantId: StudioAssistantId;
   initialThreadId?: string | null;
@@ -59,6 +61,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     isAuthReady,
     isBusy,
     error,
+    stopGeneration,
     todos,
     designRevisions,
     urlThreadId,
@@ -219,10 +222,10 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     router.replace(pathname);
   }, [pathname, resetAfterNotFound, router]);
 
-  const errorMessage = error
+  const rawErrorMessage = error
     ? (error instanceof Error ? error.message : String(error))
     : null;
-  const isNotFound = errorMessage?.includes("HTTP 404");
+  const isNotFound = rawErrorMessage?.includes("HTTP 404");
 
   if (isNotFound) {
     return <ChatNotFoundState onStartNew={handleStartAfterNotFound} />;
@@ -230,8 +233,8 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
 
   return (
     <div className="flex h-full flex-col bg-background">
-      {errorMessage ? (
-        <ChatErrorBanner message={errorMessage} />
+      {rawErrorMessage ? (
+        <ChatErrorBanner message={GENERIC_CHAT_ERROR_MESSAGE} />
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -285,9 +288,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
             isBusy={isBusy}
             maskComposer={maskComposer}
             onSubmit={sendMessage}
-            stopGeneration={() => {
-              void stream.stop();
-            }}
+            stopGeneration={stopGeneration}
             model={selectedModel}
             onModelChange={handleModelChange}
           />

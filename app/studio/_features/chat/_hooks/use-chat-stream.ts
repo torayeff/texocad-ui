@@ -26,6 +26,17 @@ import {
 } from "@/app/studio/_features/chat/_lib/langgraph-stream";
 
 const EMPTY_TODOS: TodoItem[] = [];
+const RESUMABLE_RUN_STORAGE_PREFIX = "lg:stream:";
+
+function removeStoredRunId(threadId: string) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(`${RESUMABLE_RUN_STORAGE_PREFIX}${threadId}`);
+}
+
+function storedRunId(threadId: string) {
+  if (typeof window === "undefined") return null;
+  return window.sessionStorage.getItem(`${RESUMABLE_RUN_STORAGE_PREFIX}${threadId}`);
+}
 
 interface UseChatStreamEvents {
   onDesignRevisionEvent?: (revision: DesignRevisionArtifact) => void;
@@ -55,6 +66,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const searchParams = useSearchParams();
   const [threadId, setThreadId] = useState(options.initialThreadId ?? null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [hasStopRequested, setHasStopRequested] = useState(false);
 
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
@@ -78,6 +90,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   }, [pathname, searchParams, threadId]);
 
   const applyThreadId = useCallback((nextThreadId: string | null) => {
+    threadIdRef.current = nextThreadId;
     setThreadId(nextThreadId);
     replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, nextThreadId);
   }, []);
@@ -89,6 +102,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
       loadingRunIdRef.current = null;
       activeRunLookupRef.current = null;
       locallyStartedRunIdsRef.current.clear();
+      setHasStopRequested(false);
     },
     [applyThreadId],
   );
@@ -97,6 +111,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     const { runId: createdRunId, threadId: createdThreadId } = createdRunIds(run, threadIdRef.current);
     if (!createdThreadId) return;
     applyThreadId(createdThreadId);
+    setHasStopRequested(false);
     if (createdRunId) {
       locallyStartedRunIdsRef.current.add(createdRunId);
       setActiveRunId(createdRunId);
@@ -131,6 +146,29 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
 
   const stream = useStream<TexocadGraphState>(streamOptions);
 
+  const stopGeneration = useCallback(() => {
+    const currentThreadId = threadIdRef.current;
+    const currentRunId = activeRunId ?? (currentThreadId ? storedRunId(currentThreadId) : null);
+    if (!currentThreadId || !currentRunId) {
+      void stream.stop();
+      return;
+    }
+
+    setHasStopRequested(true);
+    // Prevent the SDK's disconnect helper from sending its default interrupt;
+    // this stop action intentionally rolls back the run instead.
+    removeStoredRunId(currentThreadId);
+    void stream.stop();
+    void client.runs.cancel(currentThreadId, currentRunId, true, "rollback")
+      .catch(() => undefined)
+      .finally(() => {
+        setActiveRunId((runId) => runId === currentRunId ? null : runId);
+        loadingRunIdRef.current = null;
+        locallyStartedRunIdsRef.current.delete(currentRunId);
+        activeRunLookupRef.current = currentThreadId;
+      });
+  }, [activeRunId, client, stream]);
+
   const switchThread = useCallback(
     (nextThreadId: string | null) => {
       const { switchThread: streamSwitchThread } = streamThreadControls(stream);
@@ -144,6 +182,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
 
   const { messages: rawMessages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
+  const visibleError = hasStopRequested ? null : error;
 
   const messages = useMemo(() => {
     if (threadId === null) return [];
@@ -234,7 +273,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     isHydrating,
     isAuthReady,
     isBusy,
-    error,
+    error: visibleError,
     activeRunId,
     todos,
     designRevisions,
@@ -246,5 +285,6 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     router,
     handleThreadIdChange,
     switchThread,
+    stopGeneration,
   } as const;
 }
