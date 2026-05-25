@@ -107,7 +107,7 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     client,
     assistantId,
     threadId: isAuthReady ? (threadId ?? undefined) : undefined,
-    fetchStateHistory: true,
+    fetchStateHistory: false,
     filterSubagentMessages: true,
     reconnectOnMount: true,
     onCreated: handleRunCreated,
