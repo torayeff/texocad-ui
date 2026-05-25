@@ -4,9 +4,16 @@ import { useState, useCallback, useRef } from "react";
 import type { Client, Thread } from "@langchain/langgraph-sdk";
 
 import type { ThreadSummary } from "@/app/studio/_features/chat/_types/chat";
-import { modeFromThread } from "@/app/studio/_features/chat/_lib/thread-mode";
+import {
+  defaultThreadTitle,
+  modeFromThread,
+  normalizeThreadTitle,
+  THREAD_TITLE_METADATA_KEY,
+  titleFromThreadMetadata,
+} from "@/app/studio/_features/chat/_lib/thread-metadata";
 
 const PAGE_SIZE = 20;
+const HISTORY_SELECT_FIELDS = ["thread_id", "metadata", "updated_at"] as const;
 
 interface RawMessage {
   type?: string;
@@ -34,10 +41,10 @@ function extractFirstHumanText(values: Record<string, unknown>): string | null {
 function toThreadSummary(thread: Thread): ThreadSummary {
   const threadId = thread.thread_id;
   const values = (thread.values ?? {}) as Record<string, unknown>;
-  const firstMsg = extractFirstHumanText(values);
-  const title = firstMsg
-    ? firstMsg.length > 100 ? firstMsg.slice(0, 100) + "..." : firstMsg
-    : "Untitled conversation";
+  const fallbackTitle = extractFirstHumanText(values);
+  const title = titleFromThreadMetadata(thread)
+    ?? (fallbackTitle ? normalizeThreadTitle(fallbackTitle) : null)
+    ?? defaultThreadTitle(threadId);
   const updatedAt = new Date(thread.updated_at);
 
   return { threadId, title, updatedAt, mode: modeFromThread(thread) };
@@ -59,6 +66,9 @@ export function useThreadHistory(client: Client, isReady: boolean) {
       const results = await client.threads.search({
         limit: PAGE_SIZE,
         offset,
+        sortBy: "updated_at",
+        sortOrder: "desc",
+        select: [...HISTORY_SELECT_FIELDS],
       });
 
       if (id !== fetchIdRef.current) return;
@@ -91,5 +101,29 @@ export function useThreadHistory(client: Client, isReady: boolean) {
     await client.threads.delete(threadId);
   }, [client]);
 
-  return { threads, isLoading, hasMore, refresh, loadMore, deleteThread };
+  const renameThread = useCallback(async (threadId: string, title: string) => {
+    const nextTitle = normalizeThreadTitle(title);
+    if (!nextTitle) return;
+
+    const previousTitle = threads.find((thread) => thread.threadId === threadId)?.title ?? null;
+    setThreads((prev) => prev.map((thread) => {
+      if (thread.threadId !== threadId) return thread;
+      return { ...thread, title: nextTitle };
+    }));
+
+    try {
+      await client.threads.update(threadId, {
+        metadata: { [THREAD_TITLE_METADATA_KEY]: nextTitle },
+      });
+    } catch (err) {
+      if (previousTitle) {
+        setThreads((prev) => prev.map((thread) => (
+          thread.threadId === threadId ? { ...thread, title: previousTitle } : thread
+        )));
+      }
+      throw err;
+    }
+  }, [client, threads]);
+
+  return { threads, isLoading, hasMore, refresh, loadMore, deleteThread, renameThread };
 }

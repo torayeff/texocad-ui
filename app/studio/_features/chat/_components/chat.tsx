@@ -1,20 +1,18 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
 
 import { useThreadHistory } from "@/app/studio/_features/chat/_hooks/use-thread-history";
 import { useChatStream } from "@/app/studio/_features/chat/_hooks/use-chat-stream";
 import { useAssistantTimer } from "@/app/studio/_features/chat/_hooks/use-assistant-timer";
-import { useMessageRows } from "@/app/studio/_features/chat/_hooks/use-message-rows";
 import { useChatScroll } from "@/app/studio/_features/chat/_hooks/use-chat-scroll";
 import { useChatSessionController } from "@/app/studio/_features/chat/_hooks/use-chat-session-controller";
-import { getMessageTextContent } from "@/app/studio/_features/chat/_lib/message-content";
-import { streamRowAccessors } from "@/app/studio/_features/chat/_lib/langgraph-stream";
+import { useInitialThreadMetadata } from "@/app/studio/_features/chat/_hooks/use-initial-thread-metadata";
+import { useChatMessageView } from "@/app/studio/_features/chat/_hooks/use-chat-message-view";
 import { DEFAULT_MODEL_ID, MODELS } from "@/app/studio/_features/chat/_lib/models";
 import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
-import { THREAD_MODE_METADATA_KEY } from "@/app/studio/_features/chat/_lib/thread-mode";
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type { ChatHandle, ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
 import { trackMessageSubmitted } from "@/app/studio/_features/chat/_lib/analytics";
@@ -95,6 +93,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   }, [sketchRevisions, onSketchRevisionsChange]);
 
   const history = useThreadHistory(client, isAuthReady);
+  const initialThreadMetadata = useInitialThreadMetadata(client, isAuthReady, urlThreadId);
   const {
     conversationScope,
     handleCancelNewChat,
@@ -123,37 +122,22 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     urlThreadId,
   });
 
-  const rowStreamAccessors = useMemo(() => streamRowAccessors(stream), [stream]);
-
-  const lastHumanMessage = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i -= 1) {
-      if (HumanMessage.isInstance(messages[i])) return messages[i];
-    }
-    return undefined;
-  }, [messages]);
-  const shouldRenderPendingHumanMessage = pendingHumanMessage != null && !(
-    lastHumanMessage &&
-    getMessageTextContent(lastHumanMessage) === getMessageTextContent(pendingHumanMessage)
-  );
-  const pendingHumanText = useMemo(
-    () => pendingHumanMessage ? getMessageTextContent(pendingHumanMessage) : "",
-    [pendingHumanMessage],
-  );
-
-  const { messageRows } = useMessageRows({
-    messages,
-    isLoading,
-    conversationScope,
+  const {
+    isEmpty,
+    lastMessageType,
+    messageRows,
+    pendingHumanText,
     shouldRenderPendingHumanMessage,
-    stream: rowStreamAccessors,
+    shouldShowTodoList,
+  } = useChatMessageView({
+    conversationScope,
+    isLoading,
+    messages,
+    pendingHumanMessage,
+    stream,
     timer,
+    todos,
   });
-
-  const isEmpty = messageRows.length === 0 && !shouldRenderPendingHumanMessage;
-  const lastMessageType = shouldRenderPendingHumanMessage
-    ? "human"
-    : messageRows[messageRows.length - 1]?.messageType;
-  const shouldShowTodoList = todos.length > 0 && lastMessageType !== "human";
   const {
     handleScroll,
     markNearBottom,
@@ -172,9 +156,10 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       hasAttachments: trimmed.includes("Attachments:"),
     });
     setPendingHumanMessage(new HumanMessage(trimmed));
+    const threadMetadata = initialThreadMetadata(trimmed, assistantId, urlThreadId);
 
     const metadata = {
-      [THREAD_MODE_METADATA_KEY]: assistantId,
+      ...threadMetadata,
       ...(userId ? { owner: userId } : {}),
       ...(isVip ? { model: selectedModel } : {}),
     };
@@ -196,6 +181,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     return true;
   }, [
     assistantId,
+    initialThreadMetadata,
     isBusy,
     isVip,
     markNearBottom,
@@ -205,6 +191,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     setPendingHumanMessage,
     stream,
     userId,
+    urlThreadId,
   ]);
 
   React.useImperativeHandle(ref, () => ({
@@ -259,6 +246,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
             activeThreadId={urlThreadId}
             onSelectThread={handleSelectThread}
             onDeleteThread={handleDeleteThread}
+            onRenameThread={history.renameThread}
             onLoadMore={history.loadMore}
           />
         ) : (
@@ -309,5 +297,4 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     </div>
   );
 });
-
 export default Chat;

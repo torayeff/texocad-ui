@@ -8,6 +8,8 @@ import {
 import { isRecord } from "@/app/lib/type-guards";
 
 export const THREAD_MODE_METADATA_KEY = "texocad_mode";
+export const THREAD_TITLE_METADATA_KEY = "texocad_title";
+export const THREAD_TITLE_MAX_LENGTH = 100;
 
 interface ThreadMetadata {
   metadata?: unknown;
@@ -16,6 +18,23 @@ interface ThreadMetadata {
 
 function isStudioAssistantId(value: unknown): value is StudioAssistantId {
   return value === CAD_ASSISTANT_ID || value === SKETCH_ASSISTANT_ID;
+}
+
+export function normalizeThreadTitle(value: string): string | null {
+  const title = value.trim();
+  if (!title) return null;
+  if (title.length <= THREAD_TITLE_MAX_LENGTH) return title;
+  return `${title.slice(0, THREAD_TITLE_MAX_LENGTH - 3).trimEnd()}...`;
+}
+
+export function defaultThreadTitle(threadId: string): string {
+  return `Thread-${threadId}`;
+}
+
+export function titleFromThreadMetadata(thread: ThreadMetadata | null | undefined): string | null {
+  if (!thread || !isRecord(thread.metadata)) return null;
+  const title = thread.metadata[THREAD_TITLE_METADATA_KEY];
+  return typeof title === "string" ? normalizeThreadTitle(title) : null;
 }
 
 export function modeFromThreadMetadata(thread: ThreadMetadata | null | undefined): StudioAssistantId | null {

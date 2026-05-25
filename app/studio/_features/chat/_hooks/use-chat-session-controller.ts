@@ -9,6 +9,7 @@ import type { AssistantTimer, ChatInputHandle, ThreadSummary } from "@/app/studi
 
 interface ChatHistoryControls {
   deleteThread: (threadId: string) => void;
+  renameThread: (threadId: string, title: string) => Promise<void>;
   refresh: () => void;
 }
 

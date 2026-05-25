@@ -14,7 +14,7 @@ import Chat from "@/app/studio/_features/chat/_components/chat";
 import { useLanggraphAuth } from "@/app/studio/_features/chat/_hooks/use-langgraph-auth";
 import { uploadFileToBlob } from "@/app/studio/_features/chat/_lib/blob-upload";
 import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
-import { readThreadMode } from "@/app/studio/_features/chat/_lib/thread-mode";
+import { readThreadMode } from "@/app/studio/_features/chat/_lib/thread-metadata";
 import type { ChatHandle } from "@/app/studio/_features/chat/_types/chat";
 import { useStudioRevisions } from "@/app/studio/_hooks/use-studio-revisions";
 import { useStudioSplitLayout } from "@/app/studio/_hooks/use-studio-split-layout";
