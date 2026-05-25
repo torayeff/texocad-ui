@@ -133,9 +133,18 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     [handleThreadIdChange, stream],
   );
 
-  const { messages, isLoading, error, values } = stream;
+  const { messages: rawMessages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
-  const todos: TodoItem[] = Array.isArray(values.todos) ? values.todos : EMPTY_TODOS;
+
+  const messages = useMemo(() => {
+    if (threadId === null || isHydrating) return [];
+    return rawMessages;
+  }, [threadId, isHydrating, rawMessages]);
+
+  const todos = useMemo(() => {
+    if (threadId === null || isHydrating) return EMPTY_TODOS;
+    return Array.isArray(values.todos) ? values.todos : EMPTY_TODOS;
+  }, [threadId, isHydrating, values.todos]);
   const designRevisions = useMemo(
     () => designRevisionsFromMessages(messages),
     [messages],
