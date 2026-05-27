@@ -57,7 +57,7 @@ const galleryItems = [
 ];
 
 export const metadata: Metadata = {
-  title: "Lumi AI Jewellery Design Assistant",
+  title: "Lumi AI Jewellery Designer",
   description:
     "Describe your dream ring and let Lumi, TexoCAD's AI jewellery design assistant, turn it into a guided design concept.",
   alternates: {
