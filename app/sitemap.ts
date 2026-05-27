@@ -19,6 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${SITE_URL}${SITE_ROUTES.lumi}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${SITE_URL}${SITE_ROUTES.expertNetwork}`,
       lastModified: now,
       changeFrequency: "monthly",

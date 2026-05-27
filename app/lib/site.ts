@@ -46,6 +46,7 @@ export const CLERK_PLAN_SLUG = process.env.NEXT_PUBLIC_CLERK_PLAN_SLUG!;
 
 export const SITE_ROUTES = {
   home: "/",
+  lumi: "/lumi",
   studio: "/studio",
   pricing: "/pricing",
   expertNetwork: "/expert-network",
