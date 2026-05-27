@@ -73,7 +73,7 @@ export default function LumiPage() {
       <header className="mx-auto w-full max-w-7xl relative z-20 flex items-center justify-between gap-4 px-6 py-4 sm:px-10 sm:py-5 lg:px-12">
         <Link
           href={SITE_ROUTES.home}
-          className="flex min-w-0 items-baseline gap-1.5 text-[15px] font-extralight tracking-[-0.05em] text-[#171717] sm:text-[16px] sm:tracking-[-0.055em]"
+          className="flex min-w-0 items-baseline gap-1.5 rounded-full text-[15px] font-extralight tracking-[-0.05em] text-[#171717] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#171717]/30 focus-visible:ring-offset-4 focus-visible:ring-offset-[#f8f7f4] sm:text-[16px] sm:tracking-[-0.055em]"
           aria-label="TexoCAD home"
         >
           <span className="shrink-0">Lumi</span>
@@ -84,7 +84,7 @@ export default function LumiPage() {
 
         <Link
           href={SITE_ROUTES.studio}
-          className="shrink-0 rounded-full bg-[#171717] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_12px_30px_rgb(0_0_0_/_0.12)] transition-colors hover:bg-[#2b2b2b] sm:px-5"
+          className="shrink-0 rounded-full bg-[#171717] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_12px_30px_rgb(0_0_0_/_0.12)] outline-none transition-colors hover:bg-[#2b2b2b] focus-visible:ring-2 focus-visible:ring-[#171717]/30 focus-visible:ring-offset-4 focus-visible:ring-offset-[#f8f7f4] sm:px-5"
         >
           Get Started
         </Link>
@@ -100,24 +100,24 @@ export default function LumiPage() {
             </span>
           </h1>
 
-          <p className="mt-5 max-w-xl text-sm font-light leading-6 text-[#817b73] sm:text-base lg:whitespace-nowrap">
+          <p className="mt-5 max-w-xl text-sm font-light leading-6 text-[#6f6860] sm:text-base">
             Describe your dream ring and Lumi shapes it into fine jewellery.
           </p>
 
           <Link
             href={SITE_ROUTES.studio}
-            className="mt-7 inline-flex w-full justify-center rounded-full bg-[#171717] px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_14px_34px_rgb(0_0_0_/_0.12)] transition-colors hover:bg-[#2b2b2b] sm:w-auto"
+            className="mt-7 inline-flex w-full justify-center rounded-full bg-[#171717] px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_14px_34px_rgb(0_0_0_/_0.12)] outline-none transition-colors hover:bg-[#2b2b2b] focus-visible:ring-2 focus-visible:ring-[#171717]/30 focus-visible:ring-offset-4 focus-visible:ring-offset-[#f8f7f4] sm:w-auto"
           >
             Start Designing
           </Link>
 
-          <ul className="mt-9 grid max-w-[32rem] gap-x-8 gap-y-4 text-[12px] font-light text-[#514d48] min-[420px]:grid-cols-2 sm:mt-10 sm:gap-y-5">
+          <ul className="mt-9 grid max-w-[32rem] gap-x-8 gap-y-4 text-[12px] font-light text-[#48433e] min-[420px]:grid-cols-2 sm:mt-10 sm:gap-y-5">
             {highlights.map(({ label, icon: Icon }) => (
               <li key={label} className="flex items-center gap-3 sm:gap-4">
                 <Icon
                   size={16}
                   strokeWidth={1.35}
-                  className="shrink-0 text-[#7d776f]"
+                  className="shrink-0 text-[#6f6860]"
                   aria-hidden="true"
                 />
                 <span>{label}</span>
@@ -126,15 +126,15 @@ export default function LumiPage() {
           </ul>
 
           <div className="mt-8 max-w-[34rem] sm:mt-9">
-            <p className="mb-3 text-[11px] font-light uppercase tracking-[0.18em] text-[#817b73]">
-              Gallery
+            <p className="mb-3 text-[11px] font-light uppercase tracking-[0.18em] text-[#6f6860]">
+              Design inspiration
             </p>
             <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-3 lg:grid-cols-6">
               {galleryItems.map((item) => (
                 <Link
                   key={item.label}
                   href={SITE_ROUTES.studio}
-                  className="group overflow-hidden rounded-2xl border border-white/70 bg-white/45 p-2 shadow-[0_14px_40px_rgb(57_50_43_/_0.06)] backdrop-blur transition-colors hover:bg-white/70"
+                  className="group overflow-hidden rounded-2xl border border-white/70 bg-white/45 p-2 shadow-[0_14px_40px_rgb(57_50_43_/_0.06)] outline-none backdrop-blur transition-colors hover:bg-white/70 focus-visible:ring-2 focus-visible:ring-[#171717]/25 focus-visible:ring-offset-4 focus-visible:ring-offset-[#f8f7f4]"
                 >
                   <span className="relative block aspect-square overflow-hidden rounded-xl bg-[#f5f3ef]">
                     <Image
@@ -146,7 +146,7 @@ export default function LumiPage() {
                       sizes="(min-width: 1024px) 96px, (min-width: 640px) 18vw, 42vw"
                     />
                   </span>
-                  <span className="mt-2 block text-center text-[10px] font-light text-[#625c55]">
+                  <span className="mt-2 block text-center text-[10px] font-light text-[#544e48]">
                     {item.label}
                   </span>
                 </Link>
@@ -160,7 +160,7 @@ export default function LumiPage() {
           <div className="absolute inset-0 lg:inset-y-0 lg:left-auto lg:right-[-7vw] lg:w-[55vw] lg:max-w-[52rem]">
             <Image
               src="/images/lumi/lumi.png"
-              alt="Lumi AI jewellery design assistant"
+              alt="Portrait of a woman wearing subtle jewellery"
               width={1254}
               height={1254}
               priority
