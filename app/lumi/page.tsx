@@ -93,10 +93,15 @@ export default function LumiPage() {
       <section className="mx-auto w-full max-w-7xl relative z-10 grid min-h-[calc(100dvh-4.25rem)] items-start gap-6 px-6 pb-12 pt-2 sm:gap-8 sm:px-10 sm:pt-4 lg:min-h-[calc(100dvh-4.75rem)] lg:grid-cols-2 lg:items-center lg:gap-12 lg:px-12 lg:pb-0 lg:pt-0">
         {/* Content column: Second on mobile, first on desktop */}
         <div className="order-2 max-w-[34rem] pt-0 lg:order-1 lg:pb-16">
-          <h1 className="text-balance text-[clamp(2.8rem,15vw,5.9rem)] font-extralight leading-[0.96] tracking-[-0.06em] sm:tracking-[-0.065em]">
-            Lumi,
-            <span className="mt-2 block text-[clamp(1.65rem,8vw,3.55rem)] leading-[1.04] tracking-[-0.055em] sm:tracking-[-0.07em]">
-              your personal AI jewellery design assistant.
+          <h1 className="text-balance font-extralight leading-[0.96] tracking-[-0.06em] sm:tracking-[-0.065em]">
+            <span className="block text-[clamp(2.8rem,15vw,5.9rem)]">
+              Lumi,
+            </span>
+            <span className="mt-2 block text-[clamp(1.35rem,6vw,2.55rem)] leading-[1.02] tracking-[-0.055em] text-[#2f2c29] sm:tracking-[-0.065em]">
+              your personal AI
+            </span>
+            <span className="mt-1 block text-[clamp(2rem,9vw,4.2rem)] font-light leading-[0.98] tracking-[-0.065em] text-[#191817] sm:tracking-[-0.075em]">
+              Jewellery Designer.
             </span>
           </h1>
 
