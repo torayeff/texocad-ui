@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { HumanMessage } from "@langchain/core/messages";
 
+import { CLERK_PLAN_SLUG } from "@/app/lib/site";
 import { useThreadHistory } from "@/app/studio/_features/chat/_hooks/use-thread-history";
 import { useChatStream } from "@/app/studio/_features/chat/_hooks/use-chat-stream";
 import { useAssistantTimer } from "@/app/studio/_features/chat/_hooks/use-assistant-timer";
@@ -11,7 +12,15 @@ import { useChatScroll } from "@/app/studio/_features/chat/_hooks/use-chat-scrol
 import { useChatSessionController } from "@/app/studio/_features/chat/_hooks/use-chat-session-controller";
 import { useInitialThreadMetadata } from "@/app/studio/_features/chat/_hooks/use-initial-thread-metadata";
 import { useChatMessageView } from "@/app/studio/_features/chat/_hooks/use-chat-message-view";
-import { DEFAULT_MODEL_ID, MODELS } from "@/app/studio/_features/chat/_lib/models";
+import {
+  DEFAULT_FREE_REASONING_EFFORT_ID,
+  DEFAULT_MODEL_ID,
+  DEFAULT_REASONING_EFFORT_ID,
+  MODELS,
+  isReasoningEffortAllowed,
+  reasoningEffortsForAccess,
+} from "@/app/studio/_features/chat/_lib/models";
+import type { ReasoningEffortId } from "@/app/studio/_features/chat/_lib/models";
 import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type { ChatHandle, ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
@@ -76,14 +85,40 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   });
 
   const timer = useAssistantTimer();
-  const { sessionClaims, userId } = useAuth();
+  const { has, isLoaded, sessionClaims, userId } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
+  const hasAdvancedReasoning = Boolean(isVip || has?.({ plan: CLERK_PLAN_SLUG }));
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
+  const [selectedReasoningEffort, setSelectedReasoningEffort] =
+    useState<ReasoningEffortId>(DEFAULT_REASONING_EFFORT_ID);
+  const reasoningEfforts = useMemo(
+    () => reasoningEffortsForAccess(hasAdvancedReasoning),
+    [hasAdvancedReasoning],
+  );
+  const defaultReasoningEffort = hasAdvancedReasoning
+    ? DEFAULT_REASONING_EFFORT_ID
+    : DEFAULT_FREE_REASONING_EFFORT_ID;
 
   const handleModelChange = useCallback((modelId: string) => {
     if (!MODELS.some((m) => m.id === modelId)) return;
     setSelectedModel(modelId);
   }, []);
+
+  const handleReasoningEffortChange = useCallback((effortId: ReasoningEffortId) => {
+    if (!isReasoningEffortAllowed(effortId, hasAdvancedReasoning)) return;
+    setSelectedReasoningEffort(effortId);
+  }, [hasAdvancedReasoning]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (isReasoningEffortAllowed(selectedReasoningEffort, hasAdvancedReasoning)) return;
+    setSelectedReasoningEffort(defaultReasoningEffort);
+  }, [
+    defaultReasoningEffort,
+    hasAdvancedReasoning,
+    isLoaded,
+    selectedReasoningEffort,
+  ]);
 
   const chatInputRef = useRef<ChatInputHandle>(null);
 
@@ -167,6 +202,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       ...threadMetadata,
       ...(userId ? { owner: userId } : {}),
       ...(isVip ? { model: selectedModel } : {}),
+      reasoning_effort: selectedReasoningEffort,
     };
     stream.submit(
       { messages: [{ type: "human", content: trimmed }] },
@@ -195,6 +231,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     isVip,
     markNearBottom,
     scrollToBottom,
+    selectedReasoningEffort,
     selectedModel,
     setHasChosenMode,
     setPendingHumanMessage,
@@ -291,6 +328,9 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
             stopGeneration={stopGeneration}
             model={selectedModel}
             onModelChange={handleModelChange}
+            reasoningEffort={selectedReasoningEffort}
+            reasoningEfforts={reasoningEfforts}
+            onReasoningEffortChange={handleReasoningEffortChange}
           />
         )}
         {newChatConfirmationIntent ? (

@@ -7,7 +7,7 @@ import {
 } from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
 import { isRecord } from "@/app/lib/type-guards";
 
-export const THREAD_MODE_METADATA_KEY = "texocad_mode";
+export const THREAD_GRAPH_METADATA_KEY = "graph_id";
 export const THREAD_TITLE_METADATA_KEY = "texocad_title";
 export const THREAD_TITLE_MAX_LENGTH = 100;
 
@@ -39,10 +39,7 @@ export function titleFromThreadMetadata(thread: ThreadMetadata | null | undefine
 
 export function modeFromThreadMetadata(thread: ThreadMetadata | null | undefined): StudioAssistantId | null {
   if (!thread || !isRecord(thread.metadata)) return null;
-  const mode = thread.metadata[THREAD_MODE_METADATA_KEY];
-  if (isStudioAssistantId(mode)) return mode;
-
-  const graphId = thread.metadata.graph_id ?? thread.metadata.graphId;
+  const graphId = thread.metadata[THREAD_GRAPH_METADATA_KEY];
   return isStudioAssistantId(graphId) ? graphId : null;
 }
 

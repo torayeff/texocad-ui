@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { Plus, Square, ArrowUp, Loader2 } from "lucide-react";
 import { useFileUpload } from "@/app/studio/_features/chat/_hooks/use-file-upload";
 import ModelPicker from "@/app/studio/_features/chat/_components/model-picker";
+import ReasoningEffortPicker from "@/app/studio/_features/chat/_components/reasoning-effort-picker";
 import { AttachmentPill } from "@/app/studio/_features/chat/_components/attachment-pill";
 import {
   MaskComposerBanner,
@@ -19,6 +20,10 @@ import {
 import { attachmentMarkdown } from "@/app/studio/_features/chat/_lib/message-attachments";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 import type { ChatInputHandle, UploadedFile } from "@/app/studio/_features/chat/_types/chat";
+import type {
+  ReasoningEffortId,
+  ReasoningEffortOption,
+} from "@/app/studio/_features/chat/_lib/models";
 
 interface ChatInputProps {
   isBusy: boolean;
@@ -28,6 +33,9 @@ interface ChatInputProps {
   stopGeneration: () => void;
   model: string;
   onModelChange: (modelId: string) => void;
+  reasoningEffort: ReasoningEffortId;
+  reasoningEfforts: ReasoningEffortOption[];
+  onReasoningEffortChange: (effortId: ReasoningEffortId) => void;
 }
 
 interface ComposerIconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -62,6 +70,9 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   stopGeneration,
   model,
   onModelChange,
+  reasoningEffort,
+  reasoningEfforts,
+  onReasoningEffortChange,
 }: ChatInputProps, ref) {
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<UploadedFile[]>([]);
@@ -69,6 +80,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   const { sessionClaims } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
   const shouldShowModelPicker = isVip && MODELS.length > 1;
+  const shouldShowReasoningPicker = !maskComposer && reasoningEfforts.length > 0;
 
   const onFileUploaded = useCallback((file: UploadedFile) => {
     setAttachments((prev) => [...prev, file]);
@@ -235,6 +247,14 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                 <ModelPicker
                   value={model}
                   onChange={onModelChange}
+                  disabled={isBusy}
+                />
+              )}
+              {shouldShowReasoningPicker && (
+                <ReasoningEffortPicker
+                  value={reasoningEffort}
+                  options={reasoningEfforts}
+                  onChange={onReasoningEffortChange}
                   disabled={isBusy}
                 />
               )}
