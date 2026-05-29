@@ -38,11 +38,13 @@ const GENERIC_CHAT_ERROR_MESSAGE = "Something went wrong. Please try again.";
 
 interface ChatProps {
   assistantId: StudioAssistantId;
+  hasInitialAgentMode?: boolean;
   initialThreadId?: string | null;
   maskComposer: SketchMaskComposerState | null;
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
   onModeChange: (mode: StudioAssistantId) => void;
+  onModeReset: () => void;
   onSketchRevisionEvent: (revision: SketchRevisionArtifact) => void;
   onSketchRevisionsChange: (revisions: SketchRevisionArtifact[]) => void;
   onClearViewer: () => void;
@@ -51,11 +53,13 @@ interface ChatProps {
 
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   assistantId,
+  hasInitialAgentMode = false,
   initialThreadId,
   maskComposer,
   onDesignRevisionEvent,
   onDesignRevisionsChange,
   onModeChange,
+  onModeReset,
   onSketchRevisionEvent,
   onSketchRevisionsChange,
   onClearViewer,
@@ -154,8 +158,10 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     history,
     isHydrating,
     messageCount: messages.length,
+    hasInitialAgentMode,
     onClearViewer,
     onModeChange,
+    onModeReset,
     switchThread,
     timer,
     urlThreadId,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useRef, useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/studio/_features/chat/_hooks/use-langgraph-auth";
@@ -24,6 +24,7 @@ import {
   latestActiveRunId,
   streamThreadControls,
 } from "@/app/studio/_features/chat/_lib/langgraph-stream";
+import { studioUrlWithThread } from "@/app/studio/_features/chat/_lib/studio-chat-url";
 
 const EMPTY_TODOS: TodoItem[] = [];
 const RESUMABLE_RUN_STORAGE_PREFIX = "lg:stream:";
@@ -47,23 +48,17 @@ interface UseChatStreamOptions extends UseChatStreamEvents {
   initialThreadId?: string | null;
 }
 
-function replaceUrlThreadId(pathname: string, currentSearchParams: URLSearchParams, threadId: string | null) {
-  const params = new URLSearchParams(currentSearchParams.toString());
-  if (threadId) {
-    params.set("thread_id", threadId);
-  } else {
-    params.delete("thread_id");
-  }
-
-  const nextQuery = params.toString();
-  const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
-  window.history.replaceState(window.history.state, "", nextUrl);
+function replaceUrlThreadId(pathname: string, threadId: string | null) {
+  window.history.replaceState(
+    window.history.state,
+    "",
+    studioUrlWithThread(pathname, window.location.search, threadId),
+  );
 }
 
 export function useChatStream(assistantId: StudioAssistantId, options: UseChatStreamOptions = {}) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [threadId, setThreadId] = useState(options.initialThreadId ?? null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [hasStopRequested, setHasStopRequested] = useState(false);
@@ -74,7 +69,6 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   const onSketchRevisionEventRef = useRef(options.onSketchRevisionEvent);
   const threadIdRef = useRef(threadId);
   const pathnameRef = useRef(pathname);
-  const searchParamsRef = useRef(searchParams);
   const loadingRunIdRef = useRef<string | null>(null);
   const activeRunLookupRef = useRef<string | null>(null);
   const locallyStartedRunIdsRef = useRef(new Set<string>());
@@ -86,13 +80,12 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
   useEffect(() => {
     threadIdRef.current = threadId;
     pathnameRef.current = pathname;
-    searchParamsRef.current = searchParams;
-  }, [pathname, searchParams, threadId]);
+  }, [pathname, threadId]);
 
   const applyThreadId = useCallback((nextThreadId: string | null) => {
     threadIdRef.current = nextThreadId;
     setThreadId(nextThreadId);
-    replaceUrlThreadId(pathnameRef.current, searchParamsRef.current, nextThreadId);
+    replaceUrlThreadId(pathnameRef.current, nextThreadId);
   }, []);
 
   const handleThreadIdChange = useCallback(

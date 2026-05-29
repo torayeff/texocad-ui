@@ -17,10 +17,12 @@ interface UseChatSessionControllerOptions {
   assistantId: StudioAssistantId;
   chatInputRef: React.RefObject<ChatInputHandle | null>;
   history: ChatHistoryControls;
+  hasInitialAgentMode: boolean;
   isHydrating: boolean;
   messageCount: number;
   onClearViewer: () => void;
   onModeChange: (mode: StudioAssistantId) => void;
+  onModeReset: () => void;
   switchThread: (threadId: string | null) => void;
   timer: AssistantTimer;
   urlThreadId: string | null;
@@ -36,10 +38,12 @@ export function useChatSessionController({
   assistantId,
   chatInputRef,
   history,
+  hasInitialAgentMode,
   isHydrating,
   messageCount,
   onClearViewer,
   onModeChange,
+  onModeReset,
   switchThread,
   timer,
   urlThreadId,
@@ -50,7 +54,7 @@ export function useChatSessionController({
   } | null>(null);
   const [draftConversationKey, setDraftConversationKey] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [hasChosenMode, setHasChosenMode] = useState(urlThreadId !== null);
+  const [hasChosenMode, setHasChosenMode] = useState(urlThreadId !== null || hasInitialAgentMode);
   const [newChatConfirmationIntent, setNewChatConfirmationIntent] = useState<NewChatConfirmationIntent | null>(null);
   const onClearViewerRef = useRef(onClearViewer);
 
@@ -110,11 +114,11 @@ export function useChatSessionController({
       timer.reset();
       setDraftConversationKey((key) => key + 1);
       setHasChosenMode(false);
-      onModeChange(CAD_ASSISTANT_ID);
+      onModeReset();
       switchThread(null);
       onClearViewerRef.current();
     }
-  }, [history, onModeChange, switchThread, timer, urlThreadId]);
+  }, [history, onModeReset, switchThread, timer, urlThreadId]);
 
   const handleNewChat = useCallback(() => {
     if (!hasStartedChat) {
@@ -146,10 +150,10 @@ export function useChatSessionController({
     setDraftConversationKey((key) => key + 1);
     setHasChosenMode(false);
     timer.reset();
-    onModeChange(CAD_ASSISTANT_ID);
+    onModeReset();
     switchThread(null);
     onClearViewerRef.current();
-  }, [onModeChange, setPendingHumanMessage, switchThread, timer]);
+  }, [onModeReset, setPendingHumanMessage, switchThread, timer]);
 
   return {
     conversationScope: urlThreadId ?? `draft-${draftConversationKey}`,

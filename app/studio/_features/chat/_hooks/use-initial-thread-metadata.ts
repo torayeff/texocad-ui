@@ -5,7 +5,7 @@ import type { Client } from "@langchain/langgraph-sdk";
 
 import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import {
-  THREAD_GRAPH_METADATA_KEY,
+  THREAD_AGENT_MODE_METADATA_KEY,
   normalizeThreadTitle,
   THREAD_TITLE_METADATA_KEY,
 } from "@/app/studio/_features/chat/_lib/thread-metadata";
@@ -24,7 +24,7 @@ export function useInitialThreadMetadata(client: Client, isReady: boolean, threa
 
     void client.threads.update(threadId, {
       metadata: {
-        [THREAD_GRAPH_METADATA_KEY]: metadata.mode,
+        [THREAD_AGENT_MODE_METADATA_KEY]: metadata.mode,
         [THREAD_TITLE_METADATA_KEY]: metadata.title,
       },
     }).then(() => {
@@ -42,11 +42,11 @@ export function useInitialThreadMetadata(client: Client, isReady: boolean, threa
 
     return title
       ? {
-        [THREAD_GRAPH_METADATA_KEY]: mode,
+        [THREAD_AGENT_MODE_METADATA_KEY]: mode,
         [THREAD_TITLE_METADATA_KEY]: title,
       }
       : {
-        [THREAD_GRAPH_METADATA_KEY]: mode,
+        [THREAD_AGENT_MODE_METADATA_KEY]: mode,
       };
   }, []);
 }
