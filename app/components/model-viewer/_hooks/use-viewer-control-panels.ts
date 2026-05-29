@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-import { countModelBrowserNodes } from "@/app/components/model-viewer/_components/model-browser-tree";
+import { countModelBrowserNodes } from "@/app/components/model-viewer/_lib/model-browser-nodes";
 import { useFloatingPanel } from "@/app/components/viewer/_hooks/use-floating-panel";
 import type { ViewerControlsProps } from "@/app/components/model-viewer/_types/viewer-controls";
 
-export type ViewerControlPanel = "components" | "download" | "explode" | "revisions" | "transform" | "views";
+type ViewerControlPanel = "components" | "download" | "explode" | "revisions" | "transform" | "views";
 
 interface UseViewerControlPanelsOptions {
   activeRevisionKey: string | null;

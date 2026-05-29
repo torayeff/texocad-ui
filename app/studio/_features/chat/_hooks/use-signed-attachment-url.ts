@@ -1,9 +1,11 @@
-import React from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 
 export function useSignedAttachmentUrl(url: string) {
-  const [signedUrl, setSignedUrl] = React.useState(() => url);
+  const [signedUrl, setSignedUrl] = useState(() => url);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!url || url.startsWith("data:") || url.includes("?")) {
       return;
     }

@@ -3,7 +3,7 @@
 import { Paperclip, X } from "lucide-react";
 
 import { isImageAttachment } from "@/app/studio/_features/chat/_lib/message-attachments";
-import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_lib/signed-attachment-url";
+import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_hooks/use-signed-attachment-url";
 import type { UploadedFile } from "@/app/studio/_features/chat/_types/chat";
 
 interface AttachmentPillProps {

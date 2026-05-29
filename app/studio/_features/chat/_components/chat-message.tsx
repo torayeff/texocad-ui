@@ -9,7 +9,7 @@ import {
   humanMessageDisplayParts,
   type HumanAttachment,
 } from "@/app/studio/_features/chat/_lib/message-attachments";
-import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_lib/signed-attachment-url";
+import { useSignedAttachmentUrl } from "@/app/studio/_features/chat/_hooks/use-signed-attachment-url";
 import type { ChatMessageType, StreamToolCall } from "@/app/studio/_features/chat/_types/chat";
 
 interface ChatMessageProps {

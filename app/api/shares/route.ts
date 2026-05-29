@@ -11,19 +11,27 @@ import {
   validateShareBlob,
   validateShareName,
 } from "@/app/lib/server/shared-artifact-validation";
+import type { SharedArtifactResult } from "@/app/types/share-artifact";
 
 export const runtime = "nodejs";
 
+function toSharedArtifactResult(
+  sharedArtifact: Awaited<ReturnType<typeof getSharedArtifactForRevision>>,
+): SharedArtifactResult | null {
+  if (!sharedArtifact) return null;
+  return { shareUrl: sharedArtifact.shareUrl, slug: sharedArtifact.slug };
+}
+
 function sharedArtifactResponse(sharedArtifact: Awaited<ReturnType<typeof getSharedArtifactForRevision>>) {
   return {
-    sharedArtifact,
+    sharedArtifact: toSharedArtifactResult(sharedArtifact),
   };
 }
 
 function shareResultResponse(result: Awaited<ReturnType<typeof createOrGetSharedArtifact>>) {
   return {
     alreadyShared: result.alreadyShared,
-    sharedArtifact: result.sharedArtifact,
+    sharedArtifact: toSharedArtifactResult(result.sharedArtifact),
   };
 }
 

@@ -82,18 +82,29 @@ export function hashUserId(userId: string) {
   return createHash("sha256").update(userId).digest("hex");
 }
 
+// Authorized blob name shapes (all rooted at the caller's user hash):
+//   uploads: users/{hash}/uploads/{date}/{file}
+//   threads: users/{hash}/threads/{threadId}/...
+//   designs: users/{hash}/designs/{designId}/revisions/{n}/{exports|source}/{file}
 export function isAuthorizedUserBlob(blobName: string, userHash: string) {
-  const [root, hash, kind, , marker, , folder] = blobName.split("/");
+  const parts = blobName.split("/");
+  if (parts.some((part) => part.length === 0)) return false;
+
+  const [root, hash, kind, ...rest] = parts;
   if (root !== "users" || hash !== userHash) return false;
 
-  if (kind === "uploads") return blobName.split("/").length > 3;
-  if (kind === "threads") return blobName.split("/").length > 4;
-  if (kind !== "designs") return false;
-
-  const parts = blobName.split("/");
-  return (
-    parts.length >= 8 &&
-    marker === "revisions" &&
-    (folder === "exports" || folder === "source")
-  );
+  switch (kind) {
+    case "uploads":
+      return rest.length >= 1;
+    case "threads":
+      return rest.length >= 2;
+    case "designs":
+      return (
+        rest.length >= 5 &&
+        rest[1] === "revisions" &&
+        (rest[3] === "exports" || rest[3] === "source")
+      );
+    default:
+      return false;
+  }
 }

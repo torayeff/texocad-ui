@@ -26,7 +26,7 @@ export const REASONING_EFFORTS: ReasoningEffortOption[] = [
   { id: "xhigh", label: "XHigh", description: "Maximum reasoning" },
 ];
 
-export const DEFAULT_REASONING_EFFORT_ID: ReasoningEffortId = "xhigh";
+export const DEFAULT_REASONING_EFFORT_ID: ReasoningEffortId = "low";
 export const DEFAULT_FREE_REASONING_EFFORT_ID: ReasoningEffortId = "low";
 
 const FREE_REASONING_EFFORT_IDS = new Set<ReasoningEffortId>(["none", "low"]);

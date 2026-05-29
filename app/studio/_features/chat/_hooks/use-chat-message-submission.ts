@@ -58,7 +58,7 @@ export function useChatMessageSubmission({
   stream,
   urlThreadId,
 }: UseChatMessageSubmissionOptions) {
-  const { has, isLoaded, sessionClaims, userId } = useAuth();
+  const { has, isLoaded, sessionClaims } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
   const hasAdvancedReasoning = Boolean(isVip || has?.({ plan: CLERK_PLAN_SLUG }));
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
@@ -99,9 +99,10 @@ export function useChatMessageSubmission({
     setPendingHumanMessage(humanMessage);
 
     const threadMetadata = initialThreadMetadata(trimmed, assistantId, urlThreadId);
+    // `owner` is intentionally omitted: the LangGraph backend stamps it from the
+    // verified JWT, so any client-sent value is ignored.
     const metadata = {
       ...threadMetadata,
-      ...(userId ? { owner: userId } : {}),
       ...(isVip ? { model: selectedModel } : {}),
       reasoning_effort: selectedReasoningEffort,
     };
@@ -139,7 +140,6 @@ export function useChatMessageSubmission({
     setPendingHumanMessage,
     stream,
     urlThreadId,
-    userId,
   ]);
 
   return {

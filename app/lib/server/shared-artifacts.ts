@@ -15,8 +15,6 @@ import { hashUserId } from "@/app/lib/server/storage-auth";
 import type { ShareArtifactInput } from "@/app/lib/server/shared-artifact-validation";
 import type { ShareEntity } from "@/app/lib/server/shared-artifact-types";
 
-export type { SharedArtifact } from "@/app/lib/server/shared-artifact-types";
-
 export async function createOrGetSharedArtifact(userId: string, input: ShareArtifactInput) {
   const ownerHash = hashUserId(userId);
   const kind = input.kind ?? "model";

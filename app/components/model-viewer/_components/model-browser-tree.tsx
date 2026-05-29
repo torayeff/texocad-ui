@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
 
 import type { ModelBrowserNode } from "@/app/types/model-viewer";
+import { countModelBrowserNodes } from "@/app/components/model-viewer/_lib/model-browser-nodes";
 import { viewerGlassClass } from "@/app/components/viewer/viewer-styles";
 import { cn } from "@/app/lib/cn";
 
@@ -43,10 +44,6 @@ function collectExpandedIds(nodes: ModelBrowserNode[], expandedIds = new Set<str
   }
 
   return expandedIds;
-}
-
-export function countModelBrowserNodes(nodes: ModelBrowserNode[]): number {
-  return nodes.reduce((total, node) => total + 1 + countModelBrowserNodes(node.children ?? []), 0);
 }
 
 interface VisibleBrowserRow {
