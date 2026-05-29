@@ -219,14 +219,19 @@ export function useChatStream(assistantId: StudioAssistantId, options: UseChatSt
     if (!isAuthReady || !threadId || activeRunId || isLoading) return;
     if (activeRunLookupRef.current === threadId) return;
     activeRunLookupRef.current = threadId;
+    const requestedThreadId = threadId;
 
-    void client.runs.list(threadId)
+    void client.runs.list(requestedThreadId)
       .then((runs) => {
         const nextRunId = latestActiveRunId(runs);
-        if (nextRunId) setActiveRunId(nextRunId);
+        if (nextRunId && threadIdRef.current === requestedThreadId) {
+          setActiveRunId(nextRunId);
+        }
       })
       .catch(() => {
-        activeRunLookupRef.current = null;
+        if (threadIdRef.current === requestedThreadId) {
+          activeRunLookupRef.current = null;
+        }
       });
   }, [activeRunId, client, isAuthReady, isLoading, threadId]);
 

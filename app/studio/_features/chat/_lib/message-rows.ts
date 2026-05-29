@@ -76,9 +76,13 @@ export function getSubagentsSignature(subagents: SubagentView[]): string {
       return [
         subagent.id,
         subagent.status,
+        subagent.toolCall.id ?? "",
+        subagent.toolCall.name,
+        serialize(subagent.toolCall.args),
         subagent.messages.length,
         subagent.result ?? "",
         lastMessageSignature,
+        getToolCallsSignature(subagent.toolCalls),
         subagent.startedAt?.getTime() ?? "",
         subagent.completedAt?.getTime() ?? "",
       ].join(":");

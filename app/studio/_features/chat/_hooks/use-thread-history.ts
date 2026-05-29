@@ -97,9 +97,23 @@ export function useThreadHistory(client: Client, isReady: boolean) {
   }, [fetchThreads, hasMore, isLoading]);
 
   const deleteThread = useCallback(async (threadId: string) => {
-    setThreads((prev) => prev.filter((t) => t.threadId !== threadId));
-    await client.threads.delete(threadId);
-  }, [client]);
+    const deletedThread = threads.find((thread) => thread.threadId === threadId) ?? null;
+    setThreads((prev) => prev.filter((thread) => thread.threadId !== threadId));
+
+    try {
+      await client.threads.delete(threadId);
+    } catch (err) {
+      if (deletedThread) {
+        setThreads((prev) => {
+          if (prev.some((thread) => thread.threadId === threadId)) return prev;
+          const restoredThreads = [...prev, deletedThread];
+          restoredThreads.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+          return restoredThreads;
+        });
+      }
+      throw err;
+    }
+  }, [client, threads]);
 
   const renameThread = useCallback(async (threadId: string, title: string) => {
     const nextTitle = normalizeThreadTitle(title);

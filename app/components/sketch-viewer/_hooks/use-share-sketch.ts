@@ -1,11 +1,12 @@
 "use client";
 
 import { useShareArtifact } from "@/app/hooks/use-share-artifact";
-import type { ShareSketchRevision, SketchSource } from "@/app/types/sketch-viewer";
+import type { SketchSource } from "@/app/types/sketch-viewer";
+import type { ShareRevision } from "@/app/types/share-artifact";
 
 interface UseShareSketchOptions {
   activeRevisionKey: string | null;
-  shareRevision: ShareSketchRevision | null;
+  shareRevision: ShareRevision | null;
   source: SketchSource | null;
 }
 

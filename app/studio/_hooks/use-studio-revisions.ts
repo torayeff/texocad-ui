@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { ShareRevision } from "@/app/types/model-viewer";
-import type { ShareSketchRevision } from "@/app/types/sketch-viewer";
+import type { ShareRevision } from "@/app/types/share-artifact";
 import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import {
   latestDesignRevision,
@@ -140,7 +139,7 @@ export function useStudioRevisions(studioMode: StudioAssistantId, setStudioMode:
     revisionNumber: activeRevision.revisionNumber,
     exportArtifact: activeStepExport,
   } : null;
-  const shareSketchRevision: ShareSketchRevision | null = activeSketchRevision && activeSketchExport ? {
+  const shareSketchRevision: ShareRevision | null = activeSketchRevision && activeSketchExport ? {
     designId: activeSketchRevision.designId,
     revisionNumber: activeSketchRevision.revisionNumber,
     exportArtifact: activeSketchExport,

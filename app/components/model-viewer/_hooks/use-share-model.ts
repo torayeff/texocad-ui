@@ -1,7 +1,8 @@
 "use client";
 
 import { useShareArtifact } from "@/app/hooks/use-share-artifact";
-import type { ModelSource, ShareRevision } from "@/app/types/model-viewer";
+import type { ModelSource } from "@/app/types/model-viewer";
+import type { ShareRevision } from "@/app/types/share-artifact";
 
 interface UseShareModelOptions {
   activeRevisionKey: string | null;

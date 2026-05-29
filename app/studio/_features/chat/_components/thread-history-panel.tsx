@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { Loader2, Pencil, Trash2 } from "lucide-react";
 import type { ThreadSummary } from "@/app/studio/_features/chat/_types/chat";
 import { normalizeThreadTitle } from "@/app/studio/_features/chat/_lib/thread-metadata";
@@ -24,7 +24,7 @@ interface ThreadHistoryPanelProps {
   hasMore: boolean;
   activeThreadId: string | null;
   onSelectThread: (thread: ThreadSummary) => void;
-  onDeleteThread: (threadId: string) => void;
+  onDeleteThread: (threadId: string) => Promise<void>;
   onRenameThread: (threadId: string, title: string) => Promise<void>;
   onLoadMore: () => void;
 }
@@ -43,11 +43,13 @@ export default function ThreadHistoryPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
+  const [deleteErrorId, setDeleteErrorId] = useState<string | null>(null);
 
-  const handleDelete = useCallback((e: React.MouseEvent, threadId: string) => {
-    e.stopPropagation();
+  const handleDelete = useCallback((threadId: string) => {
     setConfirmingId(threadId);
+    setDeleteErrorId(null);
   }, []);
 
   const handleSelect = useCallback((thread: ThreadSummary) => {
@@ -57,12 +59,12 @@ export default function ThreadHistoryPanel({
     }
   }, [activeThreadId, editingId, onSelectThread]);
 
-  const startRename = useCallback((e: React.MouseEvent, thread: ThreadSummary) => {
-    e.stopPropagation();
+  const startRename = useCallback((thread: ThreadSummary) => {
     setConfirmingId(null);
     setEditingId(thread.threadId);
     setEditingTitle(thread.title);
     setRenameError(null);
+    setDeleteErrorId(null);
   }, []);
 
   const cancelRename = useCallback(() => {
@@ -95,6 +97,20 @@ export default function ThreadHistoryPanel({
     }
   }, [cancelRename, editingTitle, onRenameThread]);
 
+  const confirmDelete = useCallback(async (threadId: string) => {
+    setDeletingId(threadId);
+    setDeleteErrorId(null);
+    try {
+      await onDeleteThread(threadId);
+      setConfirmingId(null);
+    } catch (err) {
+      console.error("Failed to delete thread:", err);
+      setDeleteErrorId(threadId);
+    } finally {
+      setDeletingId(null);
+    }
+  }, [onDeleteThread]);
+
   return (
     <div className="h-full overflow-y-auto scroll-on-hover px-4 pb-6 pt-6">
       <div className="mx-auto flex w-full max-w-3xl flex-col">
@@ -107,16 +123,6 @@ export default function ThreadHistoryPanel({
             {threads.map((thread) => (
               <div
                 key={thread.threadId}
-                role="button"
-                tabIndex={0}
-                onClick={() => handleSelect(thread)}
-                onKeyDown={(e) => {
-                  if (editingId === thread.threadId) return;
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleSelect(thread);
-                  }
-                }}
                 onBlur={(e) => {
                   if (confirmingId === thread.threadId) {
                     const row = e.currentTarget;
@@ -126,116 +132,119 @@ export default function ThreadHistoryPanel({
                     });
                   }
                 }}
-                className={`group flex w-full cursor-pointer items-center gap-3 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-3 py-3 text-left text-sm transition-colors focus-visible:bg-muted focus-visible:outline-none ${thread.threadId === activeThreadId
+                className={`group rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-3 py-3 text-sm transition-colors ${thread.threadId === activeThreadId
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
               >
-                <div className="min-w-0 flex-1">
+                <div className="flex w-full items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    {editingId === thread.threadId ? (
+                      <div className="space-y-1.5">
+                        <input
+                          value={editingTitle}
+                          autoFocus
+                          disabled={renamingId === thread.threadId}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              void saveRename(thread);
+                            }
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              cancelRename();
+                            }
+                          }}
+                          className="w-full rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-border bg-background px-2 py-1 text-sm text-foreground outline-none transition-colors focus:border-foreground/40"
+                        />
+                        {renameError ? (
+                          <div className="text-xs text-error">{renameError}</div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground">
+                            Enter to save, Esc to cancel
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleSelect(thread)}
+                        aria-current={thread.threadId === activeThreadId ? "true" : undefined}
+                        className="block w-full rounded-[calc(var(--viewer-control-radius)-0.125rem)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30"
+                      >
+                        <span className={`block truncate font-medium ${thread.threadId === activeThreadId ? "text-foreground" : ""}`}>
+                          {thread.title}
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {formatRelativeTime(thread.updatedAt)}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
                   {editingId === thread.threadId ? (
-                    <div className="space-y-1.5">
-                      <input
-                        value={editingTitle}
-                        autoFocus
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => void saveRename(thread)}
                         disabled={renamingId === thread.threadId}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          e.stopPropagation();
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            void saveRename(thread);
-                          }
-                          if (e.key === "Escape") {
-                            e.preventDefault();
-                            cancelRename();
-                          }
-                        }}
-                        className="w-full rounded-[calc(var(--viewer-control-radius)-0.125rem)] border border-border bg-background px-2 py-1 text-sm text-foreground outline-none transition-colors focus:border-foreground/40"
-                      />
-                      {renameError ? (
-                        <div className="text-xs text-error">{renameError}</div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground">
-                          Enter to save, Esc to cancel
-                        </div>
-                      )}
+                        className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-muted px-2.5 py-1 text-[10px] font-medium text-foreground transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelRename}
+                        disabled={renamingId === thread.threadId}
+                        className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : confirmingId === thread.threadId ? (
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => void confirmDelete(thread.threadId)}
+                        disabled={deletingId === thread.threadId}
+                        className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-error/10 px-2.5 py-1 text-[10px] font-medium text-error transition-colors hover:bg-error/15 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {deletingId === thread.threadId ? "Deleting..." : "Delete"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(null)}
+                        disabled={deletingId === thread.threadId}
+                        className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   ) : (
-                    <>
-                      <div className={`truncate font-medium ${thread.threadId === activeThreadId ? "text-foreground" : ""}`}>
-                        {thread.title}
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {formatRelativeTime(thread.updatedAt)}
-                      </div>
-                    </>
+                    <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => startRename(thread)}
+                        aria-label="Rename thread"
+                        className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:opacity-100"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(thread.threadId)}
+                        aria-label="Delete thread"
+                        className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-1.5 text-muted-foreground transition-colors hover:bg-error/10 hover:text-error focus:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   )}
                 </div>
-
-                {editingId === thread.threadId ? (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void saveRename(thread);
-                      }}
-                      disabled={renamingId === thread.threadId}
-                      className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-muted px-2.5 py-1 text-[10px] font-medium text-foreground transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        cancelRename();
-                      }}
-                      disabled={renamingId === thread.threadId}
-                      className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : confirmingId === thread.threadId ? (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteThread(thread.threadId);
-                        setConfirmingId(null);
-                      }}
-                      className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-error/10 px-2.5 py-1 text-[10px] font-medium text-error transition-colors hover:bg-error/15"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfirmingId(null);
-                      }}
-                      className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                    <button
-                      onClick={(e) => startRename(e, thread)}
-                      aria-label="Rename thread"
-                      className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:opacity-100"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(e, thread.threadId)}
-                      aria-label="Delete thread"
-                      className="rounded-[calc(var(--viewer-control-radius)-0.125rem)] p-1.5 text-muted-foreground transition-colors hover:bg-error/10 hover:text-error focus:opacity-100"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                )}
+                {deleteErrorId === thread.threadId ? (
+                  <div className="mt-1 text-xs text-error">Could not delete thread.</div>
+                ) : null}
               </div>
             ))}
           </div>

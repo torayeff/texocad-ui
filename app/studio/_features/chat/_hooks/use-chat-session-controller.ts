@@ -4,11 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { HumanMessage } from "@langchain/core/messages";
 
 import { CAD_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
-import type { NewChatConfirmationIntent } from "@/app/studio/_features/chat/_components/new-chat-confirmation-dialog";
-import type { AssistantTimer, ChatInputHandle, ThreadSummary } from "@/app/studio/_features/chat/_types/chat";
+import type {
+  AssistantTimer,
+  ChatInputHandle,
+  NewChatConfirmationIntent,
+  ThreadSummary,
+} from "@/app/studio/_features/chat/_types/chat";
 
 interface ChatHistoryControls {
-  deleteThread: (threadId: string) => void;
+  deleteThread: (threadId: string) => Promise<void>;
   renameThread: (threadId: string, title: string) => Promise<void>;
   refresh: () => void;
 }
@@ -108,8 +112,8 @@ export function useChatSessionController({
     onClearViewerRef.current();
   }, [onModeChange, setPendingHumanMessage, switchThread, timer]);
 
-  const handleDeleteThread = useCallback((threadId: string) => {
-    history.deleteThread(threadId);
+  const handleDeleteThread = useCallback(async (threadId: string) => {
+    await history.deleteThread(threadId);
     if (threadId === urlThreadId) {
       timer.reset();
       setDraftConversationKey((key) => key + 1);

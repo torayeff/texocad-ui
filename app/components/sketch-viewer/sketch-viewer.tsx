@@ -10,10 +10,10 @@ import { SketchViewerShareDialogs } from "@/app/components/sketch-viewer/_compon
 import { useSketchDownload } from "@/app/components/sketch-viewer/_hooks/use-sketch-download";
 import { useSketchMaskEditor } from "@/app/components/sketch-viewer/_hooks/use-sketch-mask-editor";
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
-import { useFloatingPanel } from "@/app/components/viewer/use-floating-panel";
+import { useFloatingPanel } from "@/app/components/viewer/_hooks/use-floating-panel";
 import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
+import type { ShareRevision } from "@/app/types/share-artifact";
 import type {
-  ShareSketchRevision,
   SketchMaskComposerState,
   SketchMaskEditRequest,
   SketchRevisionOption,
@@ -30,7 +30,7 @@ interface SketchViewerRevisions {
 
 interface SketchViewerSharing {
   activeRevisionKey: string | null;
-  shareRevision: ShareSketchRevision | null;
+  shareRevision: ShareRevision | null;
 }
 
 interface SketchViewerProps {

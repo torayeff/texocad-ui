@@ -33,8 +33,3 @@ export interface ViewerRevisionOption {
   filename: string | null;
   canView: boolean;
 }
-
-import type { ShareExportArtifact, ShareRevision } from "@/app/types/share-artifact";
-
-export type ShareModelArtifact = ShareExportArtifact;
-export type { ShareRevision };

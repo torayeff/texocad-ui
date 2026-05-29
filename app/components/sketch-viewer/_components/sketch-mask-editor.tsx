@@ -2,6 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
+import type { SketchMaskEditorHandle } from "@/app/components/sketch-viewer/_types/sketch-mask-editor";
 import type { SketchSource } from "@/app/types/sketch-viewer";
 
 const DEFAULT_BRUSH_SIZE = 36;
@@ -16,11 +17,6 @@ interface SketchMaskEditorProps {
   isSubmitting: boolean;
   source: SketchSource;
   onMaskChange: (hasMask: boolean) => void;
-}
-
-export interface SketchMaskEditorHandle {
-  clear: () => void;
-  createMaskFile: () => Promise<File>;
 }
 
 function drawStroke(

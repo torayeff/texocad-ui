@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { SketchMaskEditorHandle } from "@/app/components/sketch-viewer/_components/sketch-mask-editor";
+import type { SketchMaskEditorHandle } from "@/app/components/sketch-viewer/_types/sketch-mask-editor";
 import type {
   SketchMaskComposerState,
   SketchMaskEditRequest,

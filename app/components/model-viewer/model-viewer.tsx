@@ -2,7 +2,8 @@
 
 import { Loader2 } from "lucide-react";
 
-import type { ModelSource, ShareRevision, ViewerRevisionOption } from "@/app/types/model-viewer";
+import type { ModelSource, ViewerRevisionOption } from "@/app/types/model-viewer";
+import type { ShareRevision } from "@/app/types/share-artifact";
 import { ModelLoadPanel } from "@/app/components/model-viewer/_components/model-load-panel";
 import { loadingIconClass } from "@/app/components/viewer/viewer-styles";
 import { ModelViewerShareDialogs } from "@/app/components/model-viewer/_components/model-viewer-share-dialogs";

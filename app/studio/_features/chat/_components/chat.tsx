@@ -1,30 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useAuth } from "@clerk/nextjs";
-import { HumanMessage } from "@langchain/core/messages";
+import React, { useRef, useEffect, useCallback } from "react";
 
-import { CLERK_PLAN_SLUG } from "@/app/lib/site";
 import { useThreadHistory } from "@/app/studio/_features/chat/_hooks/use-thread-history";
 import { useChatStream } from "@/app/studio/_features/chat/_hooks/use-chat-stream";
 import { useAssistantTimer } from "@/app/studio/_features/chat/_hooks/use-assistant-timer";
 import { useChatScroll } from "@/app/studio/_features/chat/_hooks/use-chat-scroll";
 import { useChatSessionController } from "@/app/studio/_features/chat/_hooks/use-chat-session-controller";
-import { useInitialThreadMetadata } from "@/app/studio/_features/chat/_hooks/use-initial-thread-metadata";
 import { useChatMessageView } from "@/app/studio/_features/chat/_hooks/use-chat-message-view";
-import {
-  DEFAULT_FREE_REASONING_EFFORT_ID,
-  DEFAULT_MODEL_ID,
-  DEFAULT_REASONING_EFFORT_ID,
-  MODELS,
-  isReasoningEffortAllowed,
-  reasoningEffortsForAccess,
-} from "@/app/studio/_features/chat/_lib/models";
-import type { ReasoningEffortId } from "@/app/studio/_features/chat/_lib/models";
+import { useChatMessageSubmission } from "@/app/studio/_features/chat/_hooks/use-chat-message-submission";
 import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 import type { DesignRevisionArtifact, SketchRevisionArtifact } from "@/app/studio/_features/design-revisions/_types/design-artifact";
 import type { ChatHandle, ChatInputHandle } from "@/app/studio/_features/chat/_types/chat";
-import { trackMessageSubmitted } from "@/app/studio/_features/chat/_lib/analytics";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 
 import { ChatHeader } from "@/app/studio/_features/chat/_components/chat-header";
@@ -38,7 +25,7 @@ const GENERIC_CHAT_ERROR_MESSAGE = "Something went wrong. Please try again.";
 
 interface ChatProps {
   assistantId: StudioAssistantId;
-  hasInitialAgentMode?: boolean;
+  hasInitialAgentMode: boolean;
   initialThreadId?: string | null;
   maskComposer: SketchMaskComposerState | null;
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
@@ -53,7 +40,7 @@ interface ChatProps {
 
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   assistantId,
-  hasInitialAgentMode = false,
+  hasInitialAgentMode,
   initialThreadId,
   maskComposer,
   onDesignRevisionEvent,
@@ -89,41 +76,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   });
 
   const timer = useAssistantTimer();
-  const { has, isLoaded, sessionClaims, userId } = useAuth();
-  const isVip = sessionClaims?.vipAccess === true;
-  const hasAdvancedReasoning = Boolean(isVip || has?.({ plan: CLERK_PLAN_SLUG }));
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
-  const [selectedReasoningEffort, setSelectedReasoningEffort] =
-    useState<ReasoningEffortId>(DEFAULT_REASONING_EFFORT_ID);
-  const reasoningEfforts = useMemo(
-    () => reasoningEffortsForAccess(hasAdvancedReasoning),
-    [hasAdvancedReasoning],
-  );
-  const defaultReasoningEffort = hasAdvancedReasoning
-    ? DEFAULT_REASONING_EFFORT_ID
-    : DEFAULT_FREE_REASONING_EFFORT_ID;
-
-  const handleModelChange = useCallback((modelId: string) => {
-    if (!MODELS.some((m) => m.id === modelId)) return;
-    setSelectedModel(modelId);
-  }, []);
-
-  const handleReasoningEffortChange = useCallback((effortId: ReasoningEffortId) => {
-    if (!isReasoningEffortAllowed(effortId, hasAdvancedReasoning)) return;
-    setSelectedReasoningEffort(effortId);
-  }, [hasAdvancedReasoning]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (isReasoningEffortAllowed(selectedReasoningEffort, hasAdvancedReasoning)) return;
-    setSelectedReasoningEffort(defaultReasoningEffort);
-  }, [
-    defaultReasoningEffort,
-    hasAdvancedReasoning,
-    isLoaded,
-    selectedReasoningEffort,
-  ]);
-
   const chatInputRef = useRef<ChatInputHandle>(null);
 
   useEffect(() => {
@@ -135,7 +87,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   }, [sketchRevisions, onSketchRevisionsChange]);
 
   const history = useThreadHistory(client, isAuthReady);
-  const initialThreadMetadata = useInitialThreadMetadata(client, isAuthReady, urlThreadId);
   const {
     conversationScope,
     handleCancelNewChat,
@@ -192,59 +143,25 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     showScrollButton,
   } = useChatScroll({ dependencies: [messages, isLoading, shouldRenderPendingHumanMessage] });
 
-  const sendMessage = useCallback((content: string) => {
-    if (isBusy) return false;
-    const trimmed = content.trim();
-    if (!trimmed) return false;
-    const humanMessage = new HumanMessage(trimmed);
-    setHasChosenMode(true);
-    trackMessageSubmitted({
-      hasAttachments: trimmed.includes("Attachments:"),
-    });
-    setPendingHumanMessage(humanMessage);
-    const threadMetadata = initialThreadMetadata(trimmed, assistantId, urlThreadId);
-
-    const metadata = {
-      ...threadMetadata,
-      ...(userId ? { owner: userId } : {}),
-      ...(isVip ? { model: selectedModel } : {}),
-      reasoning_effort: selectedReasoningEffort,
-    };
-    stream.submit(
-      { messages: [{ type: "human", content: trimmed }] },
-      {
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-        optimisticValues: (prev: Record<string, unknown>) => ({
-          ...prev,
-          messages: [...(Array.isArray(prev.messages) ? prev.messages : []), humanMessage],
-        }),
-        onDisconnect: "continue",
-        streamSubgraphs: true,
-        streamResumable: true,
-        config: { recursion_limit: 10000 },
-      },
-    );
-
-    markNearBottom();
-    requestAnimationFrame(() => {
-      scrollToBottom();
-    });
-    return true;
-  }, [
+  const {
+    handleModelChange,
+    handleReasoningEffortChange,
+    reasoningEfforts,
+    selectedModel,
+    selectedReasoningEffort,
+    sendMessage,
+  } = useChatMessageSubmission({
     assistantId,
-    initialThreadMetadata,
+    client,
+    isAuthReady,
     isBusy,
-    isVip,
     markNearBottom,
     scrollToBottom,
-    selectedReasoningEffort,
-    selectedModel,
     setHasChosenMode,
     setPendingHumanMessage,
     stream,
-    userId,
     urlThreadId,
-  ]);
+  });
 
   React.useImperativeHandle(ref, () => ({
     focusInput: () => {

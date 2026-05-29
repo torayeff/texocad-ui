@@ -1,4 +1,5 @@
 import type { Message } from "@langchain/langgraph-sdk";
+import type { StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
 
 export interface ChatInputHandle {
   focus: () => void;
@@ -94,3 +95,7 @@ export interface AssistantTimer {
   reset: () => void;
   runtimeSecondsByRow: Record<string, number>;
 }
+
+export type NewChatConfirmationIntent =
+  | { kind: "new" }
+  | { kind: "mode"; mode: StudioAssistantId };

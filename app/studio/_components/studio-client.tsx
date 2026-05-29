@@ -52,7 +52,7 @@ export default function StudioClient() {
   const chatRef = useRef<ChatHandle | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const splitLayout = useStudioSplitLayout({ contentRef });
-  const replaceStudioAgentUrl = useCallback((mode: StudioAssistantId) => {
+  const replaceStudioAgentUrl = useCallback((mode: StudioAssistantId | null) => {
     window.history.replaceState(
       window.history.state,
       "",
@@ -65,12 +65,8 @@ export default function StudioClient() {
   }, [replaceStudioAgentUrl]);
   const resetStudioMode = useCallback(() => {
     setStudioModeState(CAD_ASSISTANT_ID);
-    window.history.replaceState(
-      window.history.state,
-      "",
-      studioUrlWithAgent(pathname, window.location.search, null),
-    );
-  }, [pathname]);
+    replaceStudioAgentUrl(null);
+  }, [replaceStudioAgentUrl]);
   const revisions = useStudioRevisions(studioMode, setStudioMode);
   const shouldMountChat = initialThreadId === null || isInitialThreadModeResolved;
 

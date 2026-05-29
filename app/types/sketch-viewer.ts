@@ -25,8 +25,3 @@ export interface SketchRevisionOption {
   canView: boolean;
   thumbnailUrl: string | null;
 }
-
-import type { ShareExportArtifact, ShareRevision } from "@/app/types/share-artifact";
-
-export type ShareSketchArtifact = ShareExportArtifact;
-export type ShareSketchRevision = ShareRevision;

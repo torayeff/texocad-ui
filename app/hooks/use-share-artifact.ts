@@ -3,9 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
-import type { ShareExportArtifact, ShareResponse, ShareRevision } from "@/app/types/share-artifact";
-
-export type { ShareExportArtifact, ShareRevision };
+import type { ShareResponse, ShareRevision } from "@/app/types/share-artifact";
 
 interface ShareResult {
   revisionKey: string | null;
