@@ -61,8 +61,10 @@ export function attachModelPicking({
   let cursor = "";
   const pointer = new THREE.Vector2();
   const raycaster = new THREE.Raycaster();
-  const highlightColor = new THREE.Color(0xffc857);
-  const highlightEmissive = new THREE.Color(0x5c3a00);
+  const highlightColor = new THREE.Color(0xffffff);
+  const highlightEmissive = new THREE.Color(0xffffff);
+  const highlightColorMix = 0.24;
+  const highlightEmissiveMix = 0.08;
 
   const clearHighlight = () => {
     if (!highlighted) {
@@ -86,8 +88,8 @@ export function attachModelPicking({
       color: material.color.clone(),
       emissive: material.emissive.clone(),
     };
-    material.color.copy(highlightColor);
-    material.emissive.copy(highlightEmissive);
+    material.color.copy(highlighted.color).lerp(highlightColor, highlightColorMix);
+    material.emissive.copy(highlighted.emissive).lerp(highlightEmissive, highlightEmissiveMix);
   };
 
   const setCursor = (nextCursor: string) => {
