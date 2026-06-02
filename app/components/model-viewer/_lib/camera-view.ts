@@ -4,6 +4,12 @@ import type { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { ViewPreset } from "@/app/types/model-viewer";
 
 const eps = 1e-5;
+const fitPadding = 1.18;
+const minimumFitRadius = 0.001;
+const minimumCameraDistance = 0.01;
+const minimumCameraFar = 10;
+const minimumCameraNear = 0.0001;
+const minimumControlsMaxDistance = 10;
 
 const viewDirections: Record<ViewPreset, [number, number, number]> = {
   iso: [1, -1, 0.8],
@@ -43,14 +49,15 @@ export function fitCameraToObject(
   const verticalFov = THREE.MathUtils.degToRad(camera.fov);
   const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * Math.max(camera.aspect, 0.1));
   const fitFov = Math.min(verticalFov, horizontalFov);
-  const fitDistance = sphere.radius / Math.sin(fitFov / 2);
-  const distance = Math.max(fitDistance * 1.18, 30);
+  const radius = Number.isFinite(sphere.radius) ? Math.max(sphere.radius, minimumFitRadius) : minimumFitRadius;
+  const fitDistance = radius / Math.sin(fitFov / 2);
+  const distance = Math.max(fitDistance * fitPadding, minimumCameraDistance);
 
   object.position.sub(center);
-  camera.near = Math.max(distance / 1000, 0.1);
-  camera.far = distance * 100;
+  camera.near = Math.max(distance / 1000, minimumCameraNear);
+  camera.far = Math.max(distance * 100, minimumCameraFar);
   controls.target.set(0, 0, 0);
-  controls.maxDistance = distance * 8;
+  controls.maxDistance = Math.max(distance * 8, minimumControlsMaxDistance);
   setCameraView(camera, controls, view, distance);
 
   return distance;

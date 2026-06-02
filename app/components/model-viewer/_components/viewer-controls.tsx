@@ -150,11 +150,6 @@ export const ViewerControls = memo(function ViewerControls({
       >
         <RefreshCcwDot size={14} strokeWidth={1.75} />
       </ViewerToolButton>
-      {canClear && onClear ? (
-        <ViewerToolButton type="button" onClick={onClear} tooltip="Clear model" aria-label="Clear model" className={toolButtonClass}>
-          <CircleX size={14} strokeWidth={1.75} />
-        </ViewerToolButton>
-      ) : null}
 
       <ViewerToolButton
         type="button"
@@ -239,6 +234,12 @@ export const ViewerControls = memo(function ViewerControls({
             </ViewerToolButton>
           ) : null}
         </>
+      ) : null}
+
+      {canClear && onClear ? (
+        <ViewerToolButton type="button" onClick={onClear} tooltip="Clear model" aria-label="Clear model" className={toolButtonClass}>
+          <CircleX size={14} strokeWidth={1.75} />
+        </ViewerToolButton>
       ) : null}
 
       <ViewerControlPopovers
