@@ -95,7 +95,7 @@ export function DownloadMenu({
           disabled={isDownloading}
           className={controlMenuItemClass}
         >
-          <span>STEP File</span>
+          <span>3D File</span>
           {isDownloading ? <Loader2 size={13} strokeWidth={1.75} className={loadingIconClass} /> : null}
         </button>
       ) : null}
