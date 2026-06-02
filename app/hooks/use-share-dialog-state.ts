@@ -23,10 +23,11 @@ export function useShareDialogState() {
     setShareError(null);
   }, []);
 
-  const copyShareUrl = useCallback((url = shareUrl) => {
-    if (!url) return;
+  const copyShareUrl = useCallback((url?: string | null) => {
+    const urlToCopy = typeof url === "string" ? url : shareUrl;
+    if (!urlToCopy) return;
 
-    void navigator.clipboard.writeText(url)
+    void navigator.clipboard.writeText(urlToCopy)
       .then(() => setDidCopyShareUrl(true))
       .catch(() => setShareError("Could not copy the link."));
   }, [shareUrl]);
