@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 
 import {
@@ -160,6 +161,13 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <Script
+        id="vtag-ai-js"
+        src="https://r2.leadsy.ai/tag.js"
+        data-pid="eFFSyhtj8Kdl7JQd"
+        data-version="062024"
+        strategy="beforeInteractive"
+      />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
