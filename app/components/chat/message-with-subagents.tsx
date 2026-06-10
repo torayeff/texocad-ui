@@ -32,6 +32,7 @@ interface MessageWithSubagentsProps {
   messageType: ChatMessageType;
   textContent: string;
   thinkingContent?: string;
+  agentAvatarUrl?: string;
   agentName?: string;
   isStreaming?: boolean;
   runtimeSeconds?: number;
@@ -47,6 +48,7 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
   messageType,
   textContent,
   thinkingContent = "",
+  agentAvatarUrl,
   agentName,
   isStreaming = false,
   runtimeSeconds,
@@ -73,6 +75,7 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
         messageType={messageType}
         textContent={textContent}
         thinkingContent={thinkingContent}
+        agentAvatarUrl={agentAvatarUrl}
         agentName={agentName}
         isStreaming={isStreaming}
         runtimeSeconds={runtimeSeconds}
@@ -100,6 +103,7 @@ export const MessageWithSubagents = React.memo(function MessageWithSubagents({
   prevProps.messageType === nextProps.messageType
   && prevProps.textContent === nextProps.textContent
   && prevProps.thinkingContent === nextProps.thinkingContent
+  && prevProps.agentAvatarUrl === nextProps.agentAvatarUrl
   && prevProps.agentName === nextProps.agentName
   && prevProps.isStreaming === nextProps.isStreaming
   && prevProps.runtimeSeconds === nextProps.runtimeSeconds

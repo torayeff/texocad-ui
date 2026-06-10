@@ -28,6 +28,7 @@ import { NewChatConfirmationDialog } from "@/app/components/chat/new-chat-confir
 const GENERIC_CHAT_ERROR_MESSAGE = "Something went wrong. Please try again.";
 
 interface ChatProps {
+  agentAvatarUrl?: string;
   allowAnonymous?: boolean;
   assistantId: AssistantId;
   hasInitialAgentMode: boolean;
@@ -50,6 +51,7 @@ interface ChatProps {
 }
 
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
+  agentAvatarUrl,
   allowAnonymous = false,
   assistantId,
   hasInitialAgentMode,
@@ -230,6 +232,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ChatHeader
           activeMode={hasActiveMode ? assistantId : null}
+          agentAvatarUrl={agentAvatarUrl}
           historyOpen={historyOpen}
           onModeChange={handleModeSelect}
           onNewChat={handleNewChat}
@@ -253,6 +256,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
         ) : (
           <ChatMessagesPanel
             activeMode={hasActiveMode ? assistantId : null}
+            agentAvatarUrl={agentAvatarUrl}
             handleScroll={handleScroll}
             isBusy={isBusy}
             isEmpty={isEmpty}

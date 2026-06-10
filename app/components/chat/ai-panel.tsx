@@ -1,8 +1,10 @@
 import React from "react";
+import Image from "next/image";
 import { Bot, Loader2, CircleCheck } from "lucide-react";
 import { PanelTimer } from "@/app/components/chat/panel-timer";
 
 export function AIPanel({
+  agentAvatarUrl,
   agentName,
   hideHeader,
   statusLabel,
@@ -11,6 +13,7 @@ export function AIPanel({
   runtimeSeconds,
   children,
 }: {
+  agentAvatarUrl?: string;
   agentName?: string;
   hideHeader?: boolean;
   statusLabel: string | null;
@@ -23,7 +26,17 @@ export function AIPanel({
     <div className="w-full">
       {!hideHeader && (
         <div className="flex items-center gap-2 text-xs">
-          <Bot size={13} className="flex-shrink-0 text-muted-foreground/70" />
+          {agentAvatarUrl ? (
+            <Image
+              src={agentAvatarUrl}
+              alt=""
+              width={24}
+              height={24}
+              className="size-6 flex-shrink-0 rounded-full object-cover ring-1 ring-border/50"
+            />
+          ) : (
+            <Bot size={13} className="flex-shrink-0 text-muted-foreground/70" />
+          )}
           <span className="font-medium text-foreground/90">{agentName || "Assistant"}</span>
           {statusLabel ? (
             <span

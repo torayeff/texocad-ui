@@ -85,7 +85,8 @@ export default function LumiViewer({
           aria-label="Viewer mode"
           className={cn(
             viewerGlassClass,
-            "absolute bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-0.5 rounded-[var(--viewer-control-radius)] p-1",
+            // Sits above the model viewer's gesture legend (anchored at bottom-7).
+            "absolute bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-center gap-0.5 rounded-[var(--viewer-control-radius)] p-1 sm:bottom-14",
           )}
         >
           {MODE_OPTIONS.map(({ mode, label, icon: Icon }) => {

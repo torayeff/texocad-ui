@@ -14,6 +14,7 @@ import { chatContentRailClass } from "@/app/lib/chat/chat-styles";
 
 interface ChatMessagesPanelProps {
   activeMode: AssistantId | null;
+  agentAvatarUrl?: string;
   handleScroll: () => void;
   isBusy: boolean;
   isEmpty: boolean;
@@ -36,6 +37,7 @@ interface ChatMessagesPanelProps {
 
 export function ChatMessagesPanel({
   activeMode,
+  agentAvatarUrl,
   handleScroll,
   isBusy,
   isEmpty,
@@ -87,6 +89,7 @@ export function ChatMessagesPanel({
               messageType={row.messageType}
               textContent={row.textContent}
               thinkingContent={row.thinkingContent}
+              agentAvatarUrl={agentAvatarUrl}
               agentName={row.agentName}
               isStreaming={row.isStreaming}
               runtimeSeconds={row.runtimeSeconds}

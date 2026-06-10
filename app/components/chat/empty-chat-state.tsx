@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Loader2 } from "lucide-react";
 
 import type { AssistantId, StudioAssistantId } from "@/app/lib/chat/langgraph-config";
@@ -29,7 +30,7 @@ const MODE_SELECTION_PROMPTS: ExamplePrompt[] = [
   },
 ];
 
-const AGENT_EXAMPLE_PROMPTS: Record<AssistantId, AgentExamplePrompt[]> = {
+const AGENT_EXAMPLE_PROMPTS: Record<StudioAssistantId, AgentExamplePrompt[]> = {
   [CAD_ASSISTANT_ID]: [
     {
       description: "Wall-mounted sensor case.",
@@ -52,18 +53,6 @@ const AGENT_EXAMPLE_PROMPTS: Record<AssistantId, AgentExamplePrompt[]> = {
       description: "Workshop measuring tool.",
       label: "Tool concept",
       prompt: "Generate a visual concept for a handheld workshop measuring tool. Show a durable rubberized grip, small top display, thumb buttons, a protected measuring probe, visible part seams for assembly, and a rugged but simple industrial design.",
-    },
-  ],
-  [LUMI_ASSISTANT_ID]: [
-    {
-      description: "Tidy desk organizer.",
-      label: "Desk organizer",
-      prompt: "Design a compact desk organizer with a pen cup, a phone slot angled for visibility, and a small tray for clips. Clean modern look, rounded edges, printable as one piece.",
-    },
-    {
-      description: "Small plant pot.",
-      label: "Planter",
-      prompt: "Create a small geometric succulent planter with a faceted outer surface and an integrated drip tray. Around 80 mm wide, minimal and modern.",
     },
   ],
 };
@@ -94,6 +83,31 @@ export default function EmptyChatState({
 
   if (isBusy) {
     return null;
+  }
+
+  if (activeMode === LUMI_ASSISTANT_ID) {
+    return (
+      <div className="mx-auto flex w-full max-w-2xl items-center justify-center px-4 py-8 sm:px-6">
+        <div className="flex w-full max-w-md flex-col items-center text-center">
+          <Image
+            src="/images/lumi/lumi.png"
+            alt="Lumi"
+            width={128}
+            height={128}
+            priority
+            className="size-32 rounded-full object-cover shadow-[0_12px_32px_rgb(0_0_0_/_0.12)] ring-1 ring-border/60"
+          />
+          <h2 className="mt-5 text-xl font-semibold tracking-tight text-foreground">
+            Hi, I&apos;m Lumi
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Your personal 3D modeler, designer, and engineer. Tell me what
+            you&apos;re imagining. I&apos;ll sketch it, bring it to life in 3D,
+            and refine every detail with you until it&apos;s exactly right.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (activeMode) {

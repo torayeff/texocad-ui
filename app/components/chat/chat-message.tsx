@@ -16,6 +16,7 @@ interface ChatMessageProps {
   messageType: ChatMessageType;
   textContent: string;
   thinkingContent?: string;
+  agentAvatarUrl?: string;
   agentName?: string;
   isStreaming?: boolean;
   runtimeSeconds?: number;
@@ -95,6 +96,7 @@ function HumanMessageBubble({ content }: { content: string }) {
 }
 
 function AIMessageView({
+  agentAvatarUrl,
   agentName = "",
   textContent,
   thinkingContent = "",
@@ -106,6 +108,7 @@ function AIMessageView({
   renderMarkdown,
   children,
 }: {
+  agentAvatarUrl?: string;
   agentName?: string;
   textContent: string;
   thinkingContent?: string;
@@ -129,6 +132,7 @@ function AIMessageView({
 
   return (
     <AIPanel
+      agentAvatarUrl={agentAvatarUrl}
       agentName={agentName}
       statusLabel={statusLabel}
       isStreaming={isStreaming}
@@ -171,6 +175,7 @@ export const ChatMessage = React.memo(function ChatMessage({
   messageType,
   textContent,
   thinkingContent = "",
+  agentAvatarUrl,
   agentName,
   isStreaming = false,
   runtimeSeconds,
@@ -186,6 +191,7 @@ export const ChatMessage = React.memo(function ChatMessage({
 
   return (
     <AIMessageView
+      agentAvatarUrl={agentAvatarUrl}
       agentName={agentName}
       textContent={textContent}
       thinkingContent={thinkingContent}

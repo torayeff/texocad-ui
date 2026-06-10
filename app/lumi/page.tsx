@@ -4,7 +4,7 @@ import { SITE_ROUTES } from "@/app/lib/site";
 import LumiClient from "@/app/lumi/_components/lumi-client";
 
 export const metadata: Metadata = {
-  title: "Lumi - AI Concept to 3D Model",
+  title: "Lumi AI - 3D modeler, designer, and engineer",
   description:
     "Describe an idea and Lumi turns it into a preview sketch and a 3D-printable model. Free to try, no account required.",
   alternates: {
