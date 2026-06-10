@@ -43,7 +43,7 @@ interface LumiViewerProps {
 }
 
 const MODE_OPTIONS: Array<{ mode: LumiViewerMode; label: string; icon: typeof Box }> = [
-  { mode: "sketch", label: "Sketch", icon: ImageIcon },
+  { mode: "sketch", label: "2D Sketch", icon: ImageIcon },
   { mode: "model", label: "3D Model", icon: Box },
 ];
 
