@@ -3,6 +3,10 @@ import type { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
 import {
+  ANONYMOUS_SESSION_COOKIE,
+  anonymousOwnerFromToken,
+} from "@/app/lib/server/anonymous-session";
+import {
   createUploadBlobName,
   isBlobStorageConfigured,
   isSafeUploadFilename,
@@ -11,6 +15,16 @@ import {
   signedUploadUrl,
 } from "@/app/lib/server/blob-storage";
 import { hashUserId, isAuthorizedUserBlob } from "@/app/lib/server/storage-auth";
+
+// Owner identity for blob scoping: a signed-in Clerk user id, or the anonymous
+// session owner (`anon:<sub>`) whose hash matches the backend's blob paths.
+async function resolveOwnerId(request: NextRequest) {
+  const { userId } = await auth();
+  if (userId) return userId;
+
+  const anonymousToken = request.cookies.get(ANONYMOUS_SESSION_COOKIE)?.value;
+  return anonymousOwnerFromToken(anonymousToken);
+}
 
 export async function GET(request: NextRequest) {
   const blobUrl = request.nextUrl.searchParams.get("url");
@@ -35,12 +49,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid storage URL" }, { status: 400 });
   }
 
-  const { userId } = await auth();
-  if (!userId) {
+  const ownerId = await resolveOwnerId(request);
+  if (!ownerId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!isAuthorizedUserBlob(resolvedBlob.blobName, hashUserId(userId))) {
+  if (!isAuthorizedUserBlob(resolvedBlob.blobName, hashUserId(ownerId))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -53,8 +67,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const ownerId = await resolveOwnerId(request);
+  if (!ownerId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -69,7 +83,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const blobName = createUploadBlobName(userId, filename);
+    const blobName = createUploadBlobName(ownerId, filename);
     return NextResponse.json(signedUploadUrl(blobName));
   } catch (err) {
     console.error("Failed to generate upload SAS URL:", err);

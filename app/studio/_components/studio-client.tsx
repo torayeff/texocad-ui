@@ -10,24 +10,27 @@ import { PanelBottomOpen, PanelRightOpen } from "lucide-react";
 import { Header } from "@/app/components/header";
 import SketchViewer from "@/app/components/sketch-viewer/sketch-viewer";
 import { cn } from "@/app/lib/cn";
-import Chat from "@/app/studio/_features/chat/_components/chat";
-import { useLanggraphAuth } from "@/app/studio/_features/chat/_hooks/use-langgraph-auth";
-import { uploadFileToBlob } from "@/app/studio/_features/chat/_lib/blob-upload";
+import Chat from "@/app/components/chat/chat";
+import { useLanggraphAuth } from "@/app/hooks/chat/use-langgraph-auth";
+import { uploadFileToBlob } from "@/app/lib/chat/blob-upload";
 import {
   CAD_ASSISTANT_ID,
+  LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
+  isStudioAssistantId,
   studioAssistantIdFromParam,
+  type AssistantId,
   type StudioAssistantId,
-} from "@/app/studio/_features/chat/_lib/langgraph-config";
+} from "@/app/lib/chat/langgraph-config";
 import {
-  STUDIO_AGENT_QUERY_PARAM,
-  STUDIO_THREAD_QUERY_PARAM,
-  studioUrlWithAgent,
-} from "@/app/studio/_features/chat/_lib/studio-chat-url";
-import { readThreadMode } from "@/app/studio/_features/chat/_lib/thread-metadata";
-import type { ChatHandle } from "@/app/studio/_features/chat/_types/chat";
+  AGENT_QUERY_PARAM,
+  THREAD_QUERY_PARAM,
+  chatUrlWithAgent,
+} from "@/app/lib/chat/chat-url";
+import { readThreadMode } from "@/app/lib/chat/thread-metadata";
+import type { ChatHandle } from "@/app/types/chat";
 import { useStudioRevisions } from "@/app/studio/_hooks/use-studio-revisions";
-import { useStudioSplitLayout } from "@/app/studio/_hooks/use-studio-split-layout";
+import { useSplitLayout } from "@/app/hooks/use-split-layout";
 import type { SketchMaskComposerState, SketchMaskEditRequest } from "@/app/types/sketch-viewer";
 
 const ModelViewer = dynamic(
@@ -35,34 +38,41 @@ const ModelViewer = dynamic(
   { ssr: false },
 );
 
+function isStudioThreadVisible(thread: { mode: AssistantId | null }) {
+  return thread.mode !== LUMI_ASSISTANT_ID;
+}
+
 export default function StudioClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [initialAgentMode] = useState<StudioAssistantId | null>(
-    () => studioAssistantIdFromParam(searchParams.get(STUDIO_AGENT_QUERY_PARAM)),
+    () => studioAssistantIdFromParam(searchParams.get(AGENT_QUERY_PARAM)),
   );
   const [studioMode, setStudioModeState] = useState<StudioAssistantId>(
     () => initialAgentMode ?? CAD_ASSISTANT_ID,
   );
   const [isMaskSubmitting, setIsMaskSubmitting] = useState(false);
   const [maskComposer, setMaskComposer] = useState<SketchMaskComposerState | null>(null);
-  const [initialThreadId] = useState(() => searchParams.get(STUDIO_THREAD_QUERY_PARAM));
+  const [initialThreadId] = useState(() => searchParams.get(THREAD_QUERY_PARAM));
   const [isInitialThreadModeResolved, setIsInitialThreadModeResolved] = useState(() => initialThreadId === null);
   const { client, isReady: isAuthReady } = useLanggraphAuth();
   const chatRef = useRef<ChatHandle | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const splitLayout = useStudioSplitLayout({ contentRef });
+  const splitLayout = useSplitLayout({ contentRef });
   const replaceStudioAgentUrl = useCallback((mode: StudioAssistantId | null) => {
     window.history.replaceState(
       window.history.state,
       "",
-      studioUrlWithAgent(pathname, window.location.search, mode),
+      chatUrlWithAgent(pathname, window.location.search, mode),
     );
   }, [pathname]);
   const setStudioMode = useCallback((mode: StudioAssistantId) => {
     setStudioModeState(mode);
     replaceStudioAgentUrl(mode);
   }, [replaceStudioAgentUrl]);
+  const handleChatModeChange = useCallback((mode: AssistantId) => {
+    if (isStudioAssistantId(mode)) setStudioMode(mode);
+  }, [setStudioMode]);
   const resetStudioMode = useCallback(() => {
     setStudioModeState(CAD_ASSISTANT_ID);
     replaceStudioAgentUrl(null);
@@ -80,7 +90,7 @@ export default function StudioClient() {
     void readThreadMode(client, initialThreadId)
       .then((mode) => {
         if (cancelled) return;
-        if (mode) setStudioMode(mode);
+        if (mode && isStudioAssistantId(mode)) setStudioMode(mode);
         setIsInitialThreadModeResolved(true);
       })
       .catch(() => {
@@ -226,10 +236,11 @@ export default function StudioClient() {
               assistantId={studioMode}
               hasInitialAgentMode={initialAgentMode !== null}
               initialThreadId={initialThreadId}
+              isThreadVisible={isStudioThreadVisible}
               maskComposer={maskComposer}
               onDesignRevisionEvent={revisions.handleDesignRevision}
               onDesignRevisionsChange={revisions.handleDesignRevisionsChange}
-              onModeChange={setStudioMode}
+              onModeChange={handleChatModeChange}
               onModeReset={resetStudioMode}
               onSketchRevisionEvent={revisions.handleSketchRevision}
               onSketchRevisionsChange={revisions.handleSketchRevisionsChange}

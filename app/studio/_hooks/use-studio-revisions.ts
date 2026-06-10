@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ShareRevision } from "@/app/types/share-artifact";
-import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type StudioAssistantId } from "@/app/studio/_features/chat/_lib/langgraph-config";
+import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type StudioAssistantId } from "@/app/lib/chat/langgraph-config";
 import {
   latestDesignRevision,
   latestSketchRevision as getLatestSketchRevision,
-} from "@/app/studio/_features/design-revisions/_lib/design-artifacts";
+} from "@/app/lib/design-revisions/design-artifacts";
 import {
   isStepExport,
   isSketchImageExport,
@@ -25,11 +25,11 @@ import {
   sketchRevisionsMatch,
   type SignedSketchRevisionSources,
   type SignedRevisionSources,
-} from "@/app/studio/_features/design-revisions/_lib/revision-sources";
+} from "@/app/lib/design-revisions/revision-sources";
 import type {
   DesignRevisionArtifact,
   SketchRevisionArtifact,
-} from "@/app/studio/_features/design-revisions/_types/design-artifact";
+} from "@/app/types/design-artifact";
 
 export function useStudioRevisions(studioMode: StudioAssistantId, setStudioMode: (mode: StudioAssistantId) => void) {
   const [signedRevisionSources, setSignedRevisionSources] = useState<SignedRevisionSources | null>(null);
