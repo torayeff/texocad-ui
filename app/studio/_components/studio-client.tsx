@@ -17,10 +17,8 @@ import {
   CAD_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
-  isStudioAssistantId,
-  studioAssistantIdFromParam,
+  assistantIdFromParam,
   type AssistantId,
-  type StudioAssistantId,
 } from "@/app/lib/chat/langgraph-config";
 import {
   AGENT_QUERY_PARAM,
@@ -29,6 +27,7 @@ import {
 } from "@/app/lib/chat/chat-url";
 import { readThreadMode } from "@/app/lib/chat/thread-metadata";
 import type { ChatHandle } from "@/app/types/chat";
+import LumiViewer from "@/app/studio/_components/lumi-viewer";
 import { useStudioRevisions } from "@/app/studio/_hooks/use-studio-revisions";
 import { useSplitLayout } from "@/app/hooks/use-split-layout";
 import type { SketchMaskComposerState, SketchMaskEditRequest } from "@/app/types/sketch-viewer";
@@ -38,17 +37,15 @@ const ModelViewer = dynamic(
   { ssr: false },
 );
 
-function isStudioThreadVisible(thread: { mode: AssistantId | null }) {
-  return thread.mode !== LUMI_ASSISTANT_ID;
-}
+const LUMI_AVATAR_URL = "/images/lumi/lumi.png";
 
 export default function StudioClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [initialAgentMode] = useState<StudioAssistantId | null>(
-    () => studioAssistantIdFromParam(searchParams.get(AGENT_QUERY_PARAM)),
+  const [initialAgentMode] = useState<AssistantId | null>(
+    () => assistantIdFromParam(searchParams.get(AGENT_QUERY_PARAM)),
   );
-  const [studioMode, setStudioModeState] = useState<StudioAssistantId>(
+  const [studioMode, setStudioModeState] = useState<AssistantId>(
     () => initialAgentMode ?? CAD_ASSISTANT_ID,
   );
   const [isMaskSubmitting, setIsMaskSubmitting] = useState(false);
@@ -59,25 +56,23 @@ export default function StudioClient() {
   const chatRef = useRef<ChatHandle | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const splitLayout = useSplitLayout({ contentRef });
-  const replaceStudioAgentUrl = useCallback((mode: StudioAssistantId | null) => {
+  const replaceStudioAgentUrl = useCallback((mode: AssistantId | null) => {
     window.history.replaceState(
       window.history.state,
       "",
       chatUrlWithAgent(pathname, window.location.search, mode),
     );
   }, [pathname]);
-  const setStudioMode = useCallback((mode: StudioAssistantId) => {
+  const setStudioMode = useCallback((mode: AssistantId) => {
     setStudioModeState(mode);
     replaceStudioAgentUrl(mode);
   }, [replaceStudioAgentUrl]);
-  const handleChatModeChange = useCallback((mode: AssistantId) => {
-    if (isStudioAssistantId(mode)) setStudioMode(mode);
-  }, [setStudioMode]);
   const resetStudioMode = useCallback(() => {
     setStudioModeState(CAD_ASSISTANT_ID);
     replaceStudioAgentUrl(null);
   }, [replaceStudioAgentUrl]);
   const revisions = useStudioRevisions(studioMode, setStudioMode);
+  const isLumiMode = studioMode === LUMI_ASSISTANT_ID;
   const shouldMountChat = initialThreadId === null || isInitialThreadModeResolved;
 
   useEffect(() => {
@@ -90,7 +85,7 @@ export default function StudioClient() {
     void readThreadMode(client, initialThreadId)
       .then((mode) => {
         if (cancelled) return;
-        if (mode && isStudioAssistantId(mode)) setStudioMode(mode);
+        if (mode) setStudioMode(mode);
         setIsInitialThreadModeResolved(true);
       })
       .catch(() => {
@@ -115,9 +110,12 @@ export default function StudioClient() {
     setIsMaskSubmitting(true);
     try {
       const uploadedMask = await uploadFileToBlob(mask);
-      flushSync(() => {
-        setStudioMode(SKETCH_ASSISTANT_ID);
-      });
+      // Lumi handles masked edits itself; otherwise hand off to the sketch agent.
+      if (!isLumiMode) {
+        flushSync(() => {
+          setStudioMode(SKETCH_ASSISTANT_ID);
+        });
+      }
       const submitted = chatRef.current?.submitMessage([
         "Edit the active sketch using this mask.",
         `Input image: ${revisions.activeSketchExport.blobName}`,
@@ -131,7 +129,7 @@ export default function StudioClient() {
     } finally {
       setIsMaskSubmitting(false);
     }
-  }, [revisions.activeSketchExport, setStudioMode]);
+  }, [isLumiMode, revisions.activeSketchExport, setStudioMode]);
 
   const handleMaskEditorChange = useCallback((state: SketchMaskComposerState | null) => {
     setMaskComposer(state);
@@ -158,7 +156,33 @@ export default function StudioClient() {
           )}
           style={viewerPaneStyle}
         >
-          {revisions.shouldShowSketchViewer ? (
+          {isLumiMode ? (
+            <LumiViewer
+              hasModel={revisions.hasModel}
+              hasSketch={revisions.hasSketch}
+              isMaskSubmitting={isMaskSubmitting}
+              modelSource={revisions.modelSource}
+              modelRevisions={{
+                activeRevisionKey: revisions.activeModelRevisionKey,
+                isLatestRevisionSelected: revisions.isLatestModelRevisionSelected,
+                onSelectLatestRevision: revisions.handleSelectLatestModelRevision,
+                onSelectRevision: revisions.handleSelectModelRevision,
+                revisions: revisions.modelRevisionOptions,
+              }}
+              onMaskEditorChange={handleMaskEditorChange}
+              onSubmitMaskEdit={revisions.activeSketchExport ? handleSketchMaskSubmit : undefined}
+              onViewerModeChange={revisions.setLumiViewerMode}
+              sketchSource={revisions.sketchSource}
+              sketchRevisions={{
+                activeRevisionKey: revisions.activeSketchRevisionKey,
+                isLatestRevisionSelected: revisions.isLatestSketchRevisionSelected,
+                onSelectLatestRevision: revisions.handleSelectLatestSketchRevision,
+                onSelectRevision: revisions.handleSelectSketchRevision,
+                revisions: revisions.sketchRevisionOptions,
+              }}
+              viewerMode={revisions.lumiViewerMode}
+            />
+          ) : revisions.shouldShowSketchViewer ? (
             <SketchViewer
               isMaskSubmitting={isMaskSubmitting}
               onMaskEditorChange={handleMaskEditorChange}
@@ -233,15 +257,17 @@ export default function StudioClient() {
           {shouldMountChat ? (
             <Chat
               ref={chatRef}
+              agentAvatarUrl={isLumiMode ? LUMI_AVATAR_URL : undefined}
               assistantId={studioMode}
               hasInitialAgentMode={initialAgentMode !== null}
               initialThreadId={initialThreadId}
-              isThreadVisible={isStudioThreadVisible}
               maskComposer={maskComposer}
               onDesignRevisionEvent={revisions.handleDesignRevision}
               onDesignRevisionsChange={revisions.handleDesignRevisionsChange}
-              onModeChange={handleChatModeChange}
+              onModeChange={setStudioMode}
               onModeReset={resetStudioMode}
+              onModelRevisionEvent={revisions.handleModelRevision}
+              onModelRevisionsChange={revisions.handleModelRevisionsChange}
               onSketchRevisionEvent={revisions.handleSketchRevision}
               onSketchRevisionsChange={revisions.handleSketchRevisionsChange}
               onClearViewer={handleClearViewer}

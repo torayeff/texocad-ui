@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { Client, Thread } from "@langchain/langgraph-sdk";
 
 import type { ThreadSummary } from "@/app/types/chat";
@@ -50,29 +50,12 @@ function toThreadSummary(thread: Thread): ThreadSummary {
   return { threadId, title, updatedAt, mode: modeFromThread(thread) };
 }
 
-export interface UseThreadHistoryOptions {
-  /** Exact-match metadata filter applied server-side to the thread search. */
-  searchMetadata?: Record<string, unknown>;
-  /** Client-side visibility predicate for modes the search API cannot exclude. */
-  isThreadVisible?: (thread: ThreadSummary) => boolean;
-}
-
-export function useThreadHistory(
-  client: Client,
-  isReady: boolean,
-  options: UseThreadHistoryOptions = {},
-) {
-  const { searchMetadata, isThreadVisible } = options;
+export function useThreadHistory(client: Client, isReady: boolean) {
   const [threads, setThreads] = useState<ThreadSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const offsetRef = useRef(0);
   const fetchIdRef = useRef(0);
-  const optionsRef = useRef({ searchMetadata, isThreadVisible });
-
-  useEffect(() => {
-    optionsRef.current = { searchMetadata, isThreadVisible };
-  }, [searchMetadata, isThreadVisible]);
 
   const fetchThreads = useCallback(async (offset: number, append: boolean) => {
     if (!isReady) return;
@@ -80,22 +63,17 @@ export function useThreadHistory(
     setIsLoading(true);
 
     try {
-      const { searchMetadata: metadata, isThreadVisible: isVisible } = optionsRef.current;
       const results = await client.threads.search({
         limit: PAGE_SIZE,
         offset,
         sortBy: "updated_at",
         sortOrder: "desc",
         select: [...HISTORY_SELECT_FIELDS],
-        ...(metadata ? { metadata } : {}),
       });
 
       if (id !== fetchIdRef.current) return;
 
-      let summaries = results.map(toThreadSummary);
-      if (isVisible) {
-        summaries = summaries.filter(isVisible);
-      }
+      const summaries = results.map(toThreadSummary);
       summaries.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
       setThreads((prev) => append ? [...prev, ...summaries] : summaries);

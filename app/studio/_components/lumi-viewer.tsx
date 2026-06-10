@@ -6,7 +6,7 @@ import { Box, Image as ImageIcon } from "lucide-react";
 import SketchViewer from "@/app/components/sketch-viewer/sketch-viewer";
 import { activeControlClass, viewerGlassClass } from "@/app/components/viewer/viewer-styles";
 import { cn } from "@/app/lib/cn";
-import type { LumiViewerMode } from "@/app/lumi/_hooks/use-lumi-revisions";
+import type { LumiViewerMode } from "@/app/studio/_types/lumi-viewer";
 import type { ModelSource, ViewerRevisionOption } from "@/app/types/model-viewer";
 import type {
   SketchMaskComposerState,

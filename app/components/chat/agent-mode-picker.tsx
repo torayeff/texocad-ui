@@ -2,10 +2,16 @@
 
 import { useCallback } from "react";
 import type { ComponentType } from "react";
+import NextImage from "next/image";
 import { Box, Check, ChevronDown, Image } from "lucide-react";
 
 import { cn } from "@/app/lib/cn";
-import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type StudioAssistantId } from "@/app/lib/chat/langgraph-config";
+import {
+  CAD_ASSISTANT_ID,
+  LUMI_ASSISTANT_ID,
+  SKETCH_ASSISTANT_ID,
+  type AssistantId,
+} from "@/app/lib/chat/langgraph-config";
 import {
   activeControlClass,
   chatGlassClass,
@@ -13,15 +19,33 @@ import {
 } from "@/app/lib/chat/chat-styles";
 import { useDropdown } from "@/app/hooks/chat/use-dropdown";
 
+interface AgentIconProps {
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}
+
+function LumiPortraitIcon({ size = 14, className }: AgentIconProps) {
+  return (
+    <NextImage
+      src="/images/lumi/lumi.png"
+      alt=""
+      width={size}
+      height={size}
+      className={cn("rounded-full object-cover ring-1 ring-border/50", className)}
+    />
+  );
+}
+
 interface AgentModeOption {
-  icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  icon: ComponentType<AgentIconProps>;
   label: string;
-  mode: StudioAssistantId;
+  mode: AssistantId;
 }
 
 interface AgentModePickerProps {
-  activeMode: StudioAssistantId;
-  onModeChange: (mode: StudioAssistantId) => void;
+  activeMode: AssistantId;
+  onModeChange: (mode: AssistantId) => void;
 }
 
 const AGENT_MODE_OPTIONS: AgentModeOption[] = [
@@ -35,9 +59,14 @@ const AGENT_MODE_OPTIONS: AgentModeOption[] = [
     label: "Sketch Agent",
     mode: SKETCH_ASSISTANT_ID,
   },
+  {
+    icon: LumiPortraitIcon,
+    label: "Lumi",
+    mode: LUMI_ASSISTANT_ID,
+  },
 ];
 
-function activeModeOption(activeMode: StudioAssistantId) {
+function activeModeOption(activeMode: AssistantId) {
   return AGENT_MODE_OPTIONS.find((option) => option.mode === activeMode) ?? AGENT_MODE_OPTIONS[0];
 }
 
@@ -46,7 +75,7 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
   const selected = activeModeOption(activeMode);
   const SelectedIcon = selected.icon;
 
-  const handleSelect = useCallback((mode: StudioAssistantId) => {
+  const handleSelect = useCallback((mode: AssistantId) => {
     onModeChange(mode);
     close();
   }, [onModeChange, close]);

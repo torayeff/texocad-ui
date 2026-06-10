@@ -15,7 +15,7 @@ import type {
   ModelRevisionArtifact,
   SketchRevisionArtifact,
 } from "@/app/types/design-artifact";
-import type { ChatHandle, ChatInputHandle, ThreadSummary } from "@/app/types/chat";
+import type { ChatHandle, ChatInputHandle } from "@/app/types/chat";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 
 import { ChatHeader } from "@/app/components/chat/chat-header";
@@ -31,9 +31,7 @@ interface ChatProps {
   agentAvatarUrl?: string;
   assistantId: AssistantId;
   hasInitialAgentMode: boolean;
-  headerTitle?: string;
   initialThreadId?: string | null;
-  isThreadVisible?: (thread: ThreadSummary) => boolean;
   maskComposer: SketchMaskComposerState | null;
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
@@ -45,17 +43,13 @@ interface ChatProps {
   onSketchRevisionsChange: (revisions: SketchRevisionArtifact[]) => void;
   onClearViewer: () => void;
   onToggleCollapse: () => void;
-  showAgentPicker?: boolean;
-  threadSearchMetadata?: Record<string, unknown>;
 }
 
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   agentAvatarUrl,
   assistantId,
   hasInitialAgentMode,
-  headerTitle,
   initialThreadId,
-  isThreadVisible,
   maskComposer,
   onDesignRevisionEvent,
   onDesignRevisionsChange,
@@ -67,8 +61,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   onSketchRevisionsChange,
   onClearViewer,
   onToggleCollapse,
-  showAgentPicker = true,
-  threadSearchMetadata,
 }: ChatProps, ref) {
   const {
     client,
@@ -110,10 +102,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     onModelRevisionsChange?.(modelRevisions);
   }, [modelRevisions, onModelRevisionsChange]);
 
-  const history = useThreadHistory(client, isAuthReady, {
-    searchMetadata: threadSearchMetadata,
-    isThreadVisible,
-  });
+  const history = useThreadHistory(client, isAuthReady);
   const {
     conversationScope,
     handleCancelNewChat,
@@ -229,14 +218,11 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ChatHeader
           activeMode={hasActiveMode ? assistantId : null}
-          agentAvatarUrl={agentAvatarUrl}
           historyOpen={historyOpen}
           onModeChange={handleModeSelect}
           onNewChat={handleNewChat}
           onToggleHistory={toggleHistory}
           onToggleCollapse={onToggleCollapse}
-          showAgentPicker={showAgentPicker}
-          title={headerTitle}
         />
 
         {historyOpen ? (

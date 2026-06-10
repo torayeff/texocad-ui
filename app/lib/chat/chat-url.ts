@@ -1,4 +1,4 @@
-import type { StudioAssistantId } from "@/app/lib/chat/langgraph-config";
+import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 
 export const AGENT_QUERY_PARAM = "agent";
 export const THREAD_QUERY_PARAM = "thread_id";
@@ -23,7 +23,7 @@ function chatUrlWithQueryParam(
 export function chatUrlWithAgent(
   pathname: string,
   currentSearch: string,
-  mode: StudioAssistantId | null,
+  mode: AssistantId | null,
 ) {
   return chatUrlWithQueryParam(pathname, currentSearch, AGENT_QUERY_PARAM, mode);
 }

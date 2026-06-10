@@ -1,9 +1,8 @@
 import React from "react";
-import Image from "next/image";
 import { FileClock, MessageSquarePlus, PanelBottomClose, PanelRightClose, X } from "lucide-react";
 
 import { cn } from "@/app/lib/cn";
-import { isStudioAssistantId, type AssistantId } from "@/app/lib/chat/langgraph-config";
+import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import { AgentModePicker } from "@/app/components/chat/agent-mode-picker";
 import {
   activeControlClass,
@@ -33,34 +32,23 @@ function ChatHeaderActionButton({ children, className, tooltip, ...buttonProps }
 
 interface ChatHeaderProps {
   activeMode: AssistantId | null;
-  agentAvatarUrl?: string;
   historyOpen: boolean;
   onModeChange: (mode: AssistantId) => void;
   onNewChat: () => void;
   onToggleCollapse: () => void;
   onToggleHistory: () => void;
-  showAgentPicker?: boolean;
-  title?: string;
 }
 
 export function ChatHeader({
   activeMode,
-  agentAvatarUrl,
   historyOpen,
   onModeChange,
   onNewChat,
   onToggleCollapse,
   onToggleHistory,
-  showAgentPicker = true,
-  title,
 }: ChatHeaderProps) {
-  const showPicker = !historyOpen
-    && showAgentPicker
-    && activeMode !== null
-    && isStudioAssistantId(activeMode);
-  const headerLabel = historyOpen
-    ? "Chat History"
-    : (showAgentPicker ? "Choose Agent" : (title ?? "Chat"));
+  const showPicker = !historyOpen && activeMode !== null;
+  const headerLabel = historyOpen ? "Chat History" : "Choose Agent";
 
   return (
     <div className={chatHeaderClass}>
@@ -69,20 +57,9 @@ export function ChatHeader({
           {showPicker ? (
             <AgentModePicker activeMode={activeMode} onModeChange={onModeChange} />
           ) : (
-            <>
-              {!historyOpen && agentAvatarUrl ? (
-                <Image
-                  src={agentAvatarUrl}
-                  alt=""
-                  width={22}
-                  height={22}
-                  className="size-[1.375rem] flex-shrink-0 rounded-full object-cover ring-1 ring-border/50"
-                />
-              ) : null}
-              <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
-                {headerLabel}
-              </span>
-            </>
+            <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-foreground">
+              {headerLabel}
+            </span>
           )}
         </div>
         <div className="flex items-center gap-0.5">

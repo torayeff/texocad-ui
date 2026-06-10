@@ -1,8 +1,9 @@
 import type { Client } from "@langchain/langgraph-sdk";
 
-import { CAD_ASSISTANT_ID, SKETCH_ASSISTANT_ID, isAssistantId, type AssistantId } from "@/app/lib/chat/langgraph-config";
+import { CAD_ASSISTANT_ID, LUMI_ASSISTANT_ID, SKETCH_ASSISTANT_ID, isAssistantId, type AssistantId } from "@/app/lib/chat/langgraph-config";
 import {
   designRevisionsFromMessages,
+  modelRevisionsFromMessages,
   sketchRevisionsFromMessages,
 } from "@/app/lib/design-revisions/design-artifacts";
 import { isRecord } from "@/app/lib/type-guards";
@@ -47,6 +48,9 @@ export function modeFromThreadValues(thread: ThreadMetadata | null | undefined):
   if (!thread || !isRecord(thread.values)) return null;
   const messages = thread.values.messages;
   if (!Array.isArray(messages)) return null;
+  // GLB model artifacts only come from Lumi, so they out-rank the sketch check
+  // (Lumi threads usually contain sketches too).
+  if (modelRevisionsFromMessages(messages).length > 0) return LUMI_ASSISTANT_ID;
   if (sketchRevisionsFromMessages(messages).length > 0) return SKETCH_ASSISTANT_ID;
   if (designRevisionsFromMessages(messages).length > 0) return CAD_ASSISTANT_ID;
   return null;

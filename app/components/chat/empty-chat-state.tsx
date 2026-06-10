@@ -1,14 +1,14 @@
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
 
-import type { AssistantId, StudioAssistantId } from "@/app/lib/chat/langgraph-config";
+import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import { CAD_ASSISTANT_ID, LUMI_ASSISTANT_ID, SKETCH_ASSISTANT_ID } from "@/app/lib/chat/langgraph-config";
 import { chatGlassClass } from "@/app/lib/chat/chat-styles";
 
 interface ExamplePrompt {
   label: string;
   description: string;
-  mode: StudioAssistantId;
+  mode: AssistantId;
 }
 
 interface AgentExamplePrompt {
@@ -28,9 +28,15 @@ const MODE_SELECTION_PROMPTS: ExamplePrompt[] = [
     description: "Generate a BREP STEP model.",
     mode: CAD_ASSISTANT_ID,
   },
+  {
+    label: "Lumi",
+    description: "Sketch and model, end to end.",
+    mode: LUMI_ASSISTANT_ID,
+  },
 ];
 
-const AGENT_EXAMPLE_PROMPTS: Record<StudioAssistantId, AgentExamplePrompt[]> = {
+// Lumi has no example prompts: its empty state is the persona greeting below.
+const AGENT_EXAMPLE_PROMPTS: Record<Exclude<AssistantId, typeof LUMI_ASSISTANT_ID>, AgentExamplePrompt[]> = {
   [CAD_ASSISTANT_ID]: [
     {
       description: "Wall-mounted sensor case.",
@@ -152,12 +158,13 @@ export default function EmptyChatState({
             What do you want to build?
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
-            Start with a visual concept or a CAD-ready model.
+            Start with a visual concept, a CAD-ready model, or design end to
+            end with Lumi.
           </p>
         </div>
 
         <div className="mt-6 flex w-full justify-center">
-          <div className={`${chatGlassClass} relative grid w-full max-w-sm grid-cols-2 gap-1.5 rounded-[calc(var(--viewer-control-radius)+0.375rem)] p-1.5 before:absolute before:inset-y-2 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-border/45 before:content-['']`}>
+          <div className={`${chatGlassClass} grid w-full max-w-md grid-cols-3 gap-1.5 rounded-[calc(var(--viewer-control-radius)+0.375rem)] p-1.5`}>
             {MODE_SELECTION_PROMPTS.map((example) => (
               <button
                 key={example.label}
