@@ -146,7 +146,6 @@ export default function LumiClient() {
           <Chat
             ref={chatRef}
             agentAvatarUrl="/images/lumi/lumi.png"
-            allowAnonymous
             assistantId={LUMI_ASSISTANT_ID}
             hasInitialAgentMode
             headerTitle="Lumi"

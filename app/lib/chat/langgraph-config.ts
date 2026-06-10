@@ -1,10 +1,6 @@
 export const LANGGRAPH_API_URL =
   process.env.NEXT_PUBLIC_LANGGRAPH_API_URL;
 
-// Header carrying the signed anonymous-session token to the LangGraph API
-// (cross-origin, so the same-site cookie cannot be used there).
-export const ANONYMOUS_SESSION_HEADER = "x-texocad-anonymous-session";
-
 export type AssistantId = "cad" | "sketch" | "lumi";
 export type StudioAssistantId = "cad" | "sketch";
 

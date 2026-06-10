@@ -54,7 +54,6 @@ interface UseChatStreamEvents {
 
 interface UseChatStreamOptions extends UseChatStreamEvents {
   initialThreadId?: string | null;
-  allowAnonymous?: boolean;
 }
 
 function replaceUrlThreadId(pathname: string, threadId: string | null) {
@@ -72,9 +71,7 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [hasStopRequested, setHasStopRequested] = useState(false);
 
-  const { client, isReady: isAuthReady } = useLanggraphAuth({
-    allowAnonymous: options.allowAnonymous,
-  });
+  const { client, isReady: isAuthReady } = useLanggraphAuth();
 
   const onDesignRevisionEventRef = useRef(options.onDesignRevisionEvent);
   const onModelRevisionEventRef = useRef(options.onModelRevisionEvent);

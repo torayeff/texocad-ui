@@ -21,7 +21,6 @@
     "@types/three": "^0.184.1",
     "@vercel/analytics": "^2.0.1",
     "@wrksz/themes": "^0.9.3",
-    "jose": "^6.2.3",
     "lucide-react": "^1.16.0",
     "next": "^16.2.6",
     "occt-import-js": "^0.0.23",

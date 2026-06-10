@@ -3,10 +3,6 @@ import type { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
 import {
-  ANONYMOUS_SESSION_COOKIE,
-  anonymousOwnerFromToken,
-} from "@/app/lib/server/anonymous-session";
-import {
   createUploadBlobName,
   isBlobStorageConfigured,
   isSafeUploadFilename,
@@ -16,14 +12,10 @@ import {
 } from "@/app/lib/server/blob-storage";
 import { hashUserId, isAuthorizedUserBlob } from "@/app/lib/server/storage-auth";
 
-// Owner identity for blob scoping: a signed-in Clerk user id, or the anonymous
-// session owner (`anon:<sub>`) whose hash matches the backend's blob paths.
-async function resolveOwnerId(request: NextRequest) {
+// Owner identity for blob scoping: the signed-in Clerk user id.
+async function resolveOwnerId() {
   const { userId } = await auth();
-  if (userId) return userId;
-
-  const anonymousToken = request.cookies.get(ANONYMOUS_SESSION_COOKIE)?.value;
-  return anonymousOwnerFromToken(anonymousToken);
+  return userId;
 }
 
 export async function GET(request: NextRequest) {
@@ -49,7 +41,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid storage URL" }, { status: 400 });
   }
 
-  const ownerId = await resolveOwnerId(request);
+  const ownerId = await resolveOwnerId();
   if (!ownerId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -67,7 +59,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const ownerId = await resolveOwnerId(request);
+  const ownerId = await resolveOwnerId();
   if (!ownerId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

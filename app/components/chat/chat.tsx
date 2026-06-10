@@ -29,7 +29,6 @@ const GENERIC_CHAT_ERROR_MESSAGE = "Something went wrong. Please try again.";
 
 interface ChatProps {
   agentAvatarUrl?: string;
-  allowAnonymous?: boolean;
   assistantId: AssistantId;
   hasInitialAgentMode: boolean;
   headerTitle?: string;
@@ -52,7 +51,6 @@ interface ChatProps {
 
 const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   agentAvatarUrl,
-  allowAnonymous = false,
   assistantId,
   hasInitialAgentMode,
   headerTitle,
@@ -91,7 +89,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     sketchRevisions,
     modelRevisions,
   } = useChatStream(assistantId, {
-    allowAnonymous,
     initialThreadId,
     onDesignRevisionEvent,
     onModelRevisionEvent,
