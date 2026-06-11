@@ -52,6 +52,7 @@ function FormaPortraitIcon({ size = 14, className }: AgentIconProps) {
 
 interface AgentModeOption {
   icon: ComponentType<AgentIconProps>;
+  iconKind: "glyph" | "portrait";
   label: string;
   mode: AssistantId;
   role: string;
@@ -65,12 +66,14 @@ interface AgentModePickerProps {
 const PRIMARY_AGENT_MODE_OPTIONS: AgentModeOption[] = [
   {
     icon: LumiPortraitIcon,
+    iconKind: "portrait",
     label: "Lumi",
     mode: LUMI_ASSISTANT_ID,
     role: "Concept designer",
   },
   {
     icon: FormaPortraitIcon,
+    iconKind: "portrait",
     label: "Forma",
     mode: FORMA_ASSISTANT_ID,
     role: "CAD engineer",
@@ -80,12 +83,14 @@ const PRIMARY_AGENT_MODE_OPTIONS: AgentModeOption[] = [
 const LEGACY_AGENT_MODE_OPTIONS: AgentModeOption[] = [
   {
     icon: Image,
+    iconKind: "glyph",
     label: "Sketch (Legacy)",
     mode: SKETCH_ASSISTANT_ID,
     role: "Concept sketches",
   },
   {
     icon: Box,
+    iconKind: "glyph",
     label: "CAD (Legacy)",
     mode: CAD_ASSISTANT_ID,
     role: "BREP CAD",
@@ -101,6 +106,40 @@ function activeModeOption(activeMode: AssistantId) {
   return AGENT_MODE_OPTIONS.find((option) => option.mode === activeMode) ?? AGENT_MODE_OPTIONS[0];
 }
 
+function AgentModeIcon({
+  isSelected = false,
+  option,
+  placement,
+}: {
+  isSelected?: boolean;
+  option: AgentModeOption;
+  placement: "option" | "trigger";
+}) {
+  const Icon = option.icon;
+  const isTrigger = placement === "trigger";
+  const frameSizeClass = isTrigger ? "size-[1.375rem]" : "size-6";
+
+  if (option.iconKind === "portrait") {
+    return (
+      <span className={cn("grid shrink-0 place-items-center overflow-hidden rounded-full", frameSizeClass)}>
+        <Icon size={isTrigger ? 22 : 24} className="size-full" />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={cn(
+        "grid shrink-0 place-items-center rounded-full border border-border/45 bg-muted/70",
+        frameSizeClass,
+        isSelected ? "border-background/30 bg-background/15 text-background" : "text-muted-foreground",
+      )}
+    >
+      <Icon size={isTrigger ? 14 : 15} strokeWidth={1.75} />
+    </span>
+  );
+}
+
 function AgentModeOptionButton({
   activeMode,
   isLegacy = false,
@@ -113,7 +152,6 @@ function AgentModeOptionButton({
   option: AgentModeOption;
 }) {
   const isSelected = option.mode === activeMode;
-  const OptionIcon = option.icon;
 
   return (
     <button
@@ -123,27 +161,24 @@ function AgentModeOptionButton({
       onClick={() => onSelect(option.mode)}
       className={cn(
         controlMenuItemClass,
-        isLegacy && !isSelected && "opacity-60 hover:opacity-85",
+        "min-h-10 px-2.5 py-1.5",
+        isLegacy && !isSelected && "opacity-75 hover:opacity-100",
         isSelected && activeControlClass,
       )}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        <OptionIcon
-          size={14}
-          strokeWidth={1.75}
-          className={cn("shrink-0", isSelected ? "text-background" : "text-muted-foreground")}
-        />
+      <span className="flex min-w-0 items-center gap-2.5">
+        <AgentModeIcon isSelected={isSelected} option={option} placement="option" />
         <span className="min-w-0">
           <span className={cn("block truncate font-medium", isSelected ? "text-background" : "text-foreground")}>
             {option.label}
           </span>
-          <span className={cn("block truncate text-[10px] font-normal leading-3", isSelected ? "text-background/70" : "text-muted-foreground")}>
+          <span className={cn("block truncate text-[10px] font-normal leading-[0.875rem]", isSelected ? "text-background/70" : "text-muted-foreground")}>
             {option.role}
           </span>
         </span>
       </span>
       {isSelected ? (
-        <Check size={14} className="shrink-0 text-background" />
+        <Check size={13} className="shrink-0 text-background" />
       ) : null}
     </button>
   );
@@ -152,7 +187,6 @@ function AgentModeOptionButton({
 export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerProps) {
   const { isOpen, containerRef, toggle, close } = useDropdown();
   const selected = activeModeOption(activeMode);
-  const SelectedIcon = selected.icon;
 
   const handleSelect = useCallback((mode: AssistantId) => {
     onModeChange(mode);
@@ -166,12 +200,12 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
         onClick={() => toggle()}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="-ml-2.5 flex h-9 items-center gap-2.5 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+        className="-ml-2 flex h-8 items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 text-[13px] font-semibold tracking-[-0.01em] text-foreground transition-colors hover:bg-muted"
       >
-        <SelectedIcon size={24} strokeWidth={1.75} className="text-muted-foreground" />
-        <span>{selected.label}</span>
+        <AgentModeIcon option={selected} placement="trigger" />
+        <span className="truncate">{selected.label}</span>
         <ChevronDown
-          size={13}
+          size={12}
           className={`text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
@@ -181,7 +215,7 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
           role="listbox"
           className={cn(
             chatGlassClass,
-            "absolute left-0 top-[calc(100%+0.375rem)] z-30 grid w-52 gap-1 rounded-[var(--viewer-control-radius)] bg-background/95 p-1 text-foreground shadow-[0_14px_36px_rgb(0_0_0_/_0.16)]",
+            "absolute left-0 top-[calc(100%+0.375rem)] z-30 grid w-56 gap-1 rounded-[var(--viewer-control-radius)] bg-background/95 p-1 text-foreground shadow-[0_14px_36px_rgb(0_0_0_/_0.16)]",
           )}
         >
           {PRIMARY_AGENT_MODE_OPTIONS.map((option) => (
@@ -193,7 +227,7 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
             />
           ))}
 
-          <div className="my-1 flex items-center gap-2 px-2" role="separator">
+          <div className="my-0.5 flex items-center gap-2 px-2" role="separator">
             <span className="h-px flex-1 bg-border/60" />
             <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Legacy agents

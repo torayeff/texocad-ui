@@ -63,9 +63,9 @@ function AgentIcon({ option }: { option: AgentSelectionOption }) {
       <Image
         src={option.avatarUrl}
         alt=""
-        width={64}
-        height={64}
-        className="size-16 rounded-full object-cover ring-1 ring-border/50"
+        width={44}
+        height={44}
+        className="size-11 rounded-full object-cover shadow-[0_1px_2px_rgb(0_0_0_/_0.08)] ring-1 ring-border/50"
       />
     );
   }
@@ -74,8 +74,8 @@ function AgentIcon({ option }: { option: AgentSelectionOption }) {
 
   const Icon = option.icon;
   return (
-    <span className="grid size-16 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
-      <Icon size={24} strokeWidth={1.6} />
+    <span className="grid size-11 shrink-0 place-items-center rounded-full border border-border/45 bg-muted/70 text-muted-foreground">
+      <Icon size={17} strokeWidth={1.7} />
     </span>
   );
 }
@@ -94,23 +94,23 @@ function AgentOptionButton({
       type="button"
       onClick={() => onModeSelect(option.mode)}
       className={cn(
-        "group flex w-full items-center gap-4 rounded-[calc(var(--viewer-control-radius)+0.25rem)] border bg-background/70 px-4 py-4 text-left shadow-[0_1px_2px_rgb(0_0_0_/_0.05)] transition-[background-color,border-color,box-shadow,color,opacity] hover:border-border hover:bg-background hover:text-foreground",
+        "group flex w-full items-center gap-3 rounded-[calc(var(--viewer-control-radius)+0.125rem)] border bg-background/70 px-3.5 py-3 text-left shadow-[0_1px_2px_rgb(0_0_0_/_0.04)] transition-[background-color,border-color,box-shadow,color,opacity] hover:border-border/80 hover:bg-background hover:text-foreground hover:shadow-[0_8px_22px_rgb(0_0_0_/_0.06)]",
         "border-border/40",
-        isLegacy && "opacity-60 hover:opacity-85",
+        isLegacy && "opacity-75 hover:opacity-100",
       )}
     >
       <AgentIcon option={option} />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="text-base font-semibold text-foreground">{option.label}</span>
-          <span className="text-xs font-medium text-muted-foreground">{option.role}</span>
+          <span className="text-sm font-semibold tracking-[-0.01em] text-foreground">{option.label}</span>
+          <span className="text-[11px] font-medium text-muted-foreground">{option.role}</span>
         </span>
-        <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+        <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
           {option.description}
         </span>
       </span>
       <span className="inline-flex shrink-0 items-center text-muted-foreground/0 transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-muted-foreground">
-        <ArrowRight size={16} strokeWidth={2} />
+        <ArrowRight size={14} strokeWidth={2} />
       </span>
     </button>
   );
@@ -124,8 +124,8 @@ function SectionLabel({
   icon: LucideIcon;
 }) {
   return (
-    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-      <Icon size={14} strokeWidth={1.7} />
+    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+      <Icon size={13} strokeWidth={1.7} />
       <span>{children}</span>
       <span className="h-px flex-1 bg-border/60" />
     </div>
@@ -138,8 +138,8 @@ export function AgentSelectionList({
   onModeSelect: (mode: AssistantId) => void;
 }) {
   return (
-    <div className="w-full max-w-xl space-y-5">
-      <section className="space-y-3">
+    <div className="w-full max-w-lg space-y-4">
+      <section className="space-y-2">
         <SectionLabel icon={Sparkles}>Recommended agents</SectionLabel>
         {PRIMARY_AGENT_OPTIONS.map((option) => (
           <AgentOptionButton
@@ -150,7 +150,7 @@ export function AgentSelectionList({
         ))}
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-2">
         <SectionLabel icon={Archive}>Legacy agents</SectionLabel>
         {LEGACY_AGENT_OPTIONS.map((option) => (
           <AgentOptionButton
