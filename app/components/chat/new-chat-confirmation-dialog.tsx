@@ -22,8 +22,8 @@ const focusableSelector = [
 ].join(",");
 
 function agentLabel(mode: AssistantId) {
-  if (mode === SKETCH_ASSISTANT_ID) return "Sketch Agent";
-  if (mode === CAD_ASSISTANT_ID) return "CAD Agent";
+  if (mode === SKETCH_ASSISTANT_ID) return "Sketch (Legacy)";
+  if (mode === CAD_ASSISTANT_ID) return "CAD (Legacy)";
   if (mode === LUMI_ASSISTANT_ID) return "Lumi";
   if (mode === FORMA_ASSISTANT_ID) return "Forma";
   return mode;

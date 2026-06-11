@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
 
+import { AgentSelectionList } from "@/app/components/chat/agent-selection-list";
 import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import {
   CAD_ASSISTANT_ID,
@@ -9,13 +12,6 @@ import {
   SKETCH_ASSISTANT_ID,
   isEndToEndAssistantId,
 } from "@/app/lib/chat/langgraph-config";
-import { chatGlassClass } from "@/app/lib/chat/chat-styles";
-
-interface ExamplePrompt {
-  label: string;
-  description: string;
-  mode: AssistantId;
-}
 
 interface AgentExamplePrompt {
   description: string;
@@ -32,29 +28,6 @@ interface EndToEndAgentGreeting {
   description: string;
   title: string;
 }
-
-const MODE_SELECTION_PROMPTS: ExamplePrompt[] = [
-  {
-    label: "Sketch image",
-    description: "Generate a visual sketch image.",
-    mode: SKETCH_ASSISTANT_ID,
-  },
-  {
-    label: "CAD model",
-    description: "Generate a BREP CAD design.",
-    mode: CAD_ASSISTANT_ID,
-  },
-  {
-    label: "Lumi",
-    description: "3D assets from ideas.",
-    mode: LUMI_ASSISTANT_ID,
-  },
-  {
-    label: "Forma",
-    description: "CAD from requirements.",
-    mode: FORMA_ASSISTANT_ID,
-  },
-];
 
 const END_TO_END_AGENT_GREETINGS: Record<EndToEndAssistantId, EndToEndAgentGreeting> = {
   [LUMI_ASSISTANT_ID]: {
@@ -193,28 +166,12 @@ export default function EmptyChatState({
             What do you want to build?
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
-            Start with a visual concept, a CAD-ready design, a 3D model, or
-            precise parametric CAD.
+            Choose an agent to get started in the chat.
           </p>
         </div>
 
         <div className="mt-6 flex w-full justify-center">
-          <div className={`${chatGlassClass} grid w-full max-w-xl grid-cols-2 gap-1.5 rounded-[calc(var(--viewer-control-radius)+0.375rem)] p-1.5 sm:grid-cols-4`}>
-            {MODE_SELECTION_PROMPTS.map((example) => (
-              <button
-                key={example.label}
-                onClick={() => onModeSelect(example.mode)}
-                aria-pressed={activeMode === example.mode}
-                className={`rounded-[var(--viewer-control-radius)] border px-3 py-2.5 text-center transition-[background-color,border-color,color,box-shadow] ${activeMode === example.mode
-                  ? "border-border bg-background text-foreground shadow-[0_4px_14px_rgb(0_0_0_/_0.10)]"
-                  : "border-transparent text-foreground/85 hover:border-border/45 hover:bg-muted hover:text-foreground"
-                  }`}
-              >
-                <span className="block text-sm font-medium">{example.label}</span>
-                <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{example.description}</span>
-              </button>
-            ))}
-          </div>
+          <AgentSelectionList onModeSelect={onModeSelect} />
         </div>
       </div>
     </div>

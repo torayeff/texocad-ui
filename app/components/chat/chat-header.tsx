@@ -48,7 +48,7 @@ export function ChatHeader({
   onToggleHistory,
 }: ChatHeaderProps) {
   const showPicker = !historyOpen && activeMode !== null;
-  const headerLabel = historyOpen ? "Chat History" : "Choose Agent";
+  const headerLabel = historyOpen ? "Chat History" : "Agents";
 
   return (
     <div className={chatHeaderClass}>
