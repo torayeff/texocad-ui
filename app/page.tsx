@@ -50,45 +50,40 @@ export default function Home() {
         <ExpertNetworkBanner />
         <SiteHeader />
 
-        <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-12 px-6 py-8 sm:px-10 lg:min-h-0 lg:grid-cols-[0.8fr_1fr] lg:grid-rows-[minmax(0,1fr)] lg:px-12 lg:py-4">
+        <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-8 px-6 py-8 sm:px-10 lg:min-h-0 lg:grid-cols-[0.72fr_1fr] lg:grid-rows-[minmax(0,1fr)] lg:gap-4 lg:px-12 lg:pb-4 lg:pt-6">
           <div className="max-w-xl lg:self-center">
-            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-[3.25rem]">
               Turn ideas into
               <br />
               real products
             </h1>
-            <p className="mt-6 max-w-md text-base leading-6 text-muted-foreground sm:text-lg sm:leading-7">
+            <p className="mt-5 max-w-md text-base leading-6 text-muted-foreground sm:text-lg sm:leading-7 lg:text-base lg:leading-6">
               Create product designs with AI agents and human experts, from
               requirements and concepts to CAD and simulation.
             </p>
           </div>
 
           <div className="relative lg:min-h-0 lg:self-stretch">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto aspect-square w-3/4 max-w-full -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_center,rgb(45_212_191_/_0.09),transparent_62%)]"
-            />
             <HeroPointCloud />
           </div>
         </section>
 
         <section
           aria-labelledby="agents-heading"
-          className="mx-auto w-full max-w-7xl px-6 pb-14 sm:px-10 lg:px-12 lg:pb-10"
+          className="mx-auto w-full max-w-7xl px-6 pb-14 pt-6 sm:px-10 sm:pt-8 lg:px-12 lg:pb-10 lg:pt-4"
         >
-          <div className="mb-4 flex items-center gap-4">
+          <div className="mb-3 flex items-center gap-4">
             <h2
               id="agents-heading"
               className="text-sm font-semibold tracking-tight text-foreground"
             >
               Meet the agents
             </h2>
-            <span aria-hidden="true" className="h-px flex-1 bg-border" />
           </div>
           <AgentProfileGrid />
         </section>
 
-        <footer className="mx-auto mt-auto flex w-full max-w-7xl justify-center gap-6 px-[var(--app-chrome-gutter)] pb-6 text-xs font-normal text-foreground/35 sm:justify-end lg:pb-5">
+        <footer className="mx-auto mt-auto flex w-full max-w-7xl justify-center gap-6 px-[var(--app-chrome-gutter)] pb-6 text-xs font-normal text-foreground/35 sm:justify-end lg:pb-4">
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
             className="transition-colors hover:text-foreground/60"

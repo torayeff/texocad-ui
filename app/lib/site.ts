@@ -8,7 +8,7 @@ export const LEGAL_ENTITY_ADDRESS =
   "18 The Power Station, Robominder Ltd, London, England, SW11 8BZ";
 export const LEGAL_GOVERNING_LAW = "England and Wales";
 export const LEGAL_LAST_UPDATED = "20 April 2026";
-export const SITE_TITLE = "TexoCAD - Agentic CAD for Physical Product Builders";
+export const SITE_TITLE = "TexoCAD - AI Agents for Physical Product Builders";
 export const SITE_DESCRIPTION =
   "Turn product ideas into real products with AI design agents and human experts for requirements, concepts, CAD, simulation, and manufacturing-ready outputs.";
 export const SITE_KEYWORDS = [

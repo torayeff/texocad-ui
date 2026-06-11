@@ -4,49 +4,32 @@ import { useEffect, useRef } from "react";
 import {
   BufferAttribute,
   BufferGeometry,
-  CanvasTexture,
-  DynamicDrawUsage,
+  Matrix3,
+  Matrix4,
   PerspectiveCamera,
   Points,
-  PointsMaterial,
   Scene,
+  ShaderMaterial,
   WebGLRenderer,
 } from "three";
 
+import type { HeroPointTargetId } from "@/app/_lib/hero-point-targets";
 import {
   buildHeroPointData,
   HERO_POINT_COUNT,
-} from "@/app/_lib/hero-point-shapes";
+  HERO_POINT_TARGETS,
+} from "@/app/_lib/hero-point-targets";
 
 // ---------------------------------------------------------------------------
 // Timeline
 // ---------------------------------------------------------------------------
 
-interface TimelineSegment {
-  hold: number;
-  morph: number;
-}
-
-/** Hold/morph timing per shape, in buildHeroPointData order. */
-const SEGMENTS: TimelineSegment[] = [
-  { hold: 3.2, morph: 1.6 }, // drone
-  { hold: 3.2, morph: 1.6 }, // headphones
-  { hold: 3.2, morph: 1.6 }, // plane
-  { hold: 3.2, morph: 1.6 }, // camera
-  { hold: 3.2, morph: 1.6 }, // vase
-];
-const CYCLE_DURATION = SEGMENTS.reduce(
-  (sum, segment) => sum + segment.hold + segment.morph,
-  0,
-);
-const REDUCED_MOTION_TIME = SEGMENTS[0].hold / 2;
-
-/** Tiny resting shimmer; kept low so held shapes stay crisp. */
-const STATE_JITTER = 0.003;
-/** Extra scatter at the midpoint of a morph for the dissolve effect. */
-const MORPH_SCATTER = 0.055;
-const STAGGER_SPREAD = 0.28;
-const BOB_AMPLITUDE = 0.02;
+const TARGET_COUNT = HERO_POINT_TARGETS.length;
+const HOLD_DURATION = 3.6;
+const MORPH_DURATION = 1.9;
+const SEGMENT_DURATION = HOLD_DURATION + MORPH_DURATION;
+const CYCLE_DURATION = SEGMENT_DURATION * TARGET_COUNT;
+const REDUCED_MOTION_TIME = HOLD_DURATION / 2;
 
 interface TimelineSample {
   from: number;
@@ -55,24 +38,19 @@ interface TimelineSample {
 }
 
 function sampleTimeline(cycleTime: number): TimelineSample {
-  let start = 0;
-  for (let index = 0; index < SEGMENTS.length; index++) {
-    const segment = SEGMENTS[index];
-    if (cycleTime < start + segment.hold) {
-      return { from: index, to: index, progress: 0 };
-    }
-    if (cycleTime < start + segment.hold + segment.morph) {
-      const next = (index + 1) % SEGMENTS.length;
-      const progress = (cycleTime - start - segment.hold) / segment.morph;
-      return { from: index, to: next, progress };
-    }
-    start += segment.hold + segment.morph;
+  const segment = Math.min(
+    TARGET_COUNT - 1,
+    Math.floor(cycleTime / SEGMENT_DURATION),
+  );
+  const local = cycleTime - segment * SEGMENT_DURATION;
+  if (local < HOLD_DURATION) {
+    return { from: segment, to: segment, progress: 0 };
   }
-  return { from: 0, to: 0, progress: 0 };
-}
-
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  return {
+    from: segment,
+    to: (segment + 1) % TARGET_COUNT,
+    progress: (local - HOLD_DURATION) / MORPH_DURATION,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -86,68 +64,122 @@ interface ShapePose {
   tiltZ: number;
 }
 
-/** Indexed like SEGMENTS: drone, headphones, plane, camera, vase. */
-const SHAPE_POSES: ShapePose[] = [
-  { spin: 0.42, tiltX: -0.58, tiltZ: 0.08 },
-  { spin: 0.45, tiltX: -0.22, tiltZ: 0.06 },
-  { spin: 0.45, tiltX: -0.3, tiltZ: 0.2 },
-  { spin: 0.42, tiltX: -0.28, tiltZ: 0.05 },
-  { spin: 0.5, tiltX: -0.3, tiltZ: 0.05 },
-];
+/**
+ * Radially symmetric parts (fan, bearing, gears) are pitched toward the
+ * camera so spinning around Y reads as the part rotating on its own axis.
+ */
+const TARGET_POSES: Record<HeroPointTargetId, ShapePose> = {
+  turbofan: { spin: 0.5, tiltX: -1.08, tiltZ: 0.08 },
+  bolt: { spin: 0.85, tiltX: -0.3, tiltZ: 0.55 },
+  gears: { spin: 0.45, tiltX: -0.92, tiltZ: 0.05 },
+  drone: { spin: 0.4, tiltX: -0.45, tiltZ: 0 },
+  bearing: { spin: 0.55, tiltX: -1.0, tiltZ: 0.14 },
+  piston: { spin: 0.5, tiltX: -0.25, tiltZ: 0.08 },
+  rocketEngine: { spin: 0.35, tiltX: -0.3, tiltZ: 0.12 },
+};
 
-const POSE_TRIG = SHAPE_POSES.map((pose) => ({
-  cosX: Math.cos(pose.tiltX),
-  sinX: Math.sin(pose.tiltX),
-  cosZ: Math.cos(pose.tiltZ),
-  sinZ: Math.sin(pose.tiltZ),
-}));
+const SHAPE_POSES: ShapePose[] = HERO_POINT_TARGETS.map(
+  (target) => TARGET_POSES[target.id],
+);
 
 // ---------------------------------------------------------------------------
-// Palette — mid-tone colors that read on both light and dark backgrounds
+// Palette — monochrome: neutral grays varied only in brightness, so the
+// cloud stays on-scheme and reads on both light and dark backgrounds
 // ---------------------------------------------------------------------------
 
 type Rgb = [number, number, number];
 
-interface HeroPalette {
-  base: Rgb;
-  teal: Rgb;
-  blue: Rgb;
-  spark: Rgb;
-}
+/** Indexed by the tint byte from buildHeroPointData. */
+const HERO_PALETTE: Rgb[] = [
+  [0.5, 0.5, 0.5],
+  [0.36, 0.36, 0.36],
+  [0.68, 0.68, 0.68],
+  [0.92, 0.92, 0.92],
+];
 
-const HERO_PALETTE: HeroPalette = {
-  base: [0.46, 0.52, 0.6],
-  teal: [0.1, 0.62, 0.55],
-  blue: [0.25, 0.5, 0.88],
-  spark: [0.88, 0.95, 1],
-};
+// ---------------------------------------------------------------------------
+// Shaders — morph, stagger, swirl, and sprite shading all run on the GPU
+// ---------------------------------------------------------------------------
 
-const TINT_ORDER: (keyof HeroPalette)[] = ["base", "teal", "blue", "spark"];
+const POINT_WORLD_SIZE = 0.013;
+
+const VERTEX_SHADER = /* glsl */ `
+  attribute vec3 positionTo;
+  attribute float aStagger;
+  attribute float aSize;
+  attribute vec3 aColor;
+
+  uniform float uTime;
+  uniform float uProgress;
+  uniform float uPointScale;
+  uniform mat3 uMatFrom;
+  uniform mat3 uMatTo;
+
+  varying vec3 vColor;
+  varying float vFlight;
+  varying float vFade;
+
+  float easeInOutCubic(float t) {
+    return t < 0.5 ? 4.0 * t * t * t : 1.0 - pow(-2.0 * t + 2.0, 3.0) * 0.5;
+  }
+
+  void main() {
+    float spread = 0.34;
+    float local = clamp((uProgress - aStagger * spread) / (1.0 - spread), 0.0, 1.0);
+    float eased = easeInOutCubic(local);
+
+    vec3 from = uMatFrom * position;
+    vec3 to = uMatTo * positionTo;
+    vec3 pos = mix(from, to, eased);
+
+    // Each point dissolves, swirls, and reforms on its own flight envelope.
+    float flight = sin(3.14159265 * eased);
+    float seed = fract(aStagger * 61.17 + aSize * 13.73) * 6.2831853;
+    vec3 drift = vec3(
+      sin(uTime * 1.35 + seed + pos.y * 2.4),
+      sin(uTime * 1.07 + seed * 1.7 + pos.x * 2.1),
+      sin(uTime * 1.62 + seed * 2.3 + pos.z * 2.7)
+    );
+    pos += drift * (0.004 + flight * 0.11);
+    pos += normalize(pos + vec3(1e-4)) * flight * (0.05 + 0.1 * aStagger);
+
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    float size = aSize * (1.0 + flight * 1.1) * uPointScale;
+    gl_PointSize = clamp(size / -mvPosition.z, 1.25, 22.0);
+
+    vColor = aColor;
+    vFlight = flight;
+    vFade = clamp((-mvPosition.z - 2.6) / 3.4, 0.0, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+
+/** Bright core keeps points visible on dark themes, dark rim on light ones. */
+const FRAGMENT_SHADER = /* glsl */ `
+  varying vec3 vColor;
+  varying float vFlight;
+  varying float vFade;
+
+  void main() {
+    vec2 offset = gl_PointCoord - 0.5;
+    float dist = length(offset);
+    if (dist > 0.5) discard;
+
+    float body = smoothstep(0.5, 0.3, dist);
+    float core = smoothstep(0.17, 0.0, dist);
+    float rim = smoothstep(0.3, 0.44, dist) * (1.0 - smoothstep(0.44, 0.5, dist));
+
+    vec3 color = mix(vColor, vec3(1.0), core * (0.75 + vFlight * 0.25));
+    color = mix(color, vec3(0.13), rim * 0.55);
+
+    float alpha = body * (0.95 - vFade * 0.45);
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
 
 // ---------------------------------------------------------------------------
 // Runtime
 // ---------------------------------------------------------------------------
-
-/**
- * Round sprite with a bright core and a dark rim: the core keeps points
- * visible on dark backgrounds, the rim outlines them on light ones.
- */
-function createDotTexture(): CanvasTexture | null {
-  const canvas = document.createElement("canvas");
-  canvas.width = 64;
-  canvas.height = 64;
-  const context = canvas.getContext("2d");
-  if (!context) return null;
-  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
-  gradient.addColorStop(0, "rgba(255,255,255,1)");
-  gradient.addColorStop(0.4, "rgba(255,255,255,0.96)");
-  gradient.addColorStop(0.55, "rgba(34,38,46,0.85)");
-  gradient.addColorStop(0.78, "rgba(34,38,46,0.3)");
-  gradient.addColorStop(1, "rgba(34,38,46,0)");
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 64, 64);
-  return new CanvasTexture(canvas);
-}
 
 function createHeroPointCloud(container: HTMLElement): (() => void) | null {
   let renderer: WebGLRenderer;
@@ -162,33 +194,52 @@ function createHeroPointCloud(container: HTMLElement): (() => void) | null {
   }
 
   const data = buildHeroPointData();
-  const positions = new Float32Array(data.shapes[0]);
+  const shapeAttributes = data.shapes.map(
+    (shape) => new BufferAttribute(shape, 3),
+  );
+
   const colors = new Float32Array(HERO_POINT_COUNT * 3);
   for (let index = 0; index < HERO_POINT_COUNT; index++) {
-    const rgb = HERO_PALETTE[TINT_ORDER[data.tint[index]]];
-    const brightness = 0.82 + data.stagger[index] * 0.32;
-    const offset = index * 3;
-    colors[offset] = Math.min(1, rgb[0] * brightness);
-    colors[offset + 1] = Math.min(1, rgb[1] * brightness);
-    colors[offset + 2] = Math.min(1, rgb[2] * brightness);
+    const rgb = HERO_PALETTE[data.tint[index]];
+    const brightness = 0.8 + data.stagger[index] * 0.35;
+    colors[index * 3] = Math.min(1, rgb[0] * brightness);
+    colors[index * 3 + 1] = Math.min(1, rgb[1] * brightness);
+    colors[index * 3 + 2] = Math.min(1, rgb[2] * brightness);
   }
 
   const geometry = new BufferGeometry();
-  const positionAttribute = new BufferAttribute(positions, 3);
-  positionAttribute.setUsage(DynamicDrawUsage);
-  geometry.setAttribute("position", positionAttribute);
-  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  geometry.setAttribute("aStagger", new BufferAttribute(data.stagger, 1));
+  geometry.setAttribute("aSize", new BufferAttribute(data.size, 1));
+  geometry.setAttribute("aColor", new BufferAttribute(colors, 3));
 
-  const texture = createDotTexture();
-  const material = new PointsMaterial({
-    size: 0.03,
-    vertexColors: true,
-    map: texture,
+  let boundFrom = -1;
+  let boundTo = -1;
+  const bindShapes = (from: number, to: number) => {
+    if (boundFrom !== from) {
+      geometry.setAttribute("position", shapeAttributes[from]);
+      boundFrom = from;
+    }
+    if (boundTo !== to) {
+      geometry.setAttribute("positionTo", shapeAttributes[to]);
+      boundTo = to;
+    }
+  };
+  bindShapes(0, 0);
+
+  const uniforms = {
+    uTime: { value: 0 },
+    uProgress: { value: 0 },
+    uPointScale: { value: 1 },
+    uMatFrom: { value: new Matrix3() },
+    uMatTo: { value: new Matrix3() },
+  };
+
+  const material = new ShaderMaterial({
+    vertexShader: VERTEX_SHADER,
+    fragmentShader: FRAGMENT_SHADER,
+    uniforms,
     transparent: true,
-    opacity: 0.96,
     depthWrite: false,
-    sizeAttenuation: true,
-    alphaTest: 0.01,
   });
 
   const points = new Points(geometry, material);
@@ -197,7 +248,7 @@ function createHeroPointCloud(container: HTMLElement): (() => void) | null {
   scene.add(points);
 
   const camera = new PerspectiveCamera(38, 1, 0.1, 24);
-  camera.position.set(0, 0.08, 4.25);
+  camera.position.set(0, 0.06, 4.3);
   camera.lookAt(0, 0, 0);
 
   renderer.setClearColor(0x000000, 0);
@@ -209,10 +260,14 @@ function createHeroPointCloud(container: HTMLElement): (() => void) | null {
   const resize = () => {
     const width = Math.max(1, container.clientWidth);
     const height = Math.max(1, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const pixelRatio = Math.min(window.devicePixelRatio, 2);
+    renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    uniforms.uPointScale.value =
+      (POINT_WORLD_SIZE * height * pixelRatio) /
+      (2 * Math.tan((camera.fov * Math.PI) / 360));
   };
   resize();
   const resizeObserver = new ResizeObserver(resize);
@@ -222,95 +277,49 @@ function createHeroPointCloud(container: HTMLElement): (() => void) | null {
     "(prefers-reduced-motion: reduce)",
   );
 
-  const scratchFrom: [number, number, number] = [0, 0, 0];
-  const scratchTo: [number, number, number] = [0, 0, 0];
-
-  const writeState = (
-    state: number,
-    index: number,
-    elapsed: number,
-    out: [number, number, number],
-  ) => {
-    const source = data.shapes[state];
-    const offset = index * 3;
-    let x = source[offset];
-    let y = source[offset + 1];
-    let z = source[offset + 2];
-
+  const poseMatrix = new Matrix4();
+  const scratchRotation = new Matrix4();
+  const composePose = (state: number, elapsed: number, target: Matrix3) => {
     const pose = SHAPE_POSES[state];
-    const trig = POSE_TRIG[state];
-
-    // Spin around the vertical axis.
-    const angle = elapsed * pose.spin;
-    const spinCos = Math.cos(angle);
-    const spinSin = Math.sin(angle);
-    const spunX = spinCos * x + spinSin * z;
-    z = spinCos * z - spinSin * x;
-    x = spunX;
-
-    // Fixed presentation tilt: pitch, then roll.
-    const tiltedY = trig.cosX * y - trig.sinX * z;
-    z = trig.sinX * y + trig.cosX * z;
-    y = tiltedY;
-    if (trig.sinZ !== 0) {
-      const rolledX = trig.cosZ * x - trig.sinZ * y;
-      y = trig.sinZ * x + trig.cosZ * y;
-      x = rolledX;
+    poseMatrix.makeRotationY(elapsed * pose.spin + state * 1.1);
+    scratchRotation.makeRotationX(pose.tiltX);
+    poseMatrix.premultiply(scratchRotation);
+    if (pose.tiltZ !== 0) {
+      scratchRotation.makeRotationZ(pose.tiltZ);
+      poseMatrix.premultiply(scratchRotation);
     }
-
-    out[0] = x;
-    out[1] = y + Math.sin(elapsed * 0.7 + state * 1.3) * BOB_AMPLITUDE;
-    out[2] = z;
+    target.setFromMatrix4(poseMatrix);
   };
 
   const update = (elapsed: number) => {
-    const cycleTime = elapsed % CYCLE_DURATION;
-    const sample = sampleTimeline(cycleTime);
-    const morphing = sample.from !== sample.to;
-    const scatter = morphing
-      ? Math.sin(Math.PI * sample.progress) * MORPH_SCATTER
-      : 0;
-    const amplitude = STATE_JITTER + scatter;
+    const sample = sampleTimeline(elapsed % CYCLE_DURATION);
+    bindShapes(sample.from, sample.to);
 
-    for (let index = 0; index < HERO_POINT_COUNT; index++) {
-      writeState(sample.from, index, elapsed, scratchFrom);
-      let eased = 0;
-
-      if (morphing) {
-        const local =
-          (sample.progress - data.stagger[index] * STAGGER_SPREAD) /
-          (1 - STAGGER_SPREAD);
-        eased = easeInOutCubic(Math.min(1, Math.max(0, local)));
-      }
-
-      let x = scratchFrom[0];
-      let y = scratchFrom[1];
-      let z = scratchFrom[2];
-      if (eased > 0) {
-        writeState(sample.to, index, elapsed, scratchTo);
-        x += (scratchTo[0] - x) * eased;
-        y += (scratchTo[1] - y) * eased;
-        z += (scratchTo[2] - z) * eased;
-      }
-
-      const offset = index * 3;
-      positions[offset] =
-        x + Math.sin(elapsed * 1.7 + index * 0.911) * amplitude;
-      positions[offset + 1] =
-        y + Math.sin(elapsed * 1.45 + index * 1.567) * amplitude * 0.85;
-      positions[offset + 2] =
-        z + Math.sin(elapsed * 1.95 + index * 2.317) * amplitude * 0.7;
+    composePose(sample.from, elapsed, uniforms.uMatFrom.value);
+    if (sample.to === sample.from) {
+      uniforms.uMatTo.value.copy(uniforms.uMatFrom.value);
+    } else {
+      composePose(sample.to, elapsed, uniforms.uMatTo.value);
     }
-    positionAttribute.needsUpdate = true;
+
+    uniforms.uTime.value = elapsed;
+    uniforms.uProgress.value = sample.progress;
+    points.position.y = Math.sin(elapsed * 0.55) * 0.025;
+
+    camera.position.x = Math.sin(elapsed * 0.12) * 0.1;
+    camera.position.y = 0.06 + Math.sin(elapsed * 0.09 + 1.7) * 0.05;
+    camera.lookAt(0, 0, 0);
   };
 
   let frameId = 0;
   const startTime = performance.now();
   const renderFrame = (now: number) => {
     frameId = requestAnimationFrame(renderFrame);
+    // The first RAF timestamp can predate startTime; clamp so the
+    // timeline math never sees a negative time.
     const elapsed = reducedMotionQuery.matches
       ? REDUCED_MOTION_TIME
-      : (now - startTime) / 1000;
+      : Math.max(0, (now - startTime) / 1000);
     update(elapsed);
     renderer.render(scene, camera);
   };
@@ -322,7 +331,6 @@ function createHeroPointCloud(container: HTMLElement): (() => void) | null {
     renderer.domElement.remove();
     geometry.dispose();
     material.dispose();
-    texture?.dispose();
     renderer.dispose();
   };
 }
