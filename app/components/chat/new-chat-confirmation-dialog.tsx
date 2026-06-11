@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { cn } from "@/app/lib/cn";
-import { CAD_ASSISTANT_ID, FORMA_ASSISTANT_ID, LUMI_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type AssistantId } from "@/app/lib/chat/langgraph-config";
+import { CAD_ASSISTANT_ID, CLARI_ASSISTANT_ID, FORMA_ASSISTANT_ID, LUMI_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type AssistantId } from "@/app/lib/chat/langgraph-config";
 import { chatGlassClass } from "@/app/lib/chat/chat-styles";
 import type { NewChatConfirmationIntent } from "@/app/types/chat";
 
@@ -26,6 +26,7 @@ function agentLabel(mode: AssistantId) {
   if (mode === CAD_ASSISTANT_ID) return "CAD (Legacy)";
   if (mode === LUMI_ASSISTANT_ID) return "Lumi";
   if (mode === FORMA_ASSISTANT_ID) return "Forma";
+  if (mode === CLARI_ASSISTANT_ID) return "Clari";
   return mode;
 }
 

@@ -1,5 +1,6 @@
 import { AGENT_QUERY_PARAM } from "@/app/lib/chat/chat-url";
 import {
+  CLARI_ASSISTANT_ID,
   FORMA_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   type AssistantId,
@@ -58,7 +59,7 @@ export const AGENT_PROFILES: readonly AgentProfile[] = [
       "Stakeholder alignment",
       "Concept handoff planning",
     ],
-    startHref: null,
+    startHref: studioAgentHref(CLARI_ASSISTANT_ID),
   },
   {
     name: "Forma",

@@ -8,6 +8,7 @@ import { Box, Check, ChevronDown, Image } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import {
   CAD_ASSISTANT_ID,
+  CLARI_ASSISTANT_ID,
   FORMA_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
@@ -50,6 +51,18 @@ function FormaPortraitIcon({ size = 14, className }: AgentIconProps) {
   );
 }
 
+function ClariPortraitIcon({ size = 14, className }: AgentIconProps) {
+  return (
+    <NextImage
+      src="/images/agents/clari.png"
+      alt=""
+      width={size}
+      height={size}
+      className={cn("rounded-full object-cover ring-1 ring-border/50", className)}
+    />
+  );
+}
+
 interface AgentModeOption {
   icon: ComponentType<AgentIconProps>;
   iconKind: "glyph" | "portrait";
@@ -65,11 +78,18 @@ interface AgentModePickerProps {
 
 const PRIMARY_AGENT_MODE_OPTIONS: AgentModeOption[] = [
   {
+    icon: ClariPortraitIcon,
+    iconKind: "portrait",
+    label: "Clari",
+    mode: CLARI_ASSISTANT_ID,
+    role: "Requirements engineer",
+  },
+  {
     icon: LumiPortraitIcon,
     iconKind: "portrait",
     label: "Lumi",
     mode: LUMI_ASSISTANT_ID,
-    role: "Concept designer",
+    role: "Concept engineer",
   },
   {
     icon: FormaPortraitIcon,

@@ -11,6 +11,28 @@ interface LanggraphAuthState {
   getToken: ReturnType<typeof useAuth>["getToken"];
 }
 
+const ANONYMOUS_SESSION_STORAGE_KEY = "texocad-anonymous-session-id";
+
+let cachedAnonymousSessionId: string | null = null;
+
+function anonymousSessionId(): string {
+  if (cachedAnonymousSessionId) return cachedAnonymousSessionId;
+  try {
+    const storedId = window.localStorage.getItem(ANONYMOUS_SESSION_STORAGE_KEY);
+    if (storedId) {
+      cachedAnonymousSessionId = storedId;
+      return storedId;
+    }
+    const sessionId = crypto.randomUUID();
+    window.localStorage.setItem(ANONYMOUS_SESSION_STORAGE_KEY, sessionId);
+    cachedAnonymousSessionId = sessionId;
+    return sessionId;
+  } catch {
+    cachedAnonymousSessionId = crypto.randomUUID();
+    return cachedAnonymousSessionId;
+  }
+}
+
 export function useLanggraphAuth() {
   const { getToken, isSignedIn, isLoaded } = useAuth();
   const authStateRef = useRef<LanggraphAuthState>({ isSignedIn, getToken });
@@ -30,6 +52,12 @@ export function useLanggraphAuth() {
       if (token) {
         const headers = new Headers(init.headers);
         headers.set("Authorization", `Bearer ${token}`);
+        return { ...init, headers };
+      }
+
+      if (signedIn === false) {
+        const headers = new Headers(init.headers);
+        headers.set("Authorization", `Anonymous ${anonymousSessionId()}`);
         return { ...init, headers };
       }
 

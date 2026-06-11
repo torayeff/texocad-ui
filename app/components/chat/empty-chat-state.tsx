@@ -6,10 +6,10 @@ import { AgentSelectionList } from "@/app/components/chat/agent-selection-list";
 import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import {
   CAD_ASSISTANT_ID,
+  CLARI_ASSISTANT_ID,
   FORMA_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
-  isEndToEndAssistantId,
 } from "@/app/lib/chat/langgraph-config";
 
 interface AgentExamplePrompt {
@@ -18,17 +18,26 @@ interface AgentExamplePrompt {
   prompt: string;
 }
 
-type EndToEndAssistantId = typeof LUMI_ASSISTANT_ID | typeof FORMA_ASSISTANT_ID;
-type ExamplePromptAssistantId = Exclude<AssistantId, EndToEndAssistantId>;
+type GreetingAssistantId =
+  | typeof CLARI_ASSISTANT_ID
+  | typeof LUMI_ASSISTANT_ID
+  | typeof FORMA_ASSISTANT_ID;
+type ExamplePromptAssistantId = Exclude<AssistantId, GreetingAssistantId>;
 
-interface EndToEndAgentGreeting {
+interface AgentGreeting {
   alt: string;
   avatarUrl: string;
   description: string;
   title: string;
 }
 
-const END_TO_END_AGENT_GREETINGS: Record<EndToEndAssistantId, EndToEndAgentGreeting> = {
+const AGENT_GREETINGS: Record<GreetingAssistantId, AgentGreeting> = {
+  [CLARI_ASSISTANT_ID]: {
+    alt: "Clari",
+    avatarUrl: "/images/agents/clari.png",
+    description: "I turn rough ideas into clear, complete briefs. Tell me what you want to build; I'll ask focused questions, capture requirements, constraints, and success criteria, and deliver a brief ready to hand off.",
+    title: "Hi, I'm Clari",
+  },
   [LUMI_ASSISTANT_ID]: {
     alt: "Lumi",
     avatarUrl: "/images/agents/lumi.png",
@@ -42,6 +51,12 @@ const END_TO_END_AGENT_GREETINGS: Record<EndToEndAssistantId, EndToEndAgentGreet
     title: "Hi, I'm Forma",
   },
 };
+
+function isGreetingAssistantId(mode: AssistantId | null): mode is GreetingAssistantId {
+  return mode === CLARI_ASSISTANT_ID
+    || mode === LUMI_ASSISTANT_ID
+    || mode === FORMA_ASSISTANT_ID;
+}
 
 const AGENT_EXAMPLE_PROMPTS: Record<ExamplePromptAssistantId, AgentExamplePrompt[]> = {
   [CAD_ASSISTANT_ID]: [
@@ -85,8 +100,8 @@ export default function EmptyChatState({
     return null;
   }
 
-  if (isEndToEndAssistantId(activeMode)) {
-    const greeting = END_TO_END_AGENT_GREETINGS[activeMode];
+  if (isGreetingAssistantId(activeMode)) {
+    const greeting = AGENT_GREETINGS[activeMode];
 
     return (
       <div className="mx-auto flex w-full max-w-2xl items-center justify-center px-4 sm:px-6 sm:py-8">

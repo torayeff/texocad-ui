@@ -15,6 +15,7 @@ import { useLanggraphAuth } from "@/app/hooks/chat/use-langgraph-auth";
 import { uploadFileToBlob } from "@/app/lib/chat/blob-upload";
 import {
   CAD_ASSISTANT_ID,
+  CLARI_ASSISTANT_ID,
   FORMA_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
@@ -41,6 +42,7 @@ const ModelViewer = dynamic(
 const AGENT_AVATAR_URLS: Partial<Record<AssistantId, string>> = {
   [LUMI_ASSISTANT_ID]: "/images/agents/lumi.png",
   [FORMA_ASSISTANT_ID]: "/images/agents/forma.png",
+  [CLARI_ASSISTANT_ID]: "/images/agents/clari.png",
 };
 
 function agentAvatarUrl(mode: AssistantId) {
@@ -53,6 +55,7 @@ function viewerKindForAssistant(mode: AssistantId): StudioViewerKind {
   switch (mode) {
     case CAD_ASSISTANT_ID:
     case FORMA_ASSISTANT_ID:
+    case CLARI_ASSISTANT_ID:
       return "cad";
     case SKETCH_ASSISTANT_ID:
       return "sketch";

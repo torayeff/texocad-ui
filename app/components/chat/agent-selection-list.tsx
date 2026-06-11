@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 
 import {
   CAD_ASSISTANT_ID,
+  CLARI_ASSISTANT_ID,
   FORMA_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
@@ -19,15 +20,22 @@ interface AgentSelectionOption {
   description: string;
   icon?: LucideIcon;
   label: string;
-  mode: AssistantId;
+  mode: AssistantId | null;
   role: string;
 }
 
 const PRIMARY_AGENT_OPTIONS: AgentSelectionOption[] = [
   {
+    avatarUrl: "/images/agents/clari.png",
+    label: "Clari",
+    role: "Requirements engineer",
+    description: "Briefs with requirements and success criteria.",
+    mode: CLARI_ASSISTANT_ID,
+  },
+  {
     avatarUrl: "/images/agents/lumi.png",
     label: "Lumi",
-    role: "Concept designer",
+    role: "Concept engineer",
     description: "Images and GLB-ready 3D assets.",
     mode: LUMI_ASSISTANT_ID,
   },
@@ -37,6 +45,13 @@ const PRIMARY_AGENT_OPTIONS: AgentSelectionOption[] = [
     role: "CAD engineer",
     description: "CAD parts and STEP-ready assemblies.",
     mode: FORMA_ASSISTANT_ID,
+  },
+  {
+    avatarUrl: "/images/agents/nexis.png",
+    label: "Nexis",
+    role: "Simulation engineer",
+    description: "Loads, motion, and thermal studies.",
+    mode: null,
   },
 ];
 
@@ -63,9 +78,9 @@ function AgentIcon({ option }: { option: AgentSelectionOption }) {
       <Image
         src={option.avatarUrl}
         alt=""
-        width={44}
-        height={44}
-        className="size-11 rounded-full object-cover shadow-[0_1px_2px_rgb(0_0_0_/_0.08)] ring-1 ring-border/50"
+        width={40}
+        height={40}
+        className="size-10 rounded-full object-cover shadow-[0_1px_2px_rgb(0_0_0_/_0.08)] ring-1 ring-border/50"
       />
     );
   }
@@ -74,8 +89,8 @@ function AgentIcon({ option }: { option: AgentSelectionOption }) {
 
   const Icon = option.icon;
   return (
-    <span className="grid size-11 shrink-0 place-items-center rounded-full border border-border/45 bg-muted/70 text-muted-foreground">
-      <Icon size={17} strokeWidth={1.7} />
+    <span className="grid size-10 shrink-0 place-items-center rounded-full border border-border/45 bg-muted/70 text-muted-foreground">
+      <Icon size={16} strokeWidth={1.7} />
     </span>
   );
 }
@@ -89,13 +104,21 @@ function AgentOptionButton({
   option: AgentSelectionOption;
   onModeSelect: (mode: AssistantId) => void;
 }) {
+  const isComingSoon = option.mode === null;
+
   return (
     <button
       type="button"
-      onClick={() => onModeSelect(option.mode)}
+      disabled={isComingSoon}
+      onClick={() => {
+        if (option.mode !== null) onModeSelect(option.mode);
+      }}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-[calc(var(--viewer-control-radius)+0.125rem)] border bg-background/70 px-3.5 py-3 text-left shadow-[0_1px_2px_rgb(0_0_0_/_0.04)] transition-[background-color,border-color,box-shadow,color,opacity] hover:border-border/80 hover:bg-background hover:text-foreground hover:shadow-[0_8px_22px_rgb(0_0_0_/_0.06)]",
+        "group flex w-full items-center gap-3 rounded-[calc(var(--viewer-control-radius)+0.125rem)] border bg-background/70 px-3.5 py-2 text-left shadow-[0_1px_2px_rgb(0_0_0_/_0.04)] transition-[background-color,border-color,box-shadow,color,opacity]",
         "border-border/40",
+        isComingSoon
+          ? "opacity-60"
+          : "hover:border-border/80 hover:bg-background hover:text-foreground hover:shadow-[0_8px_22px_rgb(0_0_0_/_0.06)]",
         isLegacy && "opacity-75 hover:opacity-100",
       )}
     >
@@ -109,9 +132,15 @@ function AgentOptionButton({
           {option.description}
         </span>
       </span>
-      <span className="inline-flex shrink-0 items-center text-muted-foreground/0 transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-muted-foreground">
-        <ArrowRight size={14} strokeWidth={2} />
-      </span>
+      {isComingSoon ? (
+        <span className="inline-flex shrink-0 items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+          Coming soon
+        </span>
+      ) : (
+        <span className="inline-flex shrink-0 items-center text-muted-foreground/0 transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-muted-foreground">
+          <ArrowRight size={14} strokeWidth={2} />
+        </span>
+      )}
     </button>
   );
 }
@@ -138,23 +167,23 @@ export function AgentSelectionList({
   onModeSelect: (mode: AssistantId) => void;
 }) {
   return (
-    <div className="w-full max-w-lg space-y-4">
-      <section className="space-y-2">
-        <SectionLabel icon={Sparkles}>Recommended agents</SectionLabel>
+    <div className="w-full max-w-lg space-y-3">
+      <section className="space-y-1.5">
+        <SectionLabel icon={Sparkles}>Active agents</SectionLabel>
         {PRIMARY_AGENT_OPTIONS.map((option) => (
           <AgentOptionButton
-            key={option.mode}
+            key={option.label}
             option={option}
             onModeSelect={onModeSelect}
           />
         ))}
       </section>
 
-      <section className="space-y-2">
+      <section className="space-y-1.5">
         <SectionLabel icon={Archive}>Legacy agents</SectionLabel>
         {LEGACY_AGENT_OPTIONS.map((option) => (
           <AgentOptionButton
-            key={option.mode}
+            key={option.label}
             option={option}
             isLegacy
             onModeSelect={onModeSelect}
