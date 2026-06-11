@@ -17,7 +17,7 @@ interface ChatMessageProps {
   textContent: string;
   thinkingContent?: string;
   agentAvatarUrl?: string;
-  agentName?: string;
+  agentName: string;
   isStreaming?: boolean;
   runtimeSeconds?: number;
   startedAtMs?: number;
@@ -109,7 +109,7 @@ function AIMessageView({
   children,
 }: {
   agentAvatarUrl?: string;
-  agentName?: string;
+  agentName: string;
   textContent: string;
   thinkingContent?: string;
   isStreaming: boolean;
@@ -143,7 +143,6 @@ function AIMessageView({
         <InlineThinkingBlock
           content={thinkingContent}
           isStreaming={isStreaming}
-          defaultOpen={false}
         />
       ) : null}
 

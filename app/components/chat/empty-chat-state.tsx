@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
 
 import { AgentSelectionList } from "@/app/components/chat/agent-selection-list";
 import type { AssistantId } from "@/app/lib/chat/langgraph-config";
@@ -73,28 +72,15 @@ const AGENT_EXAMPLE_PROMPTS: Record<ExamplePromptAssistantId, AgentExamplePrompt
 
 export default function EmptyChatState({
   activeMode,
-  isHydrating,
   isBusy,
   onModeSelect,
   onPromptSelect,
 }: {
   activeMode: AssistantId | null;
-  isHydrating: boolean;
   isBusy: boolean;
   onModeSelect: (mode: AssistantId) => void;
   onPromptSelect: (prompt: string) => void;
 }) {
-  if (isHydrating) {
-    return (
-      <div className="mx-auto flex min-h-[320px] w-full max-w-2xl items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
-        <div className="flex items-center justify-center gap-2 px-6 py-8 text-sm text-muted-foreground">
-          <Loader2 size={16} className="animate-spin" />
-          <span>Loading conversation...</span>
-        </div>
-      </div>
-    );
-  }
-
   if (isBusy) {
     return null;
   }

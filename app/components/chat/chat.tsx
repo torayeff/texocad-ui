@@ -9,7 +9,7 @@ import { useChatScroll } from "@/app/hooks/chat/use-chat-scroll";
 import { useChatSessionController } from "@/app/hooks/chat/use-chat-session-controller";
 import { useChatMessageView } from "@/app/hooks/chat/use-chat-message-view";
 import { useChatMessageSubmission } from "@/app/hooks/chat/use-chat-message-submission";
-import type { AssistantId } from "@/app/lib/chat/langgraph-config";
+import { assistantDisplayName, type AssistantId } from "@/app/lib/chat/langgraph-config";
 import type {
   DesignRevisionArtifact,
   ModelRevisionArtifact,
@@ -143,6 +143,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     shouldShowTodoList,
   } = useChatMessageView({
     conversationScope,
+    defaultAgentName: assistantDisplayName(assistantId),
     isLoading,
     messages,
     pendingHumanMessage,
@@ -251,7 +252,6 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
             messagesEndRef={messagesEndRef}
             onModeSelect={handleModeSelect}
             onPromptSelect={handlePromptSelect}
-            pendingHumanMessage={pendingHumanMessage}
             pendingHumanText={pendingHumanText}
             scrollToBottom={scrollToBottom}
             shouldRenderPendingHumanMessage={shouldRenderPendingHumanMessage}

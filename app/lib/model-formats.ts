@@ -3,12 +3,12 @@ import type { ModelFormat } from "@/app/types/model-viewer";
 
 import { slugify } from "@/app/lib/slugify";
 
-export const localModelShareExtensions: LocalModelShareExtension[] = ["step", "stl", "glb", "gltf"];
+const localModelShareExtensions: LocalModelShareExtension[] = ["step", "stl", "glb", "gltf"];
 export const maxLocalModelShareUploadBytes = 100 * 1024 * 1024;
 export const maxLocalModelShareApiBodyBytes = 8 * 1024;
 export const maxLocalModelShareFileNameChars = 255;
 export const maxLocalModelShareNameChars = 80;
-export const maxLocalModelShareSlugChars = 96;
+const maxLocalModelShareSlugChars = 96;
 export const localModelShareFileSizeMessage = "Model files must be 100 MB or smaller.";
 
 const acceptedLocalShareExtensions = new Map<string, LocalModelShareExtension>([

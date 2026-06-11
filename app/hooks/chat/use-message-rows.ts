@@ -25,6 +25,7 @@ export function useMessageRows({
   messages,
   isLoading,
   conversationScope,
+  defaultAgentName,
   shouldRenderPendingHumanMessage,
   stream,
   timer,
@@ -32,10 +33,11 @@ export function useMessageRows({
   messages: BaseMessage[];
   isLoading: boolean;
   conversationScope: string;
+  defaultAgentName: string;
   shouldRenderPendingHumanMessage: boolean;
   stream: StreamRowAccessors;
   timer: AssistantTimer;
-}): { messageRows: MessageRow[]; activeAssistantRowKey: string | null } {
+}): { messageRows: MessageRow[] } {
   const prevActiveRowKeyRef = useRef<string | null>(null);
 
   const messageRows = useMemo(() => {
@@ -69,6 +71,7 @@ export function useMessageRows({
           messageType: "human",
           textContent: getMessageTextContent(message),
           thinkingContent: "",
+          agentName: "",
           isStreaming: false,
           startedAtMs: undefined,
           toolCalls: EMPTY_TOOL_CALLS,
@@ -106,7 +109,7 @@ export function useMessageRows({
         messageType: "ai",
         textContent,
         thinkingContent,
-        agentName: message.name ?? "",
+        agentName: message.name?.trim() || defaultAgentName,
         isStreaming: isActive,
         runtimeSeconds,
         startedAtMs: isActive ? timer.getStartedAtMs(rowKey) : undefined,
@@ -123,6 +126,7 @@ export function useMessageRows({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     conversationScope,
+    defaultAgentName,
     isLoading,
     messages,
     shouldRenderPendingHumanMessage,
@@ -149,5 +153,5 @@ export function useMessageRows({
     prevActiveRowKeyRef.current = activeAssistantRowKey;
   }, [activeAssistantRowKey, timer]);
 
-  return { messageRows, activeAssistantRowKey };
+  return { messageRows };
 }

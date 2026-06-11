@@ -25,7 +25,7 @@ export interface MessageRow {
   messageType: "human" | "ai";
   textContent: string;
   thinkingContent: string;
-  agentName?: string;
+  agentName: string;
   isStreaming: boolean;
   runtimeSeconds?: number;
   startedAtMs?: number;

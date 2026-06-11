@@ -11,6 +11,7 @@ import type { AssistantTimer, TodoItem } from "@/app/types/chat";
 
 interface UseChatMessageViewOptions {
   conversationScope: string;
+  defaultAgentName: string;
   isLoading: boolean;
   messages: BaseMessage[];
   pendingHumanMessage: BaseMessage | null;
@@ -21,6 +22,7 @@ interface UseChatMessageViewOptions {
 
 export function useChatMessageView({
   conversationScope,
+  defaultAgentName,
   isLoading,
   messages,
   pendingHumanMessage,
@@ -51,6 +53,7 @@ export function useChatMessageView({
     messages,
     isLoading,
     conversationScope,
+    defaultAgentName,
     shouldRenderPendingHumanMessage,
     stream: rowStreamAccessors,
     timer,

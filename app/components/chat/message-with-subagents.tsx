@@ -33,7 +33,7 @@ interface MessageWithSubagentsProps {
   textContent: string;
   thinkingContent?: string;
   agentAvatarUrl?: string;
-  agentName?: string;
+  agentName: string;
   isStreaming?: boolean;
   runtimeSeconds?: number;
   startedAtMs?: number;

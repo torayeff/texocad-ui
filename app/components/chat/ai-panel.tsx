@@ -14,7 +14,7 @@ export function AIPanel({
   children,
 }: {
   agentAvatarUrl?: string;
-  agentName?: string;
+  agentName: string;
   hideHeader?: boolean;
   statusLabel: string | null;
   isStreaming: boolean;
@@ -46,7 +46,7 @@ export function AIPanel({
         ) : (
           <Bot size={18} className="flex-shrink-0 text-muted-foreground/70" />
         )}
-        <span className="text-sm font-medium text-foreground/90">{agentName || "Assistant"}</span>
+        <span className="text-sm font-medium text-foreground/90">{agentName}</span>
         {statusLabel ? (
           <span
             className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${isStreaming ? "bg-success/10 text-success" : "bg-muted text-muted-foreground/80"

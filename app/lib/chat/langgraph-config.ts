@@ -22,3 +22,20 @@ export function isEndToEndAssistantId(value: unknown): value is typeof LUMI_ASSI
 export function assistantIdFromParam(value: string | null | undefined): AssistantId | null {
   return isAssistantId(value) ? value : null;
 }
+
+export function assistantDisplayName(assistantId: AssistantId) {
+  switch (assistantId) {
+    case CAD_ASSISTANT_ID:
+      return "CAD";
+    case SKETCH_ASSISTANT_ID:
+      return "Sketch";
+    case LUMI_ASSISTANT_ID:
+      return "Lumi";
+    case FORMA_ASSISTANT_ID:
+      return "Forma";
+    default: {
+      const exhaustiveAssistantId: never = assistantId;
+      return exhaustiveAssistantId;
+    }
+  }
+}

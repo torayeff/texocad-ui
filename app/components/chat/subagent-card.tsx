@@ -144,6 +144,7 @@ export const SubagentCard = React.memo(function SubagentCard({
             <div className="space-y-1.5">
               <AIPanel
                 hideHeader
+                agentName=""
                 statusLabel={resolvedStatus === "running" ? "Working" : null}
                 isStreaming={resolvedStatus === "running"}
               >
@@ -151,7 +152,6 @@ export const SubagentCard = React.memo(function SubagentCard({
                   <InlineThinkingBlock
                     content={detailState?.thinking ?? ""}
                     isStreaming={isStreaming}
-                    defaultOpen={false}
                   />
                 ) : null}
 

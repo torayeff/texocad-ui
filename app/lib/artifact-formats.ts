@@ -1,5 +1,5 @@
 export const STEP_CONTENT_TYPE = "application/step";
-export const GLB_CONTENT_TYPE = "model/gltf-binary";
+const GLB_CONTENT_TYPE = "model/gltf-binary";
 
 export function isStepExport(filename: string, contentType: string) {
   const lowerFilename = filename.toLowerCase();

@@ -1,6 +1,6 @@
 "use client";
 
-export function safeDownloadFileName(fileName: string, fallback = "download") {
+function safeDownloadFileName(fileName: string, fallback = "download") {
   return fileName.replace(/[<>:"/\\|?*\x00-\x1F]/g, "_").trim().slice(0, 255) || fallback;
 }
 

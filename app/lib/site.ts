@@ -51,7 +51,6 @@ export const SITE_ROUTES = {
   studio: "/studio",
   pricing: "/pricing",
   expertNetwork: "/expert-network",
-  expertNetworkSuccess: "/expert-network/success",
   privacy: "/privacy",
   viewer: "/viewer",
   terms: "/terms",

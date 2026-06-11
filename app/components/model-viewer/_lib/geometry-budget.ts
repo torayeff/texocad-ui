@@ -1,13 +1,13 @@
 import * as THREE from "three";
 
-export const maxModelSourceBytes = 100 * 1024 * 1024;
-export const maxEdgeOverlayTriangles = 250_000;
+const maxModelSourceBytes = 100 * 1024 * 1024;
+const maxEdgeOverlayTriangles = 250_000;
 
 const maxModelMeshes = 1000;
 const maxModelTriangles = 2_000_000;
 const maxModelVertices = 2_000_000;
 
-export function modelTooLargeError() {
+function modelTooLargeError() {
   return new Error("Model is too large or complex to preview safely.");
 }
 

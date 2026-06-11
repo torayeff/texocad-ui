@@ -9,7 +9,7 @@ export interface BrowserNodeEntry {
   visible: boolean;
 }
 
-export interface BrowserTreeBuildResult {
+interface BrowserTreeBuildResult {
   entries: Map<string, BrowserNodeEntry>;
   nodes: ModelBrowserNode[];
 }

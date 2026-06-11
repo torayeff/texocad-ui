@@ -8,7 +8,7 @@ import type { LoadProgress, LoadState } from "@/app/types/model-viewer";
 import { primaryButtonClass, viewerGlassClass } from "@/app/components/viewer/viewer-styles";
 import { cn } from "@/app/lib/cn";
 
-export const modelFileAccept = ".step,.stp,.stl,.glb,.gltf,model/step,model/stl,model/gltf-binary,model/gltf+json";
+const modelFileAccept = ".step,.stp,.stl,.glb,.gltf,model/step,model/stl,model/gltf-binary,model/gltf+json";
 
 interface ModelLoadPanelProps {
   loadProgress: LoadProgress | null;

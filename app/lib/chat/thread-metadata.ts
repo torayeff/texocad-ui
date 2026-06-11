@@ -9,9 +9,9 @@ import {
 import { isRecord } from "@/app/lib/type-guards";
 
 export const THREAD_AGENT_MODE_METADATA_KEY = "agent_mode";
-export const THREAD_GRAPH_METADATA_KEY = "graph_id";
+const THREAD_GRAPH_METADATA_KEY = "graph_id";
 export const THREAD_TITLE_METADATA_KEY = "texocad_title";
-export const THREAD_TITLE_MAX_LENGTH = 100;
+const THREAD_TITLE_MAX_LENGTH = 100;
 
 interface ThreadMetadata {
   metadata?: unknown;
@@ -35,7 +35,7 @@ export function titleFromThreadMetadata(thread: ThreadMetadata | null | undefine
   return typeof title === "string" ? normalizeThreadTitle(title) : null;
 }
 
-export function modeFromThreadMetadata(thread: ThreadMetadata | null | undefined): AssistantId | null {
+function modeFromThreadMetadata(thread: ThreadMetadata | null | undefined): AssistantId | null {
   if (!thread || !isRecord(thread.metadata)) return null;
   const agentMode = thread.metadata[THREAD_AGENT_MODE_METADATA_KEY];
   if (isAssistantId(agentMode)) return agentMode;
@@ -44,7 +44,7 @@ export function modeFromThreadMetadata(thread: ThreadMetadata | null | undefined
   return isAssistantId(graphId) ? graphId : null;
 }
 
-export function modeFromThreadValues(thread: ThreadMetadata | null | undefined): AssistantId | null {
+function modeFromThreadValues(thread: ThreadMetadata | null | undefined): AssistantId | null {
   if (!thread || !isRecord(thread.values)) return null;
   const messages = thread.values.messages;
   if (!Array.isArray(messages)) return null;

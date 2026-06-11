@@ -140,7 +140,7 @@ export function AgentSelectionList({
   return (
     <div className="w-full max-w-xl space-y-5">
       <section className="space-y-3">
-        <SectionLabel icon={Sparkles}>Recommended</SectionLabel>
+        <SectionLabel icon={Sparkles}>Recommended agents</SectionLabel>
         {PRIMARY_AGENT_OPTIONS.map((option) => (
           <AgentOptionButton
             key={option.mode}

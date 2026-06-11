@@ -90,8 +90,8 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       nextRevisions.push(revision);
       return nextRevisions;
     });
-    setStudioMode(CAD_ASSISTANT_ID);
-  }, [setStudioMode]);
+    if (!isEndToEndMode) setStudioMode(CAD_ASSISTANT_ID);
+  }, [isEndToEndMode, setStudioMode]);
 
   const handleSketchRevision = useCallback((revision: SketchRevisionArtifact) => {
     setLiveSketchRevisions((currentRevisions) => {
@@ -209,7 +209,6 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
     : null;
   const activeStepExport = activeRevision?.exports.find(isStepExport) ?? null;
   const activeSketchExport = activeSketchRevision?.exports.find(isSketchImageExport) ?? null;
-  const shouldShowSketchViewer = studioMode === SKETCH_ASSISTANT_ID || sketchSource !== null || (activeSketchRevision !== null && !activeRevision);
   const shareRevision: ShareRevision | null = activeRevision && activeStepExport ? {
     designId: activeRevision.designId,
     revisionNumber: activeRevision.revisionNumber,
@@ -308,7 +307,6 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
     setLumiViewerMode,
     shareRevision,
     shareSketchRevision,
-    shouldShowSketchViewer,
     sketchRevisionOptions,
     sketchSource,
     sourceCode,

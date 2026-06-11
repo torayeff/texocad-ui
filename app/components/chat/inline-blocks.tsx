@@ -12,14 +12,12 @@ const REMARK_PLUGINS = [remarkGfm];
 export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
   content,
   isStreaming = false,
-  defaultOpen = false,
 }: {
   content: string;
   isStreaming?: boolean;
-  defaultOpen?: boolean;
 }) {
   const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>(isStreaming);
-  const { isOpen, handleToggle } = useAutoOpenDetails(isStreaming, defaultOpen);
+  const { isOpen, handleToggle } = useAutoOpenDetails(isStreaming);
 
   if (!content && !isStreaming) return null;
 

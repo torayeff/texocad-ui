@@ -44,11 +44,6 @@ export interface TexocadGraphState {
   product?: PartEntry[];
 }
 
-export interface CustomProductEvent {
-  type: "product";
-  parts: PartEntry[];
-}
-
 export interface StreamToolCall {
   id: string;
   state: "pending" | "completed" | "error";

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
 
-export function useAutoOpenDetails(autoOpen: boolean, defaultOpen = false) {
-  const [userOpen, setUserOpen] = useState(defaultOpen);
+export function useAutoOpenDetails(autoOpen: boolean) {
+  const [userOpen, setUserOpen] = useState(false);
   const previousAutoOpenRef = useRef(autoOpen);
 
   useEffect(() => {

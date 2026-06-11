@@ -10,7 +10,7 @@ function decodeFileName(fileName: string) {
   }
 }
 
-export function downloadNameFromSource(source: ModelSource) {
+function downloadNameFromSource(source: ModelSource) {
   if (source.kind === "file") {
     return source.file.name || "model";
   }

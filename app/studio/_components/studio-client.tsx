@@ -19,7 +19,6 @@ import {
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
   assistantIdFromParam,
-  isEndToEndAssistantId,
   type AssistantId,
 } from "@/app/lib/chat/langgraph-config";
 import {
@@ -39,13 +38,31 @@ const ModelViewer = dynamic(
   { ssr: false },
 );
 
-const END_TO_END_AGENT_AVATAR_URLS = {
+const AGENT_AVATAR_URLS: Partial<Record<AssistantId, string>> = {
   [LUMI_ASSISTANT_ID]: "/images/agents/lumi.png",
   [FORMA_ASSISTANT_ID]: "/images/agents/forma.png",
-} as const;
+};
 
-function endToEndAgentAvatarUrl(mode: AssistantId) {
-  return isEndToEndAssistantId(mode) ? END_TO_END_AGENT_AVATAR_URLS[mode] : undefined;
+function agentAvatarUrl(mode: AssistantId) {
+  return AGENT_AVATAR_URLS[mode];
+}
+
+type StudioViewerKind = "cad" | "sketch" | "lumi";
+
+function viewerKindForAssistant(mode: AssistantId): StudioViewerKind {
+  switch (mode) {
+    case CAD_ASSISTANT_ID:
+    case FORMA_ASSISTANT_ID:
+      return "cad";
+    case SKETCH_ASSISTANT_ID:
+      return "sketch";
+    case LUMI_ASSISTANT_ID:
+      return "lumi";
+    default: {
+      const exhaustiveMode: never = mode;
+      return exhaustiveMode;
+    }
+  }
 }
 
 export default function StudioClient() {
@@ -81,7 +98,7 @@ export default function StudioClient() {
     replaceStudioAgentUrl(null);
   }, [replaceStudioAgentUrl]);
   const revisions = useStudioRevisions(studioMode, setStudioMode);
-  const isEndToEndMode = isEndToEndAssistantId(studioMode);
+  const viewerKind = viewerKindForAssistant(studioMode);
   const shouldMountChat = initialThreadId === null || isInitialThreadModeResolved;
 
   useEffect(() => {
@@ -119,7 +136,7 @@ export default function StudioClient() {
     setIsMaskSubmitting(true);
     try {
       const uploadedMask = await uploadFileToBlob(mask);
-      if (!isEndToEndMode) {
+      if (viewerKind !== "lumi") {
         flushSync(() => {
           setStudioMode(SKETCH_ASSISTANT_ID);
         });
@@ -137,7 +154,7 @@ export default function StudioClient() {
     } finally {
       setIsMaskSubmitting(false);
     }
-  }, [isEndToEndMode, revisions.activeSketchExport, setStudioMode]);
+  }, [revisions.activeSketchExport, setStudioMode, viewerKind]);
 
   const handleMaskEditorChange = useCallback((state: SketchMaskComposerState | null) => {
     setMaskComposer(state);
@@ -164,7 +181,7 @@ export default function StudioClient() {
           )}
           style={viewerPaneStyle}
         >
-          {isEndToEndMode ? (
+          {viewerKind === "lumi" ? (
             <LumiViewer
               hasModel={revisions.hasModel}
               hasSketch={revisions.hasSketch}
@@ -190,7 +207,7 @@ export default function StudioClient() {
               }}
               viewerMode={revisions.lumiViewerMode}
             />
-          ) : revisions.shouldShowSketchViewer ? (
+          ) : viewerKind === "sketch" ? (
             <SketchViewer
               isMaskSubmitting={isMaskSubmitting}
               onMaskEditorChange={handleMaskEditorChange}
@@ -265,7 +282,7 @@ export default function StudioClient() {
           {shouldMountChat ? (
             <Chat
               ref={chatRef}
-              agentAvatarUrl={endToEndAgentAvatarUrl(studioMode)}
+              agentAvatarUrl={agentAvatarUrl(studioMode)}
               assistantId={studioMode}
               hasInitialAgentMode={initialAgentMode !== null}
               initialThreadId={initialThreadId}

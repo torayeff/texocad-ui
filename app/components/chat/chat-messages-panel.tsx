@@ -3,7 +3,6 @@
 import { ArrowDown, Loader2 } from "lucide-react";
 
 import type { RefObject } from "react";
-import type { HumanMessage } from "@langchain/core/messages";
 import type { MessageRow } from "@/app/lib/chat/message-rows";
 import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import type { TodoItem } from "@/app/types/chat";
@@ -26,7 +25,6 @@ interface ChatMessagesPanelProps {
   messagesEndRef: RefObject<HTMLDivElement | null>;
   onModeSelect: (mode: AssistantId) => void;
   onPromptSelect: (prompt: string) => void;
-  pendingHumanMessage: HumanMessage | null;
   pendingHumanText: string;
   scrollToBottom: () => void;
   shouldRenderPendingHumanMessage: boolean;
@@ -49,7 +47,6 @@ export function ChatMessagesPanel({
   messagesEndRef,
   onModeSelect,
   onPromptSelect,
-  pendingHumanMessage,
   pendingHumanText,
   scrollToBottom,
   shouldRenderPendingHumanMessage,
@@ -70,7 +67,6 @@ export function ChatMessagesPanel({
           {isEmpty && !isHydrating && (
             <EmptyChatState
               activeMode={activeMode}
-              isHydrating={isHydrating}
               isBusy={isBusy}
               onModeSelect={onModeSelect}
               onPromptSelect={onPromptSelect}
@@ -102,11 +98,12 @@ export function ChatMessagesPanel({
             />
           ))}
 
-          {shouldRenderPendingHumanMessage && pendingHumanMessage ? (
+          {shouldRenderPendingHumanMessage ? (
             <MessageWithSubagents
               key="pending-human-message"
               messageType="human"
               textContent={pendingHumanText}
+              agentName=""
             />
           ) : null}
 
