@@ -8,6 +8,7 @@ import { Box, Check, ChevronDown, Image } from "lucide-react";
 import { cn } from "@/app/lib/cn";
 import {
   CAD_ASSISTANT_ID,
+  FORMA_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
   type AssistantId,
@@ -28,7 +29,19 @@ interface AgentIconProps {
 function LumiPortraitIcon({ size = 14, className }: AgentIconProps) {
   return (
     <NextImage
-      src="/images/lumi/lumi.png"
+      src="/images/agents/lumi.png"
+      alt=""
+      width={size}
+      height={size}
+      className={cn("rounded-full object-cover ring-1 ring-border/50", className)}
+    />
+  );
+}
+
+function FormaPortraitIcon({ size = 14, className }: AgentIconProps) {
+  return (
+    <NextImage
+      src="/images/agents/forma.png"
       alt=""
       width={size}
       height={size}
@@ -63,6 +76,11 @@ const AGENT_MODE_OPTIONS: AgentModeOption[] = [
     icon: LumiPortraitIcon,
     label: "Lumi",
     mode: LUMI_ASSISTANT_ID,
+  },
+  {
+    icon: FormaPortraitIcon,
+    label: "Forma",
+    mode: FORMA_ASSISTANT_ID,
   },
 ];
 

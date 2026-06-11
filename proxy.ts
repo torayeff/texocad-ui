@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isProtectedRoute = createRouteMatcher(["/studio(.*)", "/lumi(.*)"]);
+const isProtectedRoute = createRouteMatcher(["/studio(.*)"]);
 const isMaintenanceRoute = createRouteMatcher(["/maintenance"]);
 const isApiRoute = createRouteMatcher(["/api(.*)", "/trpc(.*)"]);
 const isMaintenanceMode = process.env.MAINTENANCE_MODE === "true";

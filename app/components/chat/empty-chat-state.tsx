@@ -2,7 +2,13 @@ import Image from "next/image";
 import { Loader2 } from "lucide-react";
 
 import type { AssistantId } from "@/app/lib/chat/langgraph-config";
-import { CAD_ASSISTANT_ID, LUMI_ASSISTANT_ID, SKETCH_ASSISTANT_ID } from "@/app/lib/chat/langgraph-config";
+import {
+  CAD_ASSISTANT_ID,
+  FORMA_ASSISTANT_ID,
+  LUMI_ASSISTANT_ID,
+  SKETCH_ASSISTANT_ID,
+  isEndToEndAssistantId,
+} from "@/app/lib/chat/langgraph-config";
 import { chatGlassClass } from "@/app/lib/chat/chat-styles";
 
 interface ExamplePrompt {
@@ -17,6 +23,16 @@ interface AgentExamplePrompt {
   prompt: string;
 }
 
+type EndToEndAssistantId = typeof LUMI_ASSISTANT_ID | typeof FORMA_ASSISTANT_ID;
+type ExamplePromptAssistantId = Exclude<AssistantId, EndToEndAssistantId>;
+
+interface EndToEndAgentGreeting {
+  alt: string;
+  avatarUrl: string;
+  description: string;
+  title: string;
+}
+
 const MODE_SELECTION_PROMPTS: ExamplePrompt[] = [
   {
     label: "Sketch image",
@@ -25,18 +41,37 @@ const MODE_SELECTION_PROMPTS: ExamplePrompt[] = [
   },
   {
     label: "CAD model",
-    description: "Generate a BREP STEP model.",
+    description: "Generate a BREP CAD design.",
     mode: CAD_ASSISTANT_ID,
   },
   {
     label: "Lumi",
-    description: "Sketch and model, end to end.",
+    description: "3D assets from ideas.",
     mode: LUMI_ASSISTANT_ID,
+  },
+  {
+    label: "Forma",
+    description: "CAD from requirements.",
+    mode: FORMA_ASSISTANT_ID,
   },
 ];
 
-// Lumi has no example prompts: its empty state is the persona greeting below.
-const AGENT_EXAMPLE_PROMPTS: Record<Exclude<AssistantId, typeof LUMI_ASSISTANT_ID>, AgentExamplePrompt[]> = {
+const END_TO_END_AGENT_GREETINGS: Record<EndToEndAssistantId, EndToEndAgentGreeting> = {
+  [LUMI_ASSISTANT_ID]: {
+    alt: "Lumi",
+    avatarUrl: "/images/agents/lumi.png",
+    description: "I turn ideas into 3D assets from prompts, sketches, or reference images. Give me the object, style, and level of detail; I'll create images, export GLB files, and iterate revisions with you.",
+    title: "Hi, I'm Lumi",
+  },
+  [FORMA_ASSISTANT_ID]: {
+    alt: "Forma",
+    avatarUrl: "/images/agents/forma.png",
+    description: "I turn requirements into precise parametric CAD for parts and assemblies. Give me dimensions, interfaces, constraints, and function; I'll build CAD, export STEP files, and iterate revisions with you.",
+    title: "Hi, I'm Forma",
+  },
+};
+
+const AGENT_EXAMPLE_PROMPTS: Record<ExamplePromptAssistantId, AgentExamplePrompt[]> = {
   [CAD_ASSISTANT_ID]: [
     {
       description: "Wall-mounted sensor case.",
@@ -91,25 +126,25 @@ export default function EmptyChatState({
     return null;
   }
 
-  if (activeMode === LUMI_ASSISTANT_ID) {
+  if (isEndToEndAssistantId(activeMode)) {
+    const greeting = END_TO_END_AGENT_GREETINGS[activeMode];
+
     return (
-      <div className="mx-auto flex w-full max-w-2xl items-center justify-center px-4 py-8 sm:px-6">
+      <div className="mx-auto flex w-full max-w-2xl items-center justify-center px-4 sm:px-6 sm:py-8">
         <div className="flex w-full max-w-md flex-col items-center text-center">
           <Image
-            src="/images/lumi/lumi.png"
-            alt="Lumi"
+            src={greeting.avatarUrl}
+            alt={greeting.alt}
             width={128}
             height={128}
             priority
             className="size-32 rounded-full object-cover shadow-[0_12px_32px_rgb(0_0_0_/_0.12)] ring-1 ring-border/60"
           />
           <h2 className="mt-5 text-xl font-semibold tracking-tight text-foreground">
-            Hi, I&apos;m Lumi
+            {greeting.title}
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Your personal 3D modeler, designer, and engineer. Tell me what
-            you&apos;re imagining. I&apos;ll sketch it, bring it to life in 3D,
-            and refine every detail with you until it&apos;s exactly right.
+            {greeting.description}
           </p>
         </div>
       </div>
@@ -158,13 +193,13 @@ export default function EmptyChatState({
             What do you want to build?
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
-            Start with a visual concept, a CAD-ready model, or design end to
-            end with Lumi.
+            Start with a visual concept, a CAD-ready design, a 3D model, or
+            precise parametric CAD.
           </p>
         </div>
 
         <div className="mt-6 flex w-full justify-center">
-          <div className={`${chatGlassClass} grid w-full max-w-md grid-cols-3 gap-1.5 rounded-[calc(var(--viewer-control-radius)+0.375rem)] p-1.5`}>
+          <div className={`${chatGlassClass} grid w-full max-w-xl grid-cols-2 gap-1.5 rounded-[calc(var(--viewer-control-radius)+0.375rem)] p-1.5 sm:grid-cols-4`}>
             {MODE_SELECTION_PROMPTS.map((example) => (
               <button
                 key={example.label}

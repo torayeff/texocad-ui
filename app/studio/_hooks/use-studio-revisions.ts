@@ -7,6 +7,7 @@ import {
   CAD_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
+  isEndToEndAssistantId,
   type AssistantId,
 } from "@/app/lib/chat/langgraph-config";
 import {
@@ -78,7 +79,7 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
   const designRequestVersionRef = useRef(0);
   const sketchRequestVersionRef = useRef(0);
   const modelRequestVersionRef = useRef(0);
-  const isLumiMode = studioMode === LUMI_ASSISTANT_ID;
+  const isEndToEndMode = isEndToEndAssistantId(studioMode);
 
   const handleDesignRevision = useCallback((revision: DesignRevisionArtifact) => {
     setLiveDesignRevisions((currentRevisions) => {
@@ -101,10 +102,8 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       nextRevisions.push(revision);
       return nextRevisions;
     });
-    // Lumi produces sketches as part of its own flow; only the dedicated
-    // sketch agent should pull the studio into sketch mode.
-    if (!isLumiMode) setStudioMode(SKETCH_ASSISTANT_ID);
-  }, [isLumiMode, setStudioMode]);
+    if (!isEndToEndMode) setStudioMode(SKETCH_ASSISTANT_ID);
+  }, [isEndToEndMode, setStudioMode]);
 
   const handleModelRevision = useCallback((revision: ModelRevisionArtifact) => {
     setLiveModelRevisions((currentRevisions) => {
@@ -115,8 +114,8 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       nextRevisions.push(revision);
       return nextRevisions;
     });
-    setStudioMode(LUMI_ASSISTANT_ID);
-  }, [setStudioMode]);
+    if (!isEndToEndMode) setStudioMode(LUMI_ASSISTANT_ID);
+  }, [isEndToEndMode, setStudioMode]);
 
   const handleDesignRevisionsChange = useCallback((revisions: DesignRevisionArtifact[]) => {
     setHydratedDesignRevisions((currentRevisions) => (
@@ -222,9 +221,6 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
     exportArtifact: activeSketchExport,
   } : null;
 
-  // In Lumi mode the newest artifact (by revision number within the design)
-  // decides the automatic sketch/model tab; a manual choice survives only
-  // until the next artifact arrives.
   const autoLumiViewerMode: LumiViewerMode = latestModelRevision
     ? (latestSketchRevision && latestSketchRevision.revisionNumber > latestModelRevision.revisionNumber
       ? "sketch"

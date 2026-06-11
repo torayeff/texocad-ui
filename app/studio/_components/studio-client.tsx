@@ -15,9 +15,11 @@ import { useLanggraphAuth } from "@/app/hooks/chat/use-langgraph-auth";
 import { uploadFileToBlob } from "@/app/lib/chat/blob-upload";
 import {
   CAD_ASSISTANT_ID,
+  FORMA_ASSISTANT_ID,
   LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
   assistantIdFromParam,
+  isEndToEndAssistantId,
   type AssistantId,
 } from "@/app/lib/chat/langgraph-config";
 import {
@@ -37,7 +39,14 @@ const ModelViewer = dynamic(
   { ssr: false },
 );
 
-const LUMI_AVATAR_URL = "/images/lumi/lumi.png";
+const END_TO_END_AGENT_AVATAR_URLS = {
+  [LUMI_ASSISTANT_ID]: "/images/agents/lumi.png",
+  [FORMA_ASSISTANT_ID]: "/images/agents/forma.png",
+} as const;
+
+function endToEndAgentAvatarUrl(mode: AssistantId) {
+  return isEndToEndAssistantId(mode) ? END_TO_END_AGENT_AVATAR_URLS[mode] : undefined;
+}
 
 export default function StudioClient() {
   const pathname = usePathname();
@@ -72,7 +81,7 @@ export default function StudioClient() {
     replaceStudioAgentUrl(null);
   }, [replaceStudioAgentUrl]);
   const revisions = useStudioRevisions(studioMode, setStudioMode);
-  const isLumiMode = studioMode === LUMI_ASSISTANT_ID;
+  const isEndToEndMode = isEndToEndAssistantId(studioMode);
   const shouldMountChat = initialThreadId === null || isInitialThreadModeResolved;
 
   useEffect(() => {
@@ -110,8 +119,7 @@ export default function StudioClient() {
     setIsMaskSubmitting(true);
     try {
       const uploadedMask = await uploadFileToBlob(mask);
-      // Lumi handles masked edits itself; otherwise hand off to the sketch agent.
-      if (!isLumiMode) {
+      if (!isEndToEndMode) {
         flushSync(() => {
           setStudioMode(SKETCH_ASSISTANT_ID);
         });
@@ -129,7 +137,7 @@ export default function StudioClient() {
     } finally {
       setIsMaskSubmitting(false);
     }
-  }, [isLumiMode, revisions.activeSketchExport, setStudioMode]);
+  }, [isEndToEndMode, revisions.activeSketchExport, setStudioMode]);
 
   const handleMaskEditorChange = useCallback((state: SketchMaskComposerState | null) => {
     setMaskComposer(state);
@@ -156,7 +164,7 @@ export default function StudioClient() {
           )}
           style={viewerPaneStyle}
         >
-          {isLumiMode ? (
+          {isEndToEndMode ? (
             <LumiViewer
               hasModel={revisions.hasModel}
               hasSketch={revisions.hasSketch}
@@ -257,7 +265,7 @@ export default function StudioClient() {
           {shouldMountChat ? (
             <Chat
               ref={chatRef}
-              agentAvatarUrl={isLumiMode ? LUMI_AVATAR_URL : undefined}
+              agentAvatarUrl={endToEndAgentAvatarUrl(studioMode)}
               assistantId={studioMode}
               hasInitialAgentMode={initialAgentMode !== null}
               initialThreadId={initialThreadId}

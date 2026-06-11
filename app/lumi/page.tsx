@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 
 import { Header } from "@/app/components/header";
 import { AGENT_QUERY_PARAM } from "@/app/lib/chat/chat-url";
 import { LUMI_ASSISTANT_ID } from "@/app/lib/chat/langgraph-config";
-import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
+import { SITE_ROUTES } from "@/app/lib/site";
 
 export const metadata: Metadata = {
-  title: "Lumi AI - 3D modeler, designer, and engineer",
+  title: "Lumi AI - 3D modeler for concepts and assets",
   description:
-    "Describe an idea and Lumi turns it into a preview sketch and a 3D-printable model.",
+    "Turn ideas into 3D assets from prompts, sketches, or reference images, with image and GLB exports.",
   alternates: {
     canonical: SITE_ROUTES.lumi,
   },
@@ -20,18 +18,7 @@ export const metadata: Metadata = {
 
 const lumiStudioUrl = `${SITE_ROUTES.studio}?${AGENT_QUERY_PARAM}=${LUMI_ASSISTANT_ID}`;
 
-export default async function LumiPage() {
-  const { userId, has, sessionClaims } = await auth();
-
-  if (!userId) {
-    redirect(SITE_ROUTES.home);
-  }
-
-  const hasGrant = sessionClaims?.freeAccess === true || sessionClaims?.vipAccess === true;
-  if (!has({ plan: CLERK_PLAN_SLUG }) && !hasGrant) {
-    redirect(SITE_ROUTES.pricing);
-  }
-
+export default function LumiPage() {
   return (
     <main className="flex min-h-dvh flex-col bg-background">
       <Header />
@@ -39,7 +26,7 @@ export default async function LumiPage() {
       <section className="flex flex-1 items-center justify-center px-6 py-16">
         <div className="flex w-full max-w-3xl flex-col items-center gap-10 sm:flex-row sm:gap-14">
           <Image
-            src="/images/lumi/lumi.png"
+            src="/images/agents/lumi.png"
             alt="Lumi"
             width={224}
             height={224}
@@ -52,16 +39,16 @@ export default async function LumiPage() {
               Meet Lumi
             </h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-              Your personal 3D modeler, designer, and engineer. Tell Lumi what
-              you&apos;re imagining and it sketches the concept, brings it to
-              life as a 3D model, and refines every detail with you until
-              it&apos;s exactly right.
+              Lumi turns ideas into 3D assets from prompts, sketches, or
+              reference images. Describe the object, style, and level of detail;
+              Lumi creates images, exports GLB files, and iterates revisions
+              with you.
             </p>
             <Link
               href={lumiStudioUrl}
               className="mt-7 inline-flex h-10 items-center justify-center rounded-[calc(var(--viewer-control-radius)-0.125rem)] bg-foreground px-6 text-sm font-semibold text-background transition-colors hover:bg-foreground/90"
             >
-              Design with Lumi
+              Model with Lumi
             </Link>
           </div>
         </div>

@@ -62,10 +62,10 @@ export function ChatMessagesPanel({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-on-hover px-[var(--app-chrome-gutter)] pb-6 pt-6"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-on-hover px-[var(--app-chrome-gutter)]"
       >
         <div
-          className={`${chatContentRailClass} flex flex-col gap-5 ${isEmpty && !isHydrating ? "min-h-full justify-center" : ""}`}
+          className={`${chatContentRailClass} flex min-h-full flex-col gap-5 py-6 ${isEmpty && !isHydrating ? "justify-center" : ""}`}
         >
           {isEmpty && !isHydrating && (
             <EmptyChatState
@@ -118,9 +118,9 @@ export function ChatMessagesPanel({
           )}
 
           {shouldShowTodoList ? <TodoList todos={todos} /> : null}
-
-          <div ref={messagesEndRef} />
         </div>
+
+        <div ref={messagesEndRef} />
       </div>
 
       {showScrollButton && (
