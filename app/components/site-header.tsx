@@ -27,7 +27,7 @@ export function SiteHeader() {
               Viewer
             </Link>
             <Link href={SITE_ROUTES.expertNetwork} className="px-3 py-2">
-              CAD Experts
+              Expert Network
             </Link>
           </div>
         </details>
@@ -68,7 +68,7 @@ export function SiteHeader() {
           href={SITE_ROUTES.expertNetwork}
           className="transition-colors hover:text-foreground"
         >
-          CAD Experts
+          Expert Network
         </Link>
         <ThemeToggle />
       </nav>
