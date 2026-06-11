@@ -34,7 +34,7 @@ const PRIMARY_AGENT_OPTIONS: AgentSelectionOption[] = [
   {
     avatarUrl: "/images/agents/forma.png",
     label: "Forma",
-    role: "Parametric CAD agent",
+    role: "CAD engineer",
     description: "CAD parts and STEP-ready assemblies.",
     mode: FORMA_ASSISTANT_ID,
   },

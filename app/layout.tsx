@@ -129,7 +129,7 @@ export default function RootLayout({
     },
     about: {
       "@type": "Thing",
-      name: "Text-to-CAD, text-to-sketch, text-to-3D models, AI CAD, manufacturing-ready CAD, and rapid prototyping",
+      name: "AI design agents, human product design experts, text-to-CAD, text-to-sketch, text-to-3D models, AI CAD, manufacturing-ready CAD, and rapid prototyping",
     },
   };
 
@@ -155,6 +155,9 @@ export default function RootLayout({
       "Text-to-CAD generation from natural-language prompts",
       "Text-to-sketch generation from product ideas",
       "Manufacturing-ready CAD export",
+      "AI agents for requirements, concepts, CAD, and simulation",
+      "Human expert support for physical product design",
+      "Product design workflow from idea to manufacturing-ready output",
     ],
   };
 

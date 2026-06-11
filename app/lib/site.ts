@@ -10,7 +10,7 @@ export const LEGAL_GOVERNING_LAW = "England and Wales";
 export const LEGAL_LAST_UPDATED = "20 April 2026";
 export const SITE_TITLE = "TexoCAD - Agentic CAD for Physical Product Builders";
 export const SITE_DESCRIPTION =
-  "AI text-to-CAD, text-to-sketch, and text-to-3D model generation for people building physical products. Turn ideas, requirements, and sketches into editable, manufacturing-ready CAD.";
+  "Turn product ideas into real products with AI design agents and human experts for requirements, concepts, CAD, simulation, and manufacturing-ready outputs.";
 export const SITE_KEYWORDS = [
   "text to CAD",
   "text to sketch",
@@ -36,6 +36,26 @@ export const SITE_KEYWORDS = [
   "BREP CAD",
   "STL export",
   "STEP export",
+  "AI design agents",
+  "AI product design",
+  "product design agents",
+  "human design experts",
+  "requirements engineering",
+  "requirements engineer agent",
+  "concept development",
+  "concept engineer agent",
+  "CAD engineer agent",
+  "simulation engineer agent",
+  "AI product development",
+  "product design automation",
+  "manufacturing-ready parts",
+  "AI prototyping",
+  "physical product design",
+  "idea to CAD",
+  "idea to product",
+  "concept to CAD",
+  "CAD simulation",
+  "design for manufacturing",
 ];
 
 export const SITE_CATEGORY = "technology";
