@@ -29,7 +29,7 @@ export function AgentProfileGrid() {
             type="button"
             onClick={() => setActiveAgent(agent)}
             aria-haspopup="dialog"
-            className="group relative grid h-[10rem] grid-rows-[3.75rem_1fr] gap-y-4 rounded-2xl border border-border bg-card p-6 pr-14 text-left transition-colors hover:bg-muted/40 lg:h-[8rem] lg:grid-rows-[3rem_1fr] lg:gap-y-2.5 lg:rounded-xl lg:p-4 lg:pr-12"
+            className="group relative grid h-[10rem] grid-rows-[auto_auto] content-between rounded-2xl border border-border bg-card p-6 pr-14 text-left transition-colors hover:bg-muted/40 lg:h-[8rem] lg:rounded-xl lg:p-4 lg:pr-12"
           >
             <span className="flex items-center gap-4 lg:gap-3">
               <Image
@@ -53,7 +53,7 @@ export function AgentProfileGrid() {
               </span>
             </span>
 
-            <span className="flex flex-wrap content-start gap-1.5 lg:gap-1">
+            <span className="flex flex-wrap content-end gap-1.5 lg:gap-1">
               {agent.cardSkills.map((skill) => (
                 <span
                   key={skill}
