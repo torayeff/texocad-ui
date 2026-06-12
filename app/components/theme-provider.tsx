@@ -6,7 +6,7 @@ export default function ThemeProvider({
   children: React.ReactNode;
 }) {
   return (
-    <WrkszThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <WrkszThemeProvider attribute="class" defaultTheme="light" enableSystem>
       {children}
     </WrkszThemeProvider>
   );
