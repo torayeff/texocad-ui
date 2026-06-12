@@ -8,7 +8,7 @@ export function ExpertNetworkBanner() {
       <p className="mx-auto w-full max-w-7xl text-center">
         <span>Are you a human expert? Get paid for product design work.</span>{" "}
         <Link
-          href={SITE_ROUTES.expertNetwork}
+          href={SITE_ROUTES.humanExpertsNetwork}
           className="text-accent transition-colors hover:text-accent/80"
         >
           Join the Expert Network
