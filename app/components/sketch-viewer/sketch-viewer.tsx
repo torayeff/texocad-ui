@@ -113,7 +113,7 @@ export default function SketchViewer({
 
   return (
     <section
-      className="relative size-full overflow-hidden bg-white text-foreground"
+      className="relative size-full overflow-hidden bg-[var(--viewer-background,var(--background))] text-foreground"
       aria-label="Generated sketch viewer"
     >
       <div className="absolute inset-0 flex items-center justify-center p-4 py-20 md:p-8 md:py-24">
