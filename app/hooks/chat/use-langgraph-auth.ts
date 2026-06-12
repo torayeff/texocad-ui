@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Client } from "@langchain/langgraph-sdk";
 
-import { anonymousAuthorizationHeader } from "@/app/lib/chat/anonymous-session";
+import { ensureAnonymousSession } from "@/app/lib/chat/anonymous-session";
 import { LANGGRAPH_API_URL } from "@/app/lib/chat/langgraph-config";
 
 interface LanggraphAuthState {
@@ -24,7 +24,9 @@ export function useLanggraphAuth() {
   // render, so the ref-in-render lint heuristic is a false positive here.
   // eslint-disable-next-line react-hooks/refs -- ref is read inside the async request interceptor, not during render
   const [client] = useState(() => new Client({
-    apiUrl: LANGGRAPH_API_URL,
+    apiUrl: typeof window === "undefined"
+      ? LANGGRAPH_API_URL
+      : new URL(LANGGRAPH_API_URL, window.location.origin).toString(),
     onRequest: async (_url, init) => {
       const { isSignedIn: signedIn, getToken: requestToken } = authStateRef.current;
       const token = signedIn ? await requestToken() : null;
@@ -35,9 +37,8 @@ export function useLanggraphAuth() {
       }
 
       if (signedIn === false) {
-        const headers = new Headers(init.headers);
-        headers.set("Authorization", anonymousAuthorizationHeader());
-        return { ...init, headers };
+        await ensureAnonymousSession();
+        return { ...init, credentials: "same-origin" };
       }
 
       return init;

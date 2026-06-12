@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { anonymousSessionHeaders } from "@/app/lib/chat/anonymous-session";
+import { ensureAnonymousSession } from "@/app/lib/chat/anonymous-session";
 
 export function useSignedAttachmentUrl(url: string) {
   const [signedUrl, setSignedUrl] = useState(() => url);
@@ -14,9 +14,8 @@ export function useSignedAttachmentUrl(url: string) {
 
     let cancelled = false;
     const params = new URLSearchParams({ url });
-    void fetch(`/api/blob?${params.toString()}`, {
-      headers: anonymousSessionHeaders(),
-    })
+    void ensureAnonymousSession()
+      .then(() => fetch(`/api/blob?${params.toString()}`))
       .then((response) => response.ok ? response.json() as Promise<{ sasUrl?: string }> : null)
       .then((data) => {
         if (!cancelled) setSignedUrl(data?.sasUrl ?? url);

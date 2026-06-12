@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
-import { anonymousSessionHeaders } from "@/app/lib/chat/anonymous-session";
+import { ensureAnonymousSession } from "@/app/lib/chat/anonymous-session";
 import type { ShareResponse, ShareRevision } from "@/app/types/share-artifact";
 
 interface ShareResult {
@@ -80,9 +80,8 @@ export function useShareArtifact<TSource>({
     const requestDefaultName = defaultShareName(source);
     const params = new URLSearchParams(shareRevisionParams(artifactKind, shareRevision));
 
-    void fetch(`/api/shares?${params.toString()}`, {
-      headers: anonymousSessionHeaders(),
-    })
+    void ensureAnonymousSession()
+      .then(() => fetch(`/api/shares?${params.toString()}`))
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as ShareResponse & { error?: string } | null;
         if (!response.ok) {
@@ -131,21 +130,21 @@ export function useShareArtifact<TSource>({
     requestVersionRef.current = requestVersion;
     const requestRevisionKey = activeRevisionKey;
 
-    void fetch("/api/shares", {
-      method: "POST",
-      body: JSON.stringify({
-        ...shareKindParams(artifactKind),
-        designId: shareRevision.designId,
-        revisionNumber: shareRevision.revisionNumber,
-        name: trimmedName,
-        exportArtifact: shareRevision.exportArtifact,
-        relatedArtifacts: shareRevision.relatedArtifacts,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-        ...anonymousSessionHeaders(),
-      },
-    })
+    void ensureAnonymousSession()
+      .then(() => fetch("/api/shares", {
+        method: "POST",
+        body: JSON.stringify({
+          ...shareKindParams(artifactKind),
+          designId: shareRevision.designId,
+          revisionNumber: shareRevision.revisionNumber,
+          name: trimmedName,
+          exportArtifact: shareRevision.exportArtifact,
+          relatedArtifacts: shareRevision.relatedArtifacts,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }))
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as Partial<ShareResponse> & { error?: string } | null;
         if (!response.ok || !data?.sharedArtifact?.shareUrl) {

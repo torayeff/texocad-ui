@@ -25,6 +25,7 @@ import ChatInput from "@/app/components/chat/chat-input";
 import { ChatErrorBanner, ChatNotFoundState } from "@/app/components/chat/chat-error-state";
 import { ChatMessagesPanel } from "@/app/components/chat/chat-messages-panel";
 import { NewChatConfirmationDialog } from "@/app/components/chat/new-chat-confirmation-dialog";
+import { AnonymousEditBanner } from "@/app/components/chat/anonymous-edit-banner";
 
 const GENERIC_CHAT_ERROR_MESSAGE = "Something went wrong. Please try again.";
 
@@ -236,6 +237,7 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
           onToggleHistory={toggleHistory}
           onToggleCollapse={onToggleCollapse}
         />
+        <AnonymousEditBanner />
 
         {historyOpen ? (
           <ThreadHistoryPanel
