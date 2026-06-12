@@ -4,33 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Client } from "@langchain/langgraph-sdk";
 
+import { anonymousAuthorizationHeader } from "@/app/lib/chat/anonymous-session";
 import { LANGGRAPH_API_URL } from "@/app/lib/chat/langgraph-config";
 
 interface LanggraphAuthState {
   isSignedIn: boolean | undefined;
   getToken: ReturnType<typeof useAuth>["getToken"];
-}
-
-const ANONYMOUS_SESSION_STORAGE_KEY = "texocad-anonymous-session-id";
-
-let cachedAnonymousSessionId: string | null = null;
-
-function anonymousSessionId(): string {
-  if (cachedAnonymousSessionId) return cachedAnonymousSessionId;
-  try {
-    const storedId = window.localStorage.getItem(ANONYMOUS_SESSION_STORAGE_KEY);
-    if (storedId) {
-      cachedAnonymousSessionId = storedId;
-      return storedId;
-    }
-    const sessionId = crypto.randomUUID();
-    window.localStorage.setItem(ANONYMOUS_SESSION_STORAGE_KEY, sessionId);
-    cachedAnonymousSessionId = sessionId;
-    return sessionId;
-  } catch {
-    cachedAnonymousSessionId = crypto.randomUUID();
-    return cachedAnonymousSessionId;
-  }
 }
 
 export function useLanggraphAuth() {
@@ -57,7 +36,7 @@ export function useLanggraphAuth() {
 
       if (signedIn === false) {
         const headers = new Headers(init.headers);
-        headers.set("Authorization", `Anonymous ${anonymousSessionId()}`);
+        headers.set("Authorization", anonymousAuthorizationHeader());
         return { ...init, headers };
       }
 

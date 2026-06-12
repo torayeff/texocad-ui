@@ -8,6 +8,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { PanelBottomOpen, PanelRightOpen } from "lucide-react";
 
 import { Header } from "@/app/components/header";
+import MarkdownViewer from "@/app/components/markdown-viewer/markdown-viewer";
 import SketchViewer from "@/app/components/sketch-viewer/sketch-viewer";
 import { cn } from "@/app/lib/cn";
 import Chat from "@/app/components/chat/chat";
@@ -49,14 +50,15 @@ function agentAvatarUrl(mode: AssistantId) {
   return AGENT_AVATAR_URLS[mode];
 }
 
-type StudioViewerKind = "cad" | "sketch" | "lumi";
+type StudioViewerKind = "cad" | "sketch" | "lumi" | "markdown";
 
 function viewerKindForAssistant(mode: AssistantId): StudioViewerKind {
   switch (mode) {
     case CAD_ASSISTANT_ID:
     case FORMA_ASSISTANT_ID:
-    case CLARI_ASSISTANT_ID:
       return "cad";
+    case CLARI_ASSISTANT_ID:
+      return "markdown";
     case SKETCH_ASSISTANT_ID:
       return "sketch";
     case LUMI_ASSISTANT_ID:
@@ -210,6 +212,21 @@ export default function StudioClient() {
               }}
               viewerMode={revisions.lumiViewerMode}
             />
+          ) : viewerKind === "markdown" ? (
+            <MarkdownViewer
+              source={revisions.markdownSource}
+              revisions={{
+                activeRevisionKey: revisions.activeMarkdownRevisionKey,
+                isLatestRevisionSelected: revisions.isLatestMarkdownRevisionSelected,
+                onSelectLatestRevision: revisions.handleSelectLatestMarkdownRevision,
+                onSelectRevision: revisions.handleSelectMarkdownRevision,
+                revisions: revisions.markdownRevisionOptions,
+              }}
+              sharing={{
+                activeRevisionKey: revisions.activeMarkdownRevisionKey,
+                shareRevision: revisions.shareMarkdownRevision,
+              }}
+            />
           ) : viewerKind === "sketch" ? (
             <SketchViewer
               isMaskSubmitting={isMaskSubmitting}
@@ -292,6 +309,8 @@ export default function StudioClient() {
               maskComposer={maskComposer}
               onDesignRevisionEvent={revisions.handleDesignRevision}
               onDesignRevisionsChange={revisions.handleDesignRevisionsChange}
+              onMarkdownRevisionEvent={revisions.handleMarkdownRevision}
+              onMarkdownRevisionsChange={revisions.handleMarkdownRevisionsChange}
               onModeChange={setStudioMode}
               onModeReset={resetStudioMode}
               onModelRevisionEvent={revisions.handleModelRevision}

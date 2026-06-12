@@ -15,6 +15,7 @@ interface RevisionMenuProps {
   isLatestRevisionSelected: boolean;
   revisions: ViewerRevisionOption[];
   style?: CSSProperties;
+  unavailableLabel?: string;
   onSelectLatestRevision: () => void;
   onSelectRevision: (key: string) => void;
   onClose: () => void;
@@ -25,6 +26,7 @@ export const RevisionMenu = forwardRef<HTMLDivElement, RevisionMenuProps>(functi
   isLatestRevisionSelected,
   revisions,
   style,
+  unavailableLabel = "STEP unavailable",
   onSelectLatestRevision,
   onSelectRevision,
   onClose,
@@ -73,7 +75,7 @@ export const RevisionMenu = forwardRef<HTMLDivElement, RevisionMenuProps>(functi
                 Revision {revision.revisionNumber}{isLatestRevision ? " (latest)" : ""}
               </span>
               <span className="block truncate text-[0.6875rem] font-normal opacity-70">
-                {isLatestRevision ? "Auto-follow new revisions" : revision.filename ?? "STEP unavailable"}
+                {isLatestRevision ? "Auto-follow new revisions" : revision.filename ?? unavailableLabel}
               </span>
             </span>
             {isSelected ? <Check size={13} strokeWidth={1.75} className="shrink-0" /> : null}

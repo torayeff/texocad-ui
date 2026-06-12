@@ -9,6 +9,7 @@ import {
 import {
   copyPrivateArtifactToPublic,
   sharedArtifactBlobName,
+  sharedRelatedArtifactBlobName,
 } from "@/app/lib/server/shared-artifact-storage";
 import { makeShareSlug, slugifyShareName } from "@/app/lib/server/shared-artifact-slugs";
 import { hashUserId } from "@/app/lib/server/storage-auth";
@@ -39,12 +40,25 @@ export async function createOrGetSharedArtifact(userId: string, input: ShareArti
 
   const slug = makeShareSlug(input.name);
   const artifactBlobName = sharedArtifactBlobName(kind, slug, input.exportArtifact.filename);
+  const relatedArtifacts = input.relatedArtifacts ?? [];
+  const relatedPublicArtifacts = relatedArtifacts.map((artifact) => ({
+    artifact,
+    artifactBlobName: sharedRelatedArtifactBlobName(slug, artifact.filename),
+  }));
   await copyPrivateArtifactToPublic({
     artifactBlobName,
     exportArtifact: input.exportArtifact,
     kind,
     privateBlobName,
   });
+  await Promise.all(
+    relatedPublicArtifacts.map(({ artifact, artifactBlobName: relatedArtifactBlobName }) => copyPrivateArtifactToPublic({
+      artifactBlobName: relatedArtifactBlobName,
+      exportArtifact: artifact,
+      kind: "sketch",
+      privateBlobName: artifact.blobName.replace(/^\/+/, ""),
+    })),
+  );
 
   const entity = {
     partitionKey: ownerKey,
@@ -59,6 +73,12 @@ export async function createOrGetSharedArtifact(userId: string, input: ShareArti
     name: input.name.trim(),
     ownerHash,
     privateBlobName,
+    relatedArtifactsJson: JSON.stringify(relatedPublicArtifacts.map(({ artifact, artifactBlobName: relatedArtifactBlobName }) => ({
+      artifactBlobName: relatedArtifactBlobName,
+      checksum: artifact.checksum,
+      contentType: artifact.contentType,
+      filename: artifact.filename,
+    }))),
     revisionNumber: input.revisionNumber,
     slug,
   };

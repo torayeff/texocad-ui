@@ -1,5 +1,6 @@
 export const STEP_CONTENT_TYPE = "application/step";
 const GLB_CONTENT_TYPE = "model/gltf-binary";
+const MARKDOWN_CONTENT_TYPE = "text/markdown";
 
 export function isStepExport(filename: string, contentType: string) {
   const lowerFilename = filename.toLowerCase();
@@ -21,4 +22,8 @@ export function isSketchImageExport(filename: string, contentType: string) {
     contentType === "image/jpeg" ||
     contentType === "image/webp"
   );
+}
+
+export function isMarkdownExport(filename: string, contentType: string) {
+  return filename.toLowerCase().endsWith(".md") || contentType.toLowerCase().startsWith(MARKDOWN_CONTENT_TYPE);
 }

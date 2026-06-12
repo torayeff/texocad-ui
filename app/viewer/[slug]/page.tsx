@@ -4,13 +4,57 @@ import { notFound } from "next/navigation";
 import { Header } from "@/app/components/header";
 import { getSharedArtifactBySlug } from "@/app/lib/server/shared-artifacts";
 import { SITE_NAME } from "@/app/lib/site";
+import { SharedMarkdownViewer } from "@/app/viewer/[slug]/_components/shared-markdown-viewer";
 import { SharedModelViewer } from "@/app/viewer/[slug]/_components/shared-model-viewer";
 import { SharedSketchViewer } from "@/app/viewer/[slug]/_components/shared-sketch-viewer";
+import type { SharedArtifact } from "@/app/lib/server/shared-artifact-types";
 
 interface ViewerPageProps {
   params: Promise<{
     slug: string;
   }>;
+}
+
+function sharedArtifactViewer(sharedArtifact: SharedArtifact) {
+  switch (sharedArtifact.kind) {
+    case "model":
+      return (
+        <SharedModelViewer
+          source={{
+            kind: "url",
+            label: sharedArtifact.filename,
+            url: sharedArtifact.artifactUrl,
+          }}
+        />
+      );
+    case "sketch":
+      return (
+        <SharedSketchViewer
+          source={{
+            kind: "url",
+            label: sharedArtifact.filename,
+            url: sharedArtifact.artifactUrl,
+          }}
+        />
+      );
+    case "markdown":
+      return (
+        <SharedMarkdownViewer
+          source={{
+            kind: "url",
+            label: sharedArtifact.filename,
+            url: sharedArtifact.artifactUrl,
+            imageUrlsByFilename: Object.fromEntries(
+              sharedArtifact.relatedArtifacts.map((artifact) => [artifact.filename, artifact.artifactUrl]),
+            ),
+          }}
+        />
+      );
+    default: {
+      const exhaustive: never = sharedArtifact.kind;
+      return exhaustive;
+    }
+  }
 }
 
 export async function generateMetadata({ params }: ViewerPageProps): Promise<Metadata> {
@@ -44,23 +88,7 @@ export default async function ViewerPage({ params }: ViewerPageProps) {
     <main className="fixed left-0 top-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground">
       <Header />
       <div className="min-h-0 flex-1">
-        {sharedArtifact.kind === "sketch" ? (
-          <SharedSketchViewer
-            source={{
-              kind: "url",
-              label: sharedArtifact.filename,
-              url: sharedArtifact.artifactUrl,
-            }}
-          />
-        ) : (
-          <SharedModelViewer
-            source={{
-              kind: "url",
-              label: sharedArtifact.filename,
-              url: sharedArtifact.artifactUrl,
-            }}
-          />
-        )}
+        {sharedArtifactViewer(sharedArtifact)}
       </div>
     </main>
   );

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 
 import {
   createOrGetSharedArtifact,
@@ -11,6 +10,7 @@ import {
   validateShareBlob,
   validateShareName,
 } from "@/app/lib/server/shared-artifact-validation";
+import { resolveRequestOwnerId } from "@/app/lib/server/request-owner";
 import type { SharedArtifactResult } from "@/app/types/share-artifact";
 
 export const runtime = "nodejs";
@@ -36,7 +36,7 @@ function shareResultResponse(result: Awaited<ReturnType<typeof createOrGetShared
 }
 
 export async function GET(request: Request) {
-  const { userId } = await auth();
+  const userId = await resolveRequestOwnerId(request);
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { userId } = await auth();
+  const userId = await resolveRequestOwnerId(request);
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

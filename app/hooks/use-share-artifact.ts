@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
+import { anonymousSessionHeaders } from "@/app/lib/chat/anonymous-session";
 import type { ShareResponse, ShareRevision } from "@/app/types/share-artifact";
 
 interface ShareResult {
@@ -12,7 +13,7 @@ interface ShareResult {
 
 interface UseShareArtifactOptions<TSource> {
   activeRevisionKey: string | null;
-  artifactKind: "model" | "sketch";
+  artifactKind: "model" | "sketch" | "markdown";
   defaultShareName: (source: TSource | null) => string;
   emptyNameError: string;
   shareError: string;
@@ -20,11 +21,11 @@ interface UseShareArtifactOptions<TSource> {
   source: TSource | null;
 }
 
-function shareKindParams(kind: "model" | "sketch") {
-  return kind === "sketch" ? { kind } : {};
+function shareKindParams(kind: "model" | "sketch" | "markdown") {
+  return kind === "model" ? {} : { kind };
 }
 
-function shareRevisionParams(kind: "model" | "sketch", revision: ShareRevision) {
+function shareRevisionParams(kind: "model" | "sketch" | "markdown", revision: ShareRevision) {
   const params: Record<string, string> = {
     designId: revision.designId,
     revisionNumber: String(revision.revisionNumber),
@@ -34,7 +35,7 @@ function shareRevisionParams(kind: "model" | "sketch", revision: ShareRevision) 
     filename: revision.exportArtifact.filename,
   };
 
-  if (kind === "sketch") {
+  if (kind !== "model") {
     params.kind = kind;
   }
 
@@ -79,7 +80,9 @@ export function useShareArtifact<TSource>({
     const requestDefaultName = defaultShareName(source);
     const params = new URLSearchParams(shareRevisionParams(artifactKind, shareRevision));
 
-    void fetch(`/api/shares?${params.toString()}`)
+    void fetch(`/api/shares?${params.toString()}`, {
+      headers: anonymousSessionHeaders(),
+    })
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as ShareResponse & { error?: string } | null;
         if (!response.ok) {
@@ -130,16 +133,18 @@ export function useShareArtifact<TSource>({
 
     void fetch("/api/shares", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         ...shareKindParams(artifactKind),
         designId: shareRevision.designId,
         revisionNumber: shareRevision.revisionNumber,
         name: trimmedName,
         exportArtifact: shareRevision.exportArtifact,
+        relatedArtifacts: shareRevision.relatedArtifacts,
       }),
+      headers: {
+        "Content-Type": "application/json",
+        ...anonymousSessionHeaders(),
+      },
     })
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as Partial<ShareResponse> & { error?: string } | null;

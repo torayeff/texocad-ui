@@ -27,7 +27,12 @@ export interface ModelRevisionArtifact extends BaseRevisionArtifact {
   type: "texocad.model_revision";
 }
 
+export interface MarkdownRevisionArtifact extends BaseRevisionArtifact {
+  type: "texocad.brief_revision";
+}
+
 export type TexocadRevisionArtifact =
   | DesignRevisionArtifact
   | SketchRevisionArtifact
-  | ModelRevisionArtifact;
+  | ModelRevisionArtifact
+  | MarkdownRevisionArtifact;

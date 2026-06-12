@@ -8,6 +8,7 @@ export interface ShareExportArtifact {
 export interface ShareRevision {
   designId: string;
   exportArtifact: ShareExportArtifact;
+  relatedArtifacts?: ShareExportArtifact[];
   revisionNumber: number;
 }
 

@@ -5,7 +5,7 @@ import { publicBlobUrl } from "@/app/lib/server/shared-artifact-storage";
 import { safeTableKey } from "@/app/lib/server/shared-artifact-slugs";
 import { publicStorageConfig } from "@/app/lib/server/storage-auth";
 import type { ShareArtifactInput } from "@/app/lib/server/shared-artifact-validation";
-import type { ShareEntity, SharedArtifact } from "@/app/lib/server/shared-artifact-types";
+import type { ShareEntity, SharedArtifact, SharedRelatedArtifact } from "@/app/lib/server/shared-artifact-types";
 
 export const SLUG_PARTITION_KEY = "slug";
 
@@ -42,6 +42,19 @@ function getEntityArtifactBlobName(entity: ShareEntity) {
   return entity.artifactBlobName ?? entity.modelBlobName;
 }
 
+function relatedArtifactsFromEntity(entity: ShareEntity): SharedRelatedArtifact[] {
+  if (!entity.relatedArtifactsJson) return [];
+  try {
+    const parsed = JSON.parse(entity.relatedArtifactsJson) as Omit<SharedRelatedArtifact, "artifactUrl">[];
+    return parsed.map((artifact) => ({
+      ...artifact,
+      artifactUrl: publicBlobUrl(artifact.artifactBlobName),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export function sharedArtifactFromShare(entity: ShareEntity): SharedArtifact {
   const artifactBlobName = getEntityArtifactBlobName(entity);
   const artifactUrl = publicBlobUrl(artifactBlobName);
@@ -54,6 +67,7 @@ export function sharedArtifactFromShare(entity: ShareEntity): SharedArtifact {
     filename: entity.filename,
     kind: entity.kind ?? "model",
     name: entity.name,
+    relatedArtifacts: relatedArtifactsFromEntity(entity),
     revisionNumber: entity.revisionNumber,
     shareUrl: absoluteSiteUrl(`/viewer/${entity.slug}`),
     slug: entity.slug,

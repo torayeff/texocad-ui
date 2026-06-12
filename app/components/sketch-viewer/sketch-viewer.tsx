@@ -11,6 +11,7 @@ import { useSketchDownload } from "@/app/components/sketch-viewer/_hooks/use-ske
 import { useSketchMaskEditor } from "@/app/components/sketch-viewer/_hooks/use-sketch-mask-editor";
 import { useShareSketch } from "@/app/components/sketch-viewer/_hooks/use-share-sketch";
 import { useFloatingPanel } from "@/app/components/viewer/_hooks/use-floating-panel";
+import { ViewerEmptyAnimation } from "@/app/components/viewer/viewer-empty-animation";
 import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
 import type { ShareRevision } from "@/app/types/share-artifact";
 import type {
@@ -131,9 +132,7 @@ export default function SketchViewer({
             className="h-auto w-auto max-w-[min(1024px,calc(100vw-2rem))] max-h-[calc(100dvh-12rem)] object-contain"
           />
         ) : (
-          <p className="text-sm text-muted-foreground">
-            No sketch loaded. Generate one in the chat.
-          </p>
+          <ViewerEmptyAnimation />
         )}
       </div>
 

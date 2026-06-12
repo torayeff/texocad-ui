@@ -9,9 +9,18 @@ export interface SharedArtifact {
   filename: string;
   kind: ShareKind;
   name: string;
+  relatedArtifacts: SharedRelatedArtifact[];
   revisionNumber: number;
   shareUrl: string;
   slug: string;
+}
+
+export interface SharedRelatedArtifact {
+  artifactBlobName: string;
+  artifactUrl: string;
+  checksum: string;
+  contentType: string;
+  filename: string;
 }
 
 export interface ShareEntity {
@@ -25,6 +34,7 @@ export interface ShareEntity {
   name: string;
   ownerHash: string;
   privateBlobName: string;
+  relatedArtifactsJson?: string;
   revisionNumber: number;
   slug: string;
 }

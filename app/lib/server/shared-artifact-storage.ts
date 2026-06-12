@@ -11,7 +11,7 @@ import type { ShareExportArtifactInput, ShareKind } from "@/app/lib/server/share
 const PUBLIC_SHARED_PREFIX = "public/shared";
 const READ_SAS_EXPIRY_MS = 10 * 60 * 1000;
 
-const KNOWN_EXTENSIONS = new Set(["step", "stp", "stl", "glb", "gltf", "jpg", "jpeg", "webp", "png"]);
+const KNOWN_EXTENSIONS = new Set(["step", "stp", "stl", "glb", "gltf", "jpg", "jpeg", "webp", "png", "md"]);
 
 function dotExtensionFromFilename(filename: string) {
   const ext = extensionFromName(filename);
@@ -20,6 +20,10 @@ function dotExtensionFromFilename(filename: string) {
 
 export function sharedArtifactBlobName(kind: ShareKind, slug: string, filename: string) {
   return `${PUBLIC_SHARED_PREFIX}/${slug}/${kind}${dotExtensionFromFilename(filename)}`;
+}
+
+export function sharedRelatedArtifactBlobName(slug: string, filename: string) {
+  return `${PUBLIC_SHARED_PREFIX}/${slug}/${filename.replaceAll('"', "").replaceAll("/", "-")}`;
 }
 
 function contentTypeForModelArtifact(artifact: ShareExportArtifactInput) {
@@ -36,6 +40,8 @@ function shareContentType(kind: ShareKind, artifact: ShareExportArtifactInput) {
     case "model":
       return contentTypeForModelArtifact(artifact);
     case "sketch":
+      return artifact.contentType;
+    case "markdown":
       return artifact.contentType;
     default: {
       const exhaustive: never = kind;

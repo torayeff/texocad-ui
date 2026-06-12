@@ -9,16 +9,20 @@ import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import {
   designRevisionsFromMessages,
   isDesignRevisionArtifact,
+  isMarkdownRevisionArtifact,
   isModelRevisionArtifact,
   isSketchRevisionArtifact,
   latestDesignRevision,
+  latestMarkdownRevision,
   latestModelRevision,
   latestSketchRevision,
+  markdownRevisionsFromMessages,
   modelRevisionsFromMessages,
   sketchRevisionsFromMessages,
 } from "@/app/lib/design-revisions/design-artifacts";
 import type {
   DesignRevisionArtifact,
+  MarkdownRevisionArtifact,
   ModelRevisionArtifact,
   SketchRevisionArtifact,
 } from "@/app/types/design-artifact";
@@ -48,6 +52,7 @@ function storedRunId(threadId: string) {
 
 interface UseChatStreamEvents {
   onDesignRevisionEvent?: (revision: DesignRevisionArtifact) => void;
+  onMarkdownRevisionEvent?: (revision: MarkdownRevisionArtifact) => void;
   onModelRevisionEvent?: (revision: ModelRevisionArtifact) => void;
   onSketchRevisionEvent?: (revision: SketchRevisionArtifact) => void;
 }
@@ -74,6 +79,7 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
   const { client, isReady: isAuthReady } = useLanggraphAuth();
 
   const onDesignRevisionEventRef = useRef(options.onDesignRevisionEvent);
+  const onMarkdownRevisionEventRef = useRef(options.onMarkdownRevisionEvent);
   const onModelRevisionEventRef = useRef(options.onModelRevisionEvent);
   const onSketchRevisionEventRef = useRef(options.onSketchRevisionEvent);
   const threadIdRef = useRef(threadId);
@@ -83,9 +89,10 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
   const locallyStartedRunIdsRef = useRef(new Set<string>());
   useEffect(() => {
     onDesignRevisionEventRef.current = options.onDesignRevisionEvent;
+    onMarkdownRevisionEventRef.current = options.onMarkdownRevisionEvent;
     onModelRevisionEventRef.current = options.onModelRevisionEvent;
     onSketchRevisionEventRef.current = options.onSketchRevisionEvent;
-  }, [options.onDesignRevisionEvent, options.onModelRevisionEvent, options.onSketchRevisionEvent]);
+  }, [options.onDesignRevisionEvent, options.onMarkdownRevisionEvent, options.onModelRevisionEvent, options.onSketchRevisionEvent]);
 
   useEffect(() => {
     threadIdRef.current = threadId;
@@ -136,6 +143,9 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
       }
       if (isModelRevisionArtifact(data)) {
         onModelRevisionEventRef.current?.(data);
+      }
+      if (isMarkdownRevisionArtifact(data)) {
+        onMarkdownRevisionEventRef.current?.(data);
       }
       if (isSketchRevisionArtifact(data)) {
         onSketchRevisionEventRef.current?.(data);
@@ -213,9 +223,14 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
     () => modelRevisionsFromMessages(messages),
     [messages],
   );
+  const markdownRevisions = useMemo(
+    () => markdownRevisionsFromMessages(messages),
+    [messages],
+  );
   const latestRevision = latestDesignRevision(designRevisions);
   const latestSketch = latestSketchRevision(sketchRevisions);
   const latestModel = latestModelRevision(modelRevisions);
+  const latestMarkdown = latestMarkdownRevision(markdownRevisions);
   const isBusy = isLoading || isHydrating || !isAuthReady;
 
   useEffect(() => {
@@ -287,6 +302,12 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
     }
   }, [latestModel]);
 
+  useEffect(() => {
+    if (latestMarkdown) {
+      onMarkdownRevisionEventRef.current?.(latestMarkdown);
+    }
+  }, [latestMarkdown]);
+
   return {
     client,
     stream,
@@ -300,6 +321,7 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
     designRevisions,
     sketchRevisions,
     modelRevisions,
+    markdownRevisions,
     urlThreadId: threadId,
     pathname,
     router,

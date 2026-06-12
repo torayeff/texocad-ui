@@ -9,6 +9,7 @@ import { loadingIconClass } from "@/app/components/viewer/viewer-styles";
 import { ModelViewerShareDialogs } from "@/app/components/model-viewer/_components/model-viewer-share-dialogs";
 import { ViewerControls } from "@/app/components/model-viewer/_components/viewer-controls";
 import { ViewerGestureHint } from "@/app/components/model-viewer/_components/viewer-gesture-hint";
+import { ViewerEmptyAnimation } from "@/app/components/viewer/viewer-empty-animation";
 import { useLocalModelShare } from "@/app/components/model-viewer/_hooks/use-local-model-share";
 import { useModelDownloads } from "@/app/components/model-viewer/_hooks/use-model-downloads";
 import { useModelViewerScene } from "@/app/components/model-viewer/_hooks/use-model-viewer-scene";
@@ -129,11 +130,7 @@ export default function ModelViewer({
       <div ref={containerRef} className="absolute inset-0 cursor-grab [&_canvas]:block [&_canvas]:size-full" />
 
       {!canUseLocalFiles && !source && loadState === "idle" ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <p className="text-sm text-muted-foreground">
-            No model loaded. Generate one in the chat.
-          </p>
-        </div>
+        <ViewerEmptyAnimation />
       ) : null}
 
       {!canUseLocalFiles && source && loadState === "loading" ? (

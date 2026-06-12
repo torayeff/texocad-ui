@@ -1,14 +1,18 @@
 import {
   isGlbExport as isGlbExportByName,
+  isMarkdownExport as isMarkdownExportByName,
   isSketchImageExport as isSketchImageExportByName,
   isStepExport as isStepExportByName,
 } from "@/app/lib/artifact-formats";
 import type {
   DesignRevisionArtifact,
+  MarkdownRevisionArtifact,
   ModelRevisionArtifact,
   SketchRevisionArtifact,
   StoredBlobArtifact,
 } from "@/app/types/design-artifact";
+import { anonymousSessionHeaders } from "@/app/lib/chat/anonymous-session";
+import type { MarkdownRevisionOption, MarkdownSource } from "@/app/types/markdown-viewer";
 import type { ModelSource, ViewerRevisionOption } from "@/app/types/model-viewer";
 import type { SketchRevisionOption, SketchSource } from "@/app/types/sketch-viewer";
 
@@ -28,6 +32,11 @@ export interface SignedModelRevisionSources {
   modelSource: ModelSource | null;
 }
 
+export interface SignedMarkdownRevisionSources {
+  key: string;
+  markdownSource: MarkdownSource | null;
+}
+
 export function isStepExport(artifact: StoredBlobArtifact) {
   return isStepExportByName(artifact.filename, artifact.contentType);
 }
@@ -43,6 +52,10 @@ export function isSourceCode(artifact: StoredBlobArtifact) {
 
 export function isSketchImageExport(artifact: StoredBlobArtifact) {
   return isSketchImageExportByName(artifact.filename, artifact.contentType);
+}
+
+export function isMarkdownExport(artifact: StoredBlobArtifact) {
+  return isMarkdownExportByName(artifact.filename, artifact.contentType);
 }
 
 interface RevisionLike {
@@ -138,6 +151,22 @@ export function modelRevisionListsMatch(a: ModelRevisionArtifact[], b: ModelRevi
   return revisionListsMatchBy(modelRevisionsMatch, a, b);
 }
 
+export function markdownRevisionKey(revision: MarkdownRevisionArtifact) {
+  return artifactRevisionKey(revision);
+}
+
+export function mergeMarkdownRevisions(...revisionLists: MarkdownRevisionArtifact[][]) {
+  return mergeRevisionLists(markdownRevisionKey, ...revisionLists);
+}
+
+export function markdownRevisionsMatch(a: MarkdownRevisionArtifact, b: MarkdownRevisionArtifact) {
+  return artifactRevisionsMatch(a, b);
+}
+
+export function markdownRevisionListsMatch(a: MarkdownRevisionArtifact[], b: MarkdownRevisionArtifact[]) {
+  return revisionListsMatchBy(markdownRevisionsMatch, a, b);
+}
+
 export function revisionOptionsFromArtifacts(revisions: DesignRevisionArtifact[]): ViewerRevisionOption[] {
   return revisions
     .map((revision) => {
@@ -167,8 +196,24 @@ export function sketchRevisionOptionsFromArtifacts(revisions: SketchRevisionArti
     .sort((a, b) => b.revisionNumber - a.revisionNumber);
 }
 
+export function markdownRevisionOptionsFromArtifacts(revisions: MarkdownRevisionArtifact[]): MarkdownRevisionOption[] {
+  return revisions
+    .map((revision) => {
+      const markdownExport = revision.exports.find(isMarkdownExport);
+      return {
+        key: markdownRevisionKey(revision),
+        revisionNumber: revision.revisionNumber,
+        filename: markdownExport?.filename ?? null,
+        canView: markdownExport !== undefined,
+      };
+    })
+    .sort((a, b) => b.revisionNumber - a.revisionNumber);
+}
+
 async function signBlobName(blobName: string): Promise<string | null> {
-  const response = await fetch(`/api/blob?blobName=${encodeURIComponent(blobName)}`);
+  const response = await fetch(`/api/blob?blobName=${encodeURIComponent(blobName)}`, {
+    headers: anonymousSessionHeaders(),
+  });
   if (!response.ok) return null;
   const data = (await response.json()) as { sasUrl?: string };
   return data.sasUrl ?? null;
@@ -224,5 +269,37 @@ export async function signedModelRevisionSources(
   return {
     key,
     modelSource: glbSasUrl ? { kind: "url", url: glbSasUrl, label: glbExport.filename } : null,
+  };
+}
+
+export async function signedMarkdownRevisionSources(
+  revision: MarkdownRevisionArtifact,
+  key: string,
+): Promise<SignedMarkdownRevisionSources | null> {
+  const markdownExport = revision.exports.find(isMarkdownExport);
+  if (!markdownExport) return null;
+
+  const imageExports = revision.exports.filter((artifact) => artifact !== markdownExport && isSketchImageExport(artifact));
+  const [markdownSasUrl, imageSasUrls] = await Promise.all([
+    signBlobName(markdownExport.blobName),
+    Promise.all(imageExports.map((artifact) => signBlobName(artifact.blobName))),
+  ]);
+
+  const imageUrlsByFilename: Record<string, string> = {};
+  imageExports.forEach((artifact, index) => {
+    const imageUrl = imageSasUrls[index];
+    if (imageUrl) imageUrlsByFilename[artifact.filename] = imageUrl;
+  });
+
+  return {
+    key,
+    markdownSource: markdownSasUrl
+      ? {
+        kind: "url",
+        url: markdownSasUrl,
+        label: markdownExport.filename,
+        imageUrlsByFilename,
+      }
+      : null,
   };
 }

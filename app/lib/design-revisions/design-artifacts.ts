@@ -1,5 +1,6 @@
 import type {
   DesignRevisionArtifact,
+  MarkdownRevisionArtifact,
   ModelRevisionArtifact,
   SketchRevisionArtifact,
   StoredBlobArtifact,
@@ -11,6 +12,7 @@ import { isRecord } from "@/app/lib/type-guards";
 const DESIGN_REVISION_TYPE = "texocad.design_revision";
 const SKETCH_REVISION_TYPE = "texocad.sketch_revision";
 const MODEL_REVISION_TYPE = "texocad.model_revision";
+const MARKDOWN_REVISION_TYPE = "texocad.brief_revision";
 
 function isStoredBlobArtifact(value: unknown): value is StoredBlobArtifact {
   if (!isRecord(value)) return false;
@@ -34,11 +36,16 @@ export function isModelRevisionArtifact(value: unknown): value is ModelRevisionA
   return isRevisionArtifact(value, MODEL_REVISION_TYPE);
 }
 
+export function isMarkdownRevisionArtifact(value: unknown): value is MarkdownRevisionArtifact {
+  return isRevisionArtifact(value, MARKDOWN_REVISION_TYPE);
+}
+
 export function isTexocadRevisionArtifact(value: unknown): value is TexocadRevisionArtifact {
   return (
     isDesignRevisionArtifact(value) ||
     isSketchRevisionArtifact(value) ||
-    isModelRevisionArtifact(value)
+    isModelRevisionArtifact(value) ||
+    isMarkdownRevisionArtifact(value)
   );
 }
 
@@ -96,6 +103,15 @@ export function modelRevisionsFromMessages(messages: readonly unknown[]): ModelR
   return revisions;
 }
 
+export function markdownRevisionsFromMessages(messages: readonly unknown[]): MarkdownRevisionArtifact[] {
+  const revisions: MarkdownRevisionArtifact[] = [];
+  for (const message of messages) {
+    const artifact = artifactFromMessage(message);
+    if (isMarkdownRevisionArtifact(artifact)) revisions.push(artifact);
+  }
+  return revisions;
+}
+
 export function latestRevision<T extends { revisionNumber: number }>(
   revisions: T[],
 ): T | null {
@@ -117,5 +133,9 @@ export function latestSketchRevision(revisions: SketchRevisionArtifact[]) {
 }
 
 export function latestModelRevision(revisions: ModelRevisionArtifact[]) {
+  return latestRevision(revisions);
+}
+
+export function latestMarkdownRevision(revisions: MarkdownRevisionArtifact[]) {
   return latestRevision(revisions);
 }

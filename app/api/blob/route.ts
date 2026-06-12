@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 
 import {
   createUploadBlobName,
@@ -10,13 +9,8 @@ import {
   signedReadUrl,
   signedUploadUrl,
 } from "@/app/lib/server/blob-storage";
+import { resolveRequestOwnerId } from "@/app/lib/server/request-owner";
 import { hashUserId, isAuthorizedUserBlob } from "@/app/lib/server/storage-auth";
-
-// Owner identity for blob scoping: the signed-in Clerk user id.
-async function resolveOwnerId() {
-  const { userId } = await auth();
-  return userId;
-}
 
 export async function GET(request: NextRequest) {
   const blobUrl = request.nextUrl.searchParams.get("url");
@@ -41,7 +35,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid storage URL" }, { status: 400 });
   }
 
-  const ownerId = await resolveOwnerId();
+  const ownerId = await resolveRequestOwnerId(request);
   if (!ownerId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -59,7 +53,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const ownerId = await resolveOwnerId();
+  const ownerId = await resolveRequestOwnerId(request);
   if (!ownerId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

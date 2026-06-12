@@ -1,4 +1,4 @@
-import { isSketchImageExport, isStepExport } from "@/app/lib/artifact-formats";
+import { isMarkdownExport, isSketchImageExport, isStepExport } from "@/app/lib/artifact-formats";
 import { isRecord } from "@/app/lib/type-guards";
 import { hashUserId, isAuthorizedUserBlob } from "@/app/lib/server/storage-auth";
 
@@ -15,10 +15,11 @@ export interface ShareArtifactInput {
   revisionNumber: number;
   name: string;
   exportArtifact: ShareExportArtifactInput;
+  relatedArtifacts?: ShareExportArtifactInput[];
 }
 
 export type ShareArtifactRevisionInput = Omit<ShareArtifactInput, "name">;
-export type ShareKind = "model" | "sketch";
+export type ShareKind = "model" | "sketch" | "markdown";
 
 const MAX_SHARE_NAME_LENGTH = 80;
 const MAX_BLOB_NAME_LENGTH = 1024;
@@ -49,6 +50,7 @@ export function parseShareInput(value: unknown): ShareArtifactInput | null {
   const { designId, revisionNumber, name, exportArtifact } = value;
   const kind = parseShareKind(value.kind);
   const parsedExportArtifact = parseShareExportArtifact(exportArtifact);
+  const relatedArtifacts = parseRelatedArtifacts(value.relatedArtifacts);
 
   if (
     typeof designId !== "string" ||
@@ -65,6 +67,7 @@ export function parseShareInput(value: unknown): ShareArtifactInput | null {
     name,
     kind,
     exportArtifact: parsedExportArtifact,
+    relatedArtifacts,
   };
 }
 
@@ -101,12 +104,20 @@ export function validateShareBlob(userId: string, input: ShareArtifactRevisionIn
     return null;
   }
 
+  const relatedArtifacts = input.kind === "markdown"
+    ? validatedRelatedMarkdownArtifacts(userId, input.relatedArtifacts ?? [])
+    : [];
+  if (!relatedArtifacts) {
+    return null;
+  }
+
   return {
     ...input,
     exportArtifact: {
       ...input.exportArtifact,
       blobName,
     },
+    relatedArtifacts,
   };
 }
 
@@ -120,7 +131,8 @@ function validatePrivateBlobName(blobName: string) {
 }
 
 function parseShareKind(value: unknown): ShareKind {
-  return value === "sketch" ? "sketch" : "model";
+  if (value === "sketch" || value === "markdown") return value;
+  return "model";
 }
 
 function isShareExport(kind: ShareKind, filename: string, contentType: string) {
@@ -129,9 +141,39 @@ function isShareExport(kind: ShareKind, filename: string, contentType: string) {
       return isStepExport(filename, contentType);
     case "sketch":
       return isSketchImageExport(filename, contentType);
+    case "markdown":
+      return isMarkdownExport(filename, contentType);
     default: {
       const exhaustive: never = kind;
       return exhaustive;
     }
   }
+}
+
+function parseRelatedArtifacts(value: unknown): ShareExportArtifactInput[] {
+  if (!Array.isArray(value)) return [];
+  const artifacts: ShareExportArtifactInput[] = [];
+  for (const item of value) {
+    if (!isRecord(item)) continue;
+    const artifact = parseShareExportArtifact(item);
+    if (artifact) artifacts.push(artifact);
+  }
+  return artifacts;
+}
+
+function validatedRelatedMarkdownArtifacts(userId: string, artifacts: ShareExportArtifactInput[]) {
+  const userHash = hashUserId(userId);
+  const validatedArtifacts: ShareExportArtifactInput[] = [];
+  for (const artifact of artifacts) {
+    const blobName = artifact.blobName.replace(/^\/+/, "");
+    if (
+      !validatePrivateBlobName(blobName) ||
+      !isSketchImageExport(artifact.filename, artifact.contentType) ||
+      !isAuthorizedUserBlob(blobName, userHash)
+    ) {
+      return null;
+    }
+    validatedArtifacts.push({ ...artifact, blobName });
+  }
+  return validatedArtifacts;
 }

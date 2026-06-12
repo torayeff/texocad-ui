@@ -12,6 +12,7 @@ import { useChatMessageSubmission } from "@/app/hooks/chat/use-chat-message-subm
 import { assistantDisplayName, type AssistantId } from "@/app/lib/chat/langgraph-config";
 import type {
   DesignRevisionArtifact,
+  MarkdownRevisionArtifact,
   ModelRevisionArtifact,
   SketchRevisionArtifact,
 } from "@/app/types/design-artifact";
@@ -35,6 +36,8 @@ interface ChatProps {
   maskComposer: SketchMaskComposerState | null;
   onDesignRevisionEvent: (revision: DesignRevisionArtifact) => void;
   onDesignRevisionsChange: (revisions: DesignRevisionArtifact[]) => void;
+  onMarkdownRevisionEvent: (revision: MarkdownRevisionArtifact) => void;
+  onMarkdownRevisionsChange: (revisions: MarkdownRevisionArtifact[]) => void;
   onModeChange: (mode: AssistantId) => void;
   onModeReset: () => void;
   onModelRevisionEvent?: (revision: ModelRevisionArtifact) => void;
@@ -53,6 +56,8 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   maskComposer,
   onDesignRevisionEvent,
   onDesignRevisionsChange,
+  onMarkdownRevisionEvent,
+  onMarkdownRevisionsChange,
   onModeChange,
   onModeReset,
   onModelRevisionEvent,
@@ -80,9 +85,11 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
     switchThread,
     sketchRevisions,
     modelRevisions,
+    markdownRevisions,
   } = useChatStream(assistantId, {
     initialThreadId,
     onDesignRevisionEvent,
+    onMarkdownRevisionEvent,
     onModelRevisionEvent,
     onSketchRevisionEvent,
   });
@@ -101,6 +108,10 @@ const Chat = React.forwardRef<ChatHandle, ChatProps>(function Chat({
   useEffect(() => {
     onModelRevisionsChange?.(modelRevisions);
   }, [modelRevisions, onModelRevisionsChange]);
+
+  useEffect(() => {
+    onMarkdownRevisionsChange(markdownRevisions);
+  }, [markdownRevisions, onMarkdownRevisionsChange]);
 
   const history = useThreadHistory(client, isAuthReady);
   const {
