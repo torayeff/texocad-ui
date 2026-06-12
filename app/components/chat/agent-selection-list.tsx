@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Box, ChevronRight, ImageIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth, useClerk } from "@clerk/nextjs";
+import { Box, ChevronRight, ImageIcon, Lock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import {
@@ -13,6 +15,13 @@ import {
   type AssistantId,
 } from "@/app/lib/chat/langgraph-config";
 import { cn } from "@/app/lib/cn";
+import { toolTooltipClass } from "@/app/lib/chat/chat-styles";
+import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
+
+const lockedTooltipClass = cn(
+  toolTooltipClass,
+  "bottom-[calc(100%+0.375rem)] top-auto group-hover/locked:opacity-100 group-focus-within/locked:opacity-100",
+);
 
 interface AgentSelectionOption {
   avatarUrl?: string;
@@ -49,7 +58,7 @@ const PRIMARY_AGENT_OPTIONS: AgentSelectionOption[] = [
     avatarUrl: "/images/agents/nexis.png",
     label: "Nexis",
     role: "Simulation engineer",
-    description: "Process, robot, and risk reports.",
+    description: "Tests designs, processes, and performance.",
     mode: null,
   },
 ];
@@ -95,30 +104,43 @@ function AgentIcon({ option }: { option: AgentSelectionOption }) {
 }
 
 function AgentOptionButton({
+  isLocked = false,
   isLegacy = false,
+  lockedTooltip = "Sign in to unlock",
   option,
+  onLockedSelect,
   onModeSelect,
 }: {
+  isLocked?: boolean;
   isLegacy?: boolean;
+  lockedTooltip?: string;
   option: AgentSelectionOption;
+  onLockedSelect?: () => void;
   onModeSelect: (mode: AssistantId) => void;
 }) {
   const isComingSoon = option.mode === null;
+  const isUnavailable = isComingSoon || isLocked;
 
   return (
     <button
       type="button"
       disabled={isComingSoon}
+      aria-label={isLocked ? `${option.label} (locked)` : undefined}
       onClick={() => {
+        if (isLocked) {
+          onLockedSelect?.();
+          return;
+        }
         if (option.mode !== null) onModeSelect(option.mode);
       }}
       className={cn(
         "group flex w-full items-center gap-3 rounded-[calc(var(--viewer-control-radius)+0.25rem)] border bg-background/75 text-left shadow-[0_1px_2px_rgb(0_0_0_/_0.035)] transition-[background-color,border-color,box-shadow,color,opacity]",
         "border-border/40",
         isLegacy ? "px-3 py-2.5" : "px-4 py-3",
-        isComingSoon
+        isUnavailable
           ? "opacity-60"
           : "hover:border-border/80 hover:bg-background hover:text-foreground hover:shadow-[0_8px_22px_rgb(0_0_0_/_0.06)]",
+        isLocked && "hover:border-border/70 hover:bg-background hover:opacity-100",
         isLegacy && "bg-background/45 opacity-80 shadow-none hover:opacity-100",
       )}
     >
@@ -136,6 +158,13 @@ function AgentOptionButton({
         <span className="inline-flex shrink-0 items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
           Coming soon
         </span>
+      ) : isLocked ? (
+        <span className="group/locked relative inline-flex shrink-0 items-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+          <Lock size={11} strokeWidth={2} />
+          <span role="tooltip" className={lockedTooltipClass}>
+            {lockedTooltip}
+          </span>
+        </span>
       ) : (
         <span className="inline-flex shrink-0 items-center text-muted-foreground/0 transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-muted-foreground">
           <ChevronRight size={15} strokeWidth={2} />
@@ -150,13 +179,47 @@ export function AgentSelectionList({
 }: {
   onModeSelect: (mode: AssistantId) => void;
 }) {
+  const { has, isLoaded, isSignedIn, sessionClaims } = useAuth();
+  const { openSignIn } = useClerk();
+  const router = useRouter();
+  const hasAgentAccess = Boolean(
+    isSignedIn
+    && (
+      has?.({ plan: CLERK_PLAN_SLUG })
+      || sessionClaims?.freeAccess === true
+      || sessionClaims?.vipAccess === true
+    ),
+  );
+  const lockedAgentAction = !isLoaded || hasAgentAccess
+    ? null
+    : (isSignedIn ? "upgrade" : "sign-in");
+  const shouldLockRestrictedAgents = lockedAgentAction !== null;
+  const lockedAgentTooltip = lockedAgentAction === "upgrade"
+    ? "Upgrade to unlock"
+    : "Sign in to unlock";
+
+  const handleLockedAgentSelect = () => {
+    if (lockedAgentAction === "upgrade") {
+      router.push(SITE_ROUTES.pricing);
+      return;
+    }
+    openSignIn();
+  };
+
   return (
     <div className="w-full max-w-xl space-y-4">
       <section className="grid gap-2">
         {PRIMARY_AGENT_OPTIONS.map((option) => (
           <AgentOptionButton
             key={option.label}
+            isLocked={
+              shouldLockRestrictedAgents
+              && option.mode !== null
+              && option.mode !== CLARI_ASSISTANT_ID
+            }
+            lockedTooltip={lockedAgentTooltip}
             option={option}
+            onLockedSelect={handleLockedAgentSelect}
             onModeSelect={onModeSelect}
           />
         ))}
@@ -170,8 +233,11 @@ export function AgentSelectionList({
           {LEGACY_AGENT_OPTIONS.map((option) => (
             <AgentOptionButton
               key={option.label}
+              isLocked={shouldLockRestrictedAgents}
+              lockedTooltip={lockedAgentTooltip}
               option={option}
               isLegacy
+              onLockedSelect={handleLockedAgentSelect}
               onModeSelect={onModeSelect}
             />
           ))}

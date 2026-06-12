@@ -3,7 +3,9 @@
 import { useCallback } from "react";
 import type { ComponentType } from "react";
 import NextImage from "next/image";
-import { Box, Check, ChevronDown, Image } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth, useClerk } from "@clerk/nextjs";
+import { Box, Check, ChevronDown, Image, Lock } from "lucide-react";
 
 import { cn } from "@/app/lib/cn";
 import {
@@ -18,8 +20,15 @@ import {
   activeControlClass,
   chatGlassClass,
   controlMenuItemClass,
+  toolTooltipClass,
 } from "@/app/lib/chat/chat-styles";
 import { useDropdown } from "@/app/hooks/chat/use-dropdown";
+import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
+
+const lockedTooltipClass = cn(
+  toolTooltipClass,
+  "bottom-[calc(100%+0.375rem)] top-auto group-hover/locked:opacity-100 group-focus-within/locked:opacity-100",
+);
 
 interface AgentIconProps {
   size?: number;
@@ -63,11 +72,23 @@ function ClariPortraitIcon({ size = 14, className }: AgentIconProps) {
   );
 }
 
+function NexisPortraitIcon({ size = 14, className }: AgentIconProps) {
+  return (
+    <NextImage
+      src="/images/agents/nexis.png"
+      alt=""
+      width={size}
+      height={size}
+      className={cn("rounded-full object-cover ring-1 ring-border/50", className)}
+    />
+  );
+}
+
 interface AgentModeOption {
   icon: ComponentType<AgentIconProps>;
   iconKind: "glyph" | "portrait";
   label: string;
-  mode: AssistantId;
+  mode: AssistantId | null;
   role: string;
 }
 
@@ -97,6 +118,13 @@ const PRIMARY_AGENT_MODE_OPTIONS: AgentModeOption[] = [
     label: "Forma",
     mode: FORMA_ASSISTANT_ID,
     role: "CAD engineer",
+  },
+  {
+    icon: NexisPortraitIcon,
+    iconKind: "portrait",
+    label: "Nexis",
+    mode: null,
+    role: "Simulation engineer",
   },
 ];
 
@@ -162,35 +190,60 @@ function AgentModeIcon({
 
 function AgentModeOptionButton({
   activeMode,
+  isComingSoon = false,
+  isLocked = false,
   isLegacy = false,
+  lockedTooltip = "Sign in to unlock",
+  onLockedSelect,
   onSelect,
   option,
 }: {
   activeMode: AssistantId;
+  isComingSoon?: boolean;
+  isLocked?: boolean;
   isLegacy?: boolean;
+  lockedTooltip?: string;
+  onLockedSelect?: () => void;
   onSelect: (mode: AssistantId) => void;
   option: AgentModeOption;
 }) {
   const isSelected = option.mode === activeMode;
+  const isUnavailable = isComingSoon || isLocked;
 
   return (
     <button
       type="button"
       role="option"
+      disabled={isComingSoon}
       aria-selected={isSelected}
-      onClick={() => onSelect(option.mode)}
+      aria-label={isComingSoon ? `${option.label} (coming soon)` : isLocked ? `${option.label} (locked)` : undefined}
+      onClick={() => {
+        if (isLocked) {
+          onLockedSelect?.();
+          return;
+        }
+        if (option.mode !== null) onSelect(option.mode);
+      }}
       className={cn(
         controlMenuItemClass,
         "min-h-10 px-2.5 py-1.5",
-        isLegacy && !isSelected && "opacity-75 hover:opacity-100",
+        (isLegacy || isUnavailable) && !isSelected && "opacity-75 hover:opacity-100",
+        isComingSoon && "cursor-not-allowed hover:bg-transparent hover:text-inherit",
         isSelected && activeControlClass,
       )}
     >
       <span className="flex min-w-0 items-center gap-2.5">
         <AgentModeIcon isSelected={isSelected} option={option} placement="option" />
         <span className="min-w-0">
-          <span className={cn("block truncate font-medium", isSelected ? "text-background" : "text-foreground")}>
-            {option.label}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className={cn("truncate font-medium", isSelected ? "text-background" : "text-foreground")}>
+              {option.label}
+            </span>
+            {isComingSoon ? (
+              <span className="inline-flex shrink-0 items-center rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                Coming soon
+              </span>
+            ) : null}
           </span>
           <span className={cn("block truncate text-[10px] font-normal leading-[0.875rem]", isSelected ? "text-background/70" : "text-muted-foreground")}>
             {option.role}
@@ -199,6 +252,13 @@ function AgentModeOptionButton({
       </span>
       {isSelected ? (
         <Check size={13} className="shrink-0 text-background" />
+      ) : isLocked ? (
+        <span className="group/locked relative inline-grid shrink-0 place-items-center">
+          <Lock size={13} className="text-muted-foreground" />
+          <span role="tooltip" className={lockedTooltipClass}>
+            {lockedTooltip}
+          </span>
+        </span>
       ) : null}
     </button>
   );
@@ -206,12 +266,40 @@ function AgentModeOptionButton({
 
 export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerProps) {
   const { isOpen, containerRef, toggle, close } = useDropdown();
+  const { has, isLoaded, isSignedIn, sessionClaims } = useAuth();
+  const { openSignIn } = useClerk();
+  const router = useRouter();
   const selected = activeModeOption(activeMode);
+  const hasAgentAccess = Boolean(
+    isSignedIn
+    && (
+      has?.({ plan: CLERK_PLAN_SLUG })
+      || sessionClaims?.freeAccess === true
+      || sessionClaims?.vipAccess === true
+    ),
+  );
+  const lockedAgentAction = !isLoaded || hasAgentAccess
+    ? null
+    : (isSignedIn ? "upgrade" : "sign-in");
+  const shouldLockRestrictedAgents = lockedAgentAction !== null;
+  const lockedAgentTooltip = lockedAgentAction === "upgrade"
+    ? "Upgrade to unlock"
+    : "Sign in to unlock";
 
   const handleSelect = useCallback((mode: AssistantId) => {
     onModeChange(mode);
     close();
   }, [onModeChange, close]);
+
+  const handleLockedSelect = useCallback(() => {
+    if (lockedAgentAction === "upgrade") {
+      router.push(SITE_ROUTES.pricing);
+      close();
+      return;
+    }
+    openSignIn();
+    close();
+  }, [close, lockedAgentAction, openSignIn, router]);
 
   return (
     <div ref={containerRef} className="relative">
@@ -240,9 +328,17 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
         >
           {PRIMARY_AGENT_MODE_OPTIONS.map((option) => (
             <AgentModeOptionButton
-              key={option.mode}
+              key={option.label}
               activeMode={activeMode}
+              isComingSoon={option.mode === null}
+              isLocked={
+                shouldLockRestrictedAgents
+                && option.mode !== null
+                && option.mode !== CLARI_ASSISTANT_ID
+              }
+              lockedTooltip={lockedAgentTooltip}
               option={option}
+              onLockedSelect={handleLockedSelect}
               onSelect={handleSelect}
             />
           ))}
@@ -259,8 +355,11 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
             <AgentModeOptionButton
               key={option.mode}
               activeMode={activeMode}
+              isLocked={shouldLockRestrictedAgents}
               isLegacy
+              lockedTooltip={lockedAgentTooltip}
               option={option}
+              onLockedSelect={handleLockedSelect}
               onSelect={handleSelect}
             />
           ))}

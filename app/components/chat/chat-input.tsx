@@ -244,7 +244,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onBlur={() => window.scrollTo(0, 0)}
-            placeholder={maskComposer ? "Describe the masked edit..." : "Describe a part..."}
+            placeholder={maskComposer ? "Describe the masked edit..." : "Describe what you need..."}
             rows={1}
             className="w-full resize-none overflow-y-auto bg-transparent px-2 pt-3 text-base text-foreground placeholder:text-muted-foreground outline-none max-h-[200px] md:text-[15px]"
             style={{ minHeight: "24px" }}

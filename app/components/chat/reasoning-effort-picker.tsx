@@ -9,12 +9,18 @@ import {
   chatGlassClass,
   composerTooltipClass,
   controlMenuItemClass,
+  toolTooltipClass,
 } from "@/app/lib/chat/chat-styles";
 import { useDropdown } from "@/app/hooks/chat/use-dropdown";
 import type {
   ReasoningEffortId,
   ReasoningEffortOption,
 } from "@/app/lib/chat/models";
+
+const lockedTooltipClass = cn(
+  toolTooltipClass,
+  "bottom-[calc(100%+0.375rem)] top-auto group-hover/locked:opacity-100 group-focus-within/locked:opacity-100",
+);
 
 interface ReasoningEffortPickerProps {
   value: ReasoningEffortId;
@@ -53,6 +59,8 @@ export default function ReasoningEffortPicker({
   }, [onLockedSelect, close]);
 
   if (!selected) return null;
+
+  const lockedTooltip = lockedHint ?? "Sign in to unlock";
 
   return (
     <div ref={containerRef} className="group/composer relative inline-grid">
@@ -127,10 +135,15 @@ export default function ReasoningEffortPicker({
               <span className="flex flex-col">
                 <span className="font-medium text-foreground">{effort.label}</span>
                 <span className="text-[11px] text-muted-foreground">
-                  {lockedHint ?? effort.description}
+                  {effort.description}
                 </span>
               </span>
-              <Lock size={13} className="flex-shrink-0 text-muted-foreground" />
+              <span className="group/locked relative inline-grid shrink-0 place-items-center">
+                <Lock size={13} className="text-muted-foreground" />
+                <span role="tooltip" className={lockedTooltipClass}>
+                  {lockedTooltip}
+                </span>
+              </span>
             </button>
           ))}
         </div>

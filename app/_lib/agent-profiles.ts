@@ -125,7 +125,7 @@ export const AGENT_PROFILES: readonly AgentProfile[] = [
     name: "Nexis",
     role: "Simulation engineer",
     tagline:
-      "Tests designs, processes, robotic motion, and real-world performance before prototyping.",
+      "Tests designs, processes, and real-world performance before prototyping.",
     bio: "Nexis evaluates CAD-ready concepts and production workflows with simulation plans, load cases, robot motion studies, and risk findings.",
     image: "/images/agents/nexis.png",
     cardSkills: ["FEA", "Process", "Robots", "Risk"],
@@ -142,11 +142,11 @@ export const AGENT_PROFILES: readonly AgentProfile[] = [
     outputs: [
       "Simulation setup plan",
       "Load and stress findings",
-      "Process and robot motion report",
+      "Process and simulation report",
     ],
     bestFor: [
       "Pre-prototype validation",
-      "Process and robot simulation",
+      "Process simulation",
       "Performance risk checks",
     ],
     startHref: null,
