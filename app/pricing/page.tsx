@@ -1,10 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { PricingTable } from "@clerk/nextjs";
 import Link from "next/link";
+import { FaLinkedin, FaXTwitter } from "react-icons/fa6";
 
-import { Header } from "@/app/components/header";
-import { Footer } from "@/app/components/footer";
-import { SITE_ROUTES } from "@/app/lib/site";
+import { SiteHeader } from "@/app/components/site-header";
+import { SITE_ROUTES, SUPPORT_EMAIL } from "@/app/lib/site";
 
 export default async function PricingPage() {
   const { userId, sessionClaims } = await auth();
@@ -14,15 +14,18 @@ export default async function PricingPage() {
 
   return (
     <main className="flex h-dvh flex-col bg-background text-foreground overflow-hidden">
-      <Header />
+      <SiteHeader />
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="flex flex-col items-center justify-center min-h-full p-6 md:p-8">
           <div className="w-full max-w-md flex flex-col items-center">
-            <h1 className="mb-2 text-3xl font-semibold tracking-tight">Pricing</h1>
+            <h1 className="mb-4 text-center text-4xl font-semibold leading-tight tracking-[-0.04em]">
+              Unlock your AI product team
+            </h1>
             {hasGrantedAccess ? (
               <>
                 <p className="mb-6 max-w-md text-center text-muted-foreground">
-                  You have been granted unlimited free access to TexoCAD Studio.
+                  You already have unlimited access to TexoCAD Studio. Jump back in and
+                  keep turning ideas into CAD-ready designs.
                 </p>
                 <Link
                   href={SITE_ROUTES.studio}
@@ -33,11 +36,12 @@ export default async function PricingPage() {
               </>
             ) : (
               <>
-                <p className="mb-6 max-w-md text-center text-muted-foreground">
-                  Subscribe to unlock TexoCAD Studio and start building.
-                </p>
-                <div className="mb-8 inline-flex items-center rounded-full bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent ring-1 ring-accent/20">
-                  ✨ 7-Day Free Trial
+                <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.09] px-4 py-2 text-sm font-semibold text-emerald-700 shadow-[0_12px_32px_rgb(0_0_0_/_0.08)] dark:text-emerald-300">
+                  <span
+                    className="size-2 rounded-full bg-emerald-500 shadow-[0_0_16px_rgb(16_185_129_/_0.55)]"
+                    aria-hidden="true"
+                  />
+                  100% free trial, no credit card required
                 </div>
                 <div className="w-full">
                   <PricingTable />
@@ -47,7 +51,44 @@ export default async function PricingPage() {
           </div>
         </div>
       </div>
-      <Footer />
+      <footer className="mx-auto mt-auto flex w-full max-w-7xl justify-center gap-6 px-[var(--app-chrome-gutter)] pb-6 text-xs font-normal text-foreground/35 sm:justify-end lg:pb-4">
+        <a
+          href={`mailto:${SUPPORT_EMAIL}`}
+          className="transition-colors hover:text-foreground/60"
+        >
+          Support
+        </a>
+        <Link
+          href={SITE_ROUTES.privacy}
+          className="transition-colors hover:text-foreground/60"
+        >
+          Privacy Policy
+        </Link>
+        <Link
+          href={SITE_ROUTES.terms}
+          className="transition-colors hover:text-foreground/60"
+        >
+          Terms & Conditions
+        </Link>
+        <a
+          href="https://www.linkedin.com/company/texocad/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="transition-colors hover:text-foreground/60"
+          aria-label="TexoCAD on LinkedIn"
+        >
+          <FaLinkedin size={14} aria-hidden="true" />
+        </a>
+        <a
+          href="https://x.com/texocad"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="transition-colors hover:text-foreground/60"
+          aria-label="TexoCAD on X"
+        >
+          <FaXTwitter size={14} aria-hidden="true" />
+        </a>
+      </footer>
     </main>
   );
 }
