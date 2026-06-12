@@ -2,10 +2,7 @@
 
 ## TODO
 - [ ] Desing Gallery
-
-## Viewer
-- `/viewer` opens local STEP, STL, GLB, and self-contained GLTF files in-browser.
-- `/viewer/[slug]` renders shared TexoCAD model and sketch links.
+- [ ] Job posting
 
 ## Low priority todo
 - [ ] Measurement tool
