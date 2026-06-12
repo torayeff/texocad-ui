@@ -53,13 +53,10 @@ export default function Home() {
         <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-10 px-6 py-8 sm:px-10 sm:py-10 lg:min-h-0 lg:grid-cols-[0.72fr_1fr] lg:grid-rows-[minmax(0,1fr)] lg:gap-10 lg:px-12 lg:pb-4 lg:pt-6 xl:gap-12">
           <div className="max-w-xl lg:self-center">
             <h1 className="text-balance text-4xl font-semibold leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-[3.4rem] xl:text-[3.75rem]">
-              Turn ideas into
-              <br />
-              real products
+              Your AI product team, backed by real human experts
             </h1>
             <p className="mt-5 max-w-md text-base leading-6 text-muted-foreground sm:text-lg sm:leading-7 lg:text-base lg:leading-6">
-              Create product designs with AI agents and human experts, from
-              requirements and concepts to CAD and simulation.
+              Turn sketches, ideas, and requirements into clear product specs, 3D models, CAD files, and simulation-ready designs with AI agents and expert humans.
             </p>
             <div className="mt-7 flex">
               <Link
@@ -85,7 +82,7 @@ export default function Home() {
               id="agents-heading"
               className="text-sm font-semibold tracking-tight text-foreground"
             >
-              Meet the agents
+              Meet your AI team
             </h2>
           </div>
           <AgentProfileGrid />
