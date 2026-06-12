@@ -51,8 +51,8 @@ export const ToolCallCard = React.memo(function ToolCallCard({
     [shouldRenderBody, toolCall.result],
   );
   const previewImages = React.useMemo(
-    () => state === "completed" ? getToolPreviewImages(toolCall.result) : [],
-    [state, toolCall.result],
+    () => shouldRenderBody && state === "completed" ? getToolPreviewImages(toolCall.result) : [],
+    [shouldRenderBody, state, toolCall.result],
   );
   const hasArgs = Object.keys(toolCall.call.args).length > 0;
 
@@ -84,28 +84,28 @@ export const ToolCallCard = React.memo(function ToolCallCard({
             {STATUS_LABEL[state]}
           </span>
         ) : null}
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {statusIcon}
           <ChevronDown
             size={13}
-            className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/tool:rotate-180"
+            className="flex-shrink-0 text-muted-foreground/40 opacity-0 transition-[opacity,transform] group-hover/tool:opacity-60 group-open/tool:rotate-180 group-open/tool:opacity-60"
           />
         </div>
       </summary>
 
-      {previewImages.length > 0 ? (
-        <div className="mt-2 flex flex-col gap-2 border-l border-border/30 pl-4">
-          {previewImages.map((image, index) => (
-            <ToolPreviewCard
-              key={`${image.src.slice(0, 80)}:${index}`}
-              image={image}
-            />
-          ))}
-        </div>
-      ) : null}
-
       {shouldRenderBody ? (
         <div className="mt-2 space-y-3 border-l border-border/30 pl-4">
+          {previewImages.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {previewImages.map((image, index) => (
+                <ToolPreviewCard
+                  key={`${image.src.slice(0, 80)}:${index}`}
+                  image={image}
+                />
+              ))}
+            </div>
+          ) : null}
+
           {hasArgs ? (
             <section className="space-y-1.5">
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">

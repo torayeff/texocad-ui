@@ -3,7 +3,7 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Brain, CircleCheck, ChevronDown } from "lucide-react";
+import { Brain, ChevronDown } from "lucide-react";
 import { useAutoScroll } from "@/app/hooks/chat/use-auto-scroll";
 import { useAutoOpenDetails } from "@/app/hooks/chat/use-auto-open-details";
 
@@ -16,8 +16,8 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
   content: string;
   isStreaming?: boolean;
 }) {
+  const { isOpen, handleToggle } = useAutoOpenDetails(false);
   const [scrollRef, handleScroll] = useAutoScroll<HTMLDivElement>(isStreaming);
-  const { isOpen, handleToggle } = useAutoOpenDetails(isStreaming);
 
   if (!content && !isStreaming) return null;
 
@@ -29,12 +29,11 @@ export const InlineThinkingBlock = React.memo(function InlineThinkingBlock({
     >
       <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
         <Brain size={13} className="flex-shrink-0 text-muted-foreground/60" />
-        <span>{isStreaming ? "Thinking..." : "Thought process"}</span>
-        <div className="ml-auto flex items-center gap-1.5">
-          {!isStreaming && <CircleCheck size={14} className="flex-shrink-0 text-success" />}
+        <span>{isStreaming ? "Thinking" : "Thoughts"}</span>
+        <div className="flex items-center gap-1">
           <ChevronDown
             size={13}
-            className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/thinking:rotate-180"
+            className="flex-shrink-0 text-muted-foreground/40 opacity-0 transition-[opacity,transform] group-hover/thinking:opacity-60 group-open/thinking:rotate-180 group-open/thinking:opacity-60"
           />
         </div>
       </summary>

@@ -77,7 +77,7 @@ export const SubagentCard = React.memo(function SubagentCard({
   const isStreaming = resolvedStatus === "running" && !!parentIsStreaming;
   const style = STATUS_STYLES[resolvedStatus];
   const StatusIcon = style.icon;
-  const { isOpen, handleToggle } = useAutoOpenDetails(isStreaming);
+  const { isOpen, handleToggle } = useAutoOpenDetails(false);
   const shouldRenderDetails = isOpen;
   const hasInputArgs = Object.keys(subagent.toolCall.args).length > 0;
 
@@ -112,11 +112,11 @@ export const SubagentCard = React.memo(function SubagentCard({
             {resolvedStatus}
           </span>
         ) : null}
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <StatusIcon size={14} className={style.iconClass} />
           <ChevronDown
             size={13}
-            className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/subagent:rotate-180"
+            className="flex-shrink-0 text-muted-foreground/40 opacity-0 transition-[opacity,transform] group-hover/subagent:opacity-60 group-open/subagent:rotate-180 group-open/subagent:opacity-60"
           />
         </div>
       </summary>
@@ -127,10 +127,10 @@ export const SubagentCard = React.memo(function SubagentCard({
             <details className="group/input">
               <summary className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70 cursor-pointer">
                 <span>Input</span>
-                <div className="ml-auto flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <ChevronDown
                     size={13}
-                    className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/input:rotate-180"
+                    className="flex-shrink-0 text-muted-foreground/40 opacity-0 transition-[opacity,transform] group-hover/input:opacity-60 group-open/input:rotate-180 group-open/input:opacity-60"
                   />
                 </div>
               </summary>
@@ -170,10 +170,10 @@ export const SubagentCard = React.memo(function SubagentCard({
                   <details className="group/final-text">
                     <summary className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground cursor-pointer">
                       <span>Final response</span>
-                      <div className="ml-auto flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         <ChevronDown
                           size={13}
-                          className="flex-shrink-0 text-muted-foreground/40 transition-transform group-open/final-text:rotate-180"
+                          className="flex-shrink-0 text-muted-foreground/40 opacity-0 transition-[opacity,transform] group-hover/final-text:opacity-60 group-open/final-text:rotate-180 group-open/final-text:opacity-60"
                         />
                       </div>
                     </summary>
