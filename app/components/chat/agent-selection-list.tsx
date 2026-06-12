@@ -50,7 +50,7 @@ const PRIMARY_AGENT_OPTIONS: AgentSelectionOption[] = [
     avatarUrl: "/images/agents/nexis.png",
     label: "Nexis",
     role: "Simulation engineer",
-    description: "Loads, motion, and thermal studies.",
+    description: "Process, robot, and risk reports.",
     mode: null,
   },
 ];

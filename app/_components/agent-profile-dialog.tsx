@@ -167,20 +167,6 @@ export function AgentProfileDialog({
 
         <div className="mt-5 grid gap-5 border-t border-border/70 pt-5 sm:grid-cols-2 sm:gap-8">
           <section>
-            <SectionTitle>Outputs</SectionTitle>
-            <ul className="mt-3 space-y-1.5 text-[13px] leading-5 text-muted-foreground">
-              {agent.outputs.map((output) => (
-                <li key={output} className="flex gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="mt-[0.4375rem] size-1 shrink-0 rounded-full bg-muted-foreground/55"
-                  />
-                  {output}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <section>
             <SectionTitle>Best for</SectionTitle>
             <ul className="mt-3 space-y-1.5 text-[13px] leading-5 text-muted-foreground">
               {agent.bestFor.map((item) => (
@@ -190,6 +176,20 @@ export function AgentProfileDialog({
                     className="mt-[0.4375rem] size-1 shrink-0 rounded-full bg-muted-foreground/55"
                   />
                   {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section>
+            <SectionTitle>Outputs</SectionTitle>
+            <ul className="mt-3 space-y-1.5 text-[13px] leading-5 text-muted-foreground">
+              {agent.outputs.map((output) => (
+                <li key={output} className="flex gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="mt-[0.4375rem] size-1 shrink-0 rounded-full bg-muted-foreground/55"
+                  />
+                  {output}
                 </li>
               ))}
             </ul>
