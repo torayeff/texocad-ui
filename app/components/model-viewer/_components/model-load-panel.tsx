@@ -10,12 +10,20 @@ import { cn } from "@/app/lib/cn";
 
 const modelFileAccept = ".step,.stp,.stl,.glb,.gltf,model/step,model/stl,model/gltf-binary,model/gltf+json";
 
+function formatBytes(bytes: number) {
+  const megabytes = bytes / (1024 * 1024);
+  if (megabytes >= 10) {
+    return `${Math.round(megabytes)} MB`;
+  }
+  return `${megabytes.toFixed(1)} MB`;
+}
+
 interface ModelLoadPanelProps {
   loadProgress: LoadProgress | null;
   loadState: LoadState;
   showUpload: boolean;
   status: string;
-  onFileChange: (file: File | null) => void;
+  onFileChange?: (file: File | null) => void;
 }
 
 export const ModelLoadPanel = memo(function ModelLoadPanel({
@@ -26,6 +34,9 @@ export const ModelLoadPanel = memo(function ModelLoadPanel({
   status,
 }: ModelLoadPanelProps) {
   const progressPercent = loadProgress ? Math.min(100, Math.max(0, Math.round(loadProgress.percent))) : 0;
+  const progressSize = loadProgress?.loadedBytes !== undefined && loadProgress.totalBytes !== undefined
+    ? `${formatBytes(loadProgress.loadedBytes)} / ${formatBytes(loadProgress.totalBytes)}`
+    : null;
 
   const progressStatus = loadProgress ? (
     <div className={cn(viewerGlassClass, "grid w-[min(24rem,calc(100vw-2rem))] gap-2 rounded-2xl p-3")} role="status" aria-live="polite">
@@ -35,6 +46,11 @@ export const ModelLoadPanel = memo(function ModelLoadPanel({
           {progressPercent}%
         </span>
       </div>
+      {progressSize ? (
+        <p className="m-0 text-right text-[0.75rem] font-medium tabular-nums text-muted-foreground">
+          {progressSize}
+        </p>
+      ) : null}
       <div
         className="h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--border)_58%,transparent)]"
         aria-hidden="true"
@@ -51,7 +67,7 @@ export const ModelLoadPanel = memo(function ModelLoadPanel({
     return null;
   }
 
-  if (!showUpload) {
+  if (!showUpload || !onFileChange) {
     return (
       <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center px-4">
         {progressStatus ?? (

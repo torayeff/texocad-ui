@@ -1,11 +1,8 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-
 import type { ModelSource, ViewerRevisionOption } from "@/app/types/model-viewer";
 import type { ShareRevision } from "@/app/types/share-artifact";
 import { ModelLoadPanel } from "@/app/components/model-viewer/_components/model-load-panel";
-import { loadingIconClass } from "@/app/components/viewer/viewer-styles";
 import { ModelViewerShareDialogs } from "@/app/components/model-viewer/_components/model-viewer-share-dialogs";
 import { ViewerControls } from "@/app/components/model-viewer/_components/viewer-controls";
 import { ViewerGestureHint } from "@/app/components/model-viewer/_components/viewer-gesture-hint";
@@ -133,19 +130,13 @@ export default function ModelViewer({
         <ViewerEmptyAnimation />
       ) : null}
 
-      {!canUseLocalFiles && source && loadState === "loading" ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 size={16} strokeWidth={1.75} className={loadingIconClass} />
-            <span>{status}</span>
-          </div>
-        </div>
-      ) : null}
-
-      {!canUseLocalFiles && source && loadState === "error" ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <p className="text-sm text-error">{status}</p>
-        </div>
+      {!canUseLocalFiles && source && loadState !== "ready" ? (
+        <ModelLoadPanel
+          loadState={loadState}
+          loadProgress={loadProgress}
+          showUpload={false}
+          status={status}
+        />
       ) : null}
 
       {downloadError ? (

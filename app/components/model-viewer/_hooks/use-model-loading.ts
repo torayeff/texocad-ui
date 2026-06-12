@@ -85,20 +85,22 @@ export function useModelLoading({
     async function loadModel(viewerRuntime: ViewerRuntime) {
       setMeshCount(null);
       setLoadState("loading");
-      const loadingLabel = modelSource.kind === "url" ? "Loading model..." : `Loading ${modelSource.label}...`;
+      const loadingLabel = modelSource.kind === "url" ? "Downloading model..." : `Loading ${modelSource.label}...`;
       setStatus(loadingLabel);
       setLoadProgress({ label: loadingLabel, percent: 8 });
       const format = sourceFormat(modelSource);
       const buffer = await getSourceBuffer(
         modelSource,
-        (loadPercent) => {
+        (progress) => {
           if (cancelled) {
             return;
           }
 
           setLoadProgress({
             label: loadingLabel,
-            percent: 8 + Math.round(loadPercent * 0.72),
+            loadedBytes: progress.loadedBytes,
+            percent: 8 + Math.round(progress.percent * 0.72),
+            totalBytes: progress.totalBytes,
           });
         },
         abortController.signal,

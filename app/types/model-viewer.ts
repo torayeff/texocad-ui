@@ -17,8 +17,10 @@ export type TransformMode = "translate" | "rotate" | null;
 export type ViewPreset = "iso" | "front" | "back" | "top" | "bottom" | "left" | "right";
 
 export interface LoadProgress {
+  loadedBytes?: number;
   label: string;
   percent: number;
+  totalBytes?: number;
 }
 
 export interface ModelBrowserNode {

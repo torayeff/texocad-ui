@@ -2,7 +2,13 @@ import { assertSourceByteLength } from "@/app/components/model-viewer/_lib/geome
 import { modelFormatFromName } from "@/app/lib/model-formats";
 import type { ModelFormat, ModelSource } from "@/app/types/model-viewer";
 
-type SourceBufferProgress = (percent: number) => void;
+interface SourceBufferProgressEvent {
+  loadedBytes: number;
+  percent: number;
+  totalBytes: number;
+}
+
+type SourceBufferProgress = (progress: SourceBufferProgressEvent) => void;
 
 function assertNever(value: never, message: string): never {
   throw new Error(`${message}: ${String(value)}`);
@@ -42,7 +48,11 @@ function readFileBuffer(file: File, onProgress?: SourceBufferProgress, signal?: 
 
     reader.addEventListener("progress", (event) => {
       if (event.lengthComputable && event.total > 0) {
-        onProgress?.(Math.round((event.loaded / event.total) * 100));
+        onProgress?.({
+          loadedBytes: event.loaded,
+          percent: Math.round((event.loaded / event.total) * 100),
+          totalBytes: event.total,
+        });
       }
     });
     reader.addEventListener("load", () => {
@@ -92,7 +102,11 @@ function fetchUrlBuffer(url: string, onProgress?: SourceBufferProgress, signal?:
     request.responseType = "arraybuffer";
     request.addEventListener("progress", (event) => {
       if (event.lengthComputable && event.total > 0) {
-        onProgress?.(Math.round((event.loaded / event.total) * 100));
+        onProgress?.({
+          loadedBytes: event.loaded,
+          percent: Math.round((event.loaded / event.total) * 100),
+          totalBytes: event.total,
+        });
       }
     });
     request.addEventListener("load", () => {
