@@ -50,9 +50,9 @@ export default function Home() {
         <ExpertNetworkBanner />
         <SiteHeader />
 
-        <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-8 px-6 py-8 sm:px-10 lg:min-h-0 lg:grid-cols-[0.72fr_1fr] lg:grid-rows-[minmax(0,1fr)] lg:gap-4 lg:px-12 lg:pb-4 lg:pt-6">
+        <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-10 px-6 py-8 sm:px-10 sm:py-10 lg:min-h-0 lg:grid-cols-[0.72fr_1fr] lg:grid-rows-[minmax(0,1fr)] lg:gap-10 lg:px-12 lg:pb-4 lg:pt-6 xl:gap-12">
           <div className="max-w-xl lg:self-center">
-            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-[3.25rem]">
+            <h1 className="text-balance text-4xl font-semibold leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-[3.4rem] xl:text-[3.75rem]">
               Turn ideas into
               <br />
               real products
@@ -61,6 +61,14 @@ export default function Home() {
               Create product designs with AI agents and human experts, from
               requirements and concepts to CAD and simulation.
             </p>
+            <div className="mt-7 flex">
+              <Link
+                href={SITE_ROUTES.studio}
+                className="inline-flex items-center justify-center rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-[0_16px_40px_rgb(0_0_0_/_0.12)] transition-[background-color,box-shadow,transform] hover:-translate-y-0.5 hover:bg-foreground/90 hover:shadow-[0_20px_48px_rgb(0_0_0_/_0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Start Building
+              </Link>
+            </div>
           </div>
 
           <div className="relative lg:min-h-0 lg:self-stretch">

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 
 import { AgentProfileDialog } from "@/app/_components/agent-profile-dialog";
@@ -28,7 +29,7 @@ export function AgentProfileGrid() {
             type="button"
             onClick={() => setActiveAgent(agent)}
             aria-haspopup="dialog"
-            className="group grid h-[16.5rem] grid-rows-[3.75rem_3.75rem_2rem_2rem] gap-y-4 rounded-2xl border border-border bg-card p-6 text-left transition-colors hover:bg-muted/40 lg:h-[13.25rem] lg:grid-rows-[3rem_3.5rem_1.5rem_1.5rem] lg:gap-y-2.5 lg:rounded-xl lg:p-4"
+            className="group relative grid h-[10rem] grid-rows-[3.75rem_1fr] gap-y-4 rounded-2xl border border-border bg-card p-6 pr-14 text-left transition-colors hover:bg-muted/40 lg:h-[8rem] lg:grid-rows-[3rem_1fr] lg:gap-y-2.5 lg:rounded-xl lg:p-4 lg:pr-12"
           >
             <span className="flex items-center gap-4 lg:gap-3">
               <Image
@@ -52,10 +53,6 @@ export function AgentProfileGrid() {
               </span>
             </span>
 
-            <span className="overflow-hidden text-[13px] leading-5 text-muted-foreground lg:text-xs lg:leading-[1.15rem]">
-              {agent.tagline}
-            </span>
-
             <span className="flex flex-wrap content-start gap-1.5 lg:gap-1">
               {agent.cardSkills.map((skill) => (
                 <span
@@ -67,8 +64,8 @@ export function AgentProfileGrid() {
               ))}
             </span>
 
-            <span className="flex items-center justify-center rounded-lg text-[13px] font-medium text-foreground/80 transition-colors group-hover:bg-muted/60 group-hover:text-foreground lg:text-xs">
-              View profile
+            <span className="absolute right-6 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full border border-border bg-background text-muted-foreground transition-colors group-hover:border-foreground/15 group-hover:bg-foreground group-hover:text-background lg:right-4 lg:size-7">
+              <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
             </span>
           </button>
         ))}

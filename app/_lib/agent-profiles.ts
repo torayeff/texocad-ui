@@ -62,36 +62,6 @@ export const AGENT_PROFILES: readonly AgentProfile[] = [
     startHref: studioAgentHref(CLARI_ASSISTANT_ID),
   },
   {
-    name: "Forma",
-    role: "CAD engineer",
-    tagline:
-      "Creates precise CAD parts, assembly layouts, manufacturing details, and revision-ready geometry.",
-    bio: "Forma turns an approved direction into precise, editable CAD geometry, assemblies, and manufacturing-ready parts.",
-    image: "/images/agents/forma.png",
-    cardSkills: ["CAD", "Parts", "DFM", "STEP"],
-    coreSkills: [
-      "Parametric CAD",
-      "Assembly Layouts",
-      "BREP Modeling",
-      "Tolerance Plans",
-      "DFM Checks",
-      "STEP Export",
-      "Revision Loops",
-      "Part Detailing",
-    ],
-    outputs: [
-      "Editable CAD part files",
-      "STEP assembly packages",
-      "Manufacturing detail set",
-    ],
-    bestFor: [
-      "Prototype-ready modeling",
-      "Manufacturing review",
-      "Production CAD handoff",
-    ],
-    startHref: studioAgentHref(FORMA_ASSISTANT_ID),
-  },
-  {
     name: "Lumi",
     role: "Concept engineer",
     tagline:
@@ -120,6 +90,36 @@ export const AGENT_PROFILES: readonly AgentProfile[] = [
       "Pre-CAD concept review",
     ],
     startHref: studioAgentHref(LUMI_ASSISTANT_ID),
+  },
+  {
+    name: "Forma",
+    role: "CAD engineer",
+    tagline:
+      "Creates precise CAD parts, assembly layouts, manufacturing details, and revision-ready geometry.",
+    bio: "Forma turns an approved direction into precise, editable CAD geometry, assemblies, and manufacturing-ready parts.",
+    image: "/images/agents/forma.png",
+    cardSkills: ["CAD", "Parts", "DFM", "STEP"],
+    coreSkills: [
+      "Parametric CAD",
+      "Assembly Layouts",
+      "BREP Modeling",
+      "Tolerance Plans",
+      "DFM Checks",
+      "STEP Export",
+      "Revision Loops",
+      "Part Detailing",
+    ],
+    outputs: [
+      "Editable CAD part files",
+      "STEP assembly packages",
+      "Manufacturing detail set",
+    ],
+    bestFor: [
+      "Prototype-ready modeling",
+      "Manufacturing review",
+      "Production CAD handoff",
+    ],
+    startHref: studioAgentHref(FORMA_ASSISTANT_ID),
   },
   {
     name: "Nexis",
