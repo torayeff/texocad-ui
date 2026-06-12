@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Archive, ArrowRight, Box, ImageIcon, Sparkles } from "lucide-react";
+import { Box, ChevronRight, ImageIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
 
 import {
   CAD_ASSISTANT_ID,
@@ -66,7 +65,7 @@ const LEGACY_AGENT_OPTIONS: AgentSelectionOption[] = [
   {
     icon: Box,
     label: "CAD",
-    role: "Legacy BREP CAD agent",
+    role: "Legacy CAD agent",
     description: "BREP CAD designs.",
     mode: CAD_ASSISTANT_ID,
   },
@@ -114,12 +113,13 @@ function AgentOptionButton({
         if (option.mode !== null) onModeSelect(option.mode);
       }}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-[calc(var(--viewer-control-radius)+0.125rem)] border bg-background/70 px-3.5 py-2 text-left shadow-[0_1px_2px_rgb(0_0_0_/_0.04)] transition-[background-color,border-color,box-shadow,color,opacity]",
+        "group flex w-full items-center gap-3 rounded-[calc(var(--viewer-control-radius)+0.25rem)] border bg-background/75 text-left shadow-[0_1px_2px_rgb(0_0_0_/_0.035)] transition-[background-color,border-color,box-shadow,color,opacity]",
         "border-border/40",
+        isLegacy ? "px-3 py-2.5" : "px-4 py-3",
         isComingSoon
           ? "opacity-60"
           : "hover:border-border/80 hover:bg-background hover:text-foreground hover:shadow-[0_8px_22px_rgb(0_0_0_/_0.06)]",
-        isLegacy && "opacity-75 hover:opacity-100",
+        isLegacy && "bg-background/45 opacity-80 shadow-none hover:opacity-100",
       )}
     >
       <AgentIcon option={option} />
@@ -138,26 +138,10 @@ function AgentOptionButton({
         </span>
       ) : (
         <span className="inline-flex shrink-0 items-center text-muted-foreground/0 transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-muted-foreground">
-          <ArrowRight size={14} strokeWidth={2} />
+          <ChevronRight size={15} strokeWidth={2} />
         </span>
       )}
     </button>
-  );
-}
-
-function SectionLabel({
-  children,
-  icon: Icon,
-}: {
-  children: ReactNode;
-  icon: LucideIcon;
-}) {
-  return (
-    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-      <Icon size={13} strokeWidth={1.7} />
-      <span>{children}</span>
-      <span className="h-px flex-1 bg-border/60" />
-    </div>
   );
 }
 
@@ -167,9 +151,8 @@ export function AgentSelectionList({
   onModeSelect: (mode: AssistantId) => void;
 }) {
   return (
-    <div className="w-full max-w-lg space-y-3">
-      <section className="space-y-1.5">
-        <SectionLabel icon={Sparkles}>Active agents</SectionLabel>
+    <div className="w-full max-w-xl space-y-4">
+      <section className="grid gap-2">
         {PRIMARY_AGENT_OPTIONS.map((option) => (
           <AgentOptionButton
             key={option.label}
@@ -179,16 +162,20 @@ export function AgentSelectionList({
         ))}
       </section>
 
-      <section className="space-y-1.5">
-        <SectionLabel icon={Archive}>Legacy agents</SectionLabel>
-        {LEGACY_AGENT_OPTIONS.map((option) => (
-          <AgentOptionButton
-            key={option.label}
-            option={option}
-            isLegacy
-            onModeSelect={onModeSelect}
-          />
-        ))}
+      <section className="space-y-2">
+        <h3 className="text-left text-xs font-medium text-muted-foreground">
+          Legacy agents
+        </h3>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {LEGACY_AGENT_OPTIONS.map((option) => (
+            <AgentOptionButton
+              key={option.label}
+              option={option}
+              isLegacy
+              onModeSelect={onModeSelect}
+            />
+          ))}
+        </div>
       </section>
     </div>
   );

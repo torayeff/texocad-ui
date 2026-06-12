@@ -160,18 +160,18 @@ export default function EmptyChatState({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl items-center justify-center px-4 py-8 sm:px-6">
+    <div className="mx-auto flex w-full max-w-3xl items-center justify-center px-4 py-8 sm:px-6">
       <div className="flex w-full flex-col items-center text-center">
-        <div className="max-w-md space-y-2">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            What do you want to build?
+        <div className="max-w-lg space-y-2">
+          <h2 className="text-2xl font-semibold tracking-[-0.035em] text-foreground">
+            Choose an agent to start building
           </h2>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Choose an agent to get started in the chat.
+          <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+            Pick the right specialist agent for your task.
           </p>
         </div>
 
-        <div className="mt-6 flex w-full justify-center">
+        <div className="mt-7 flex w-full justify-center">
           <AgentSelectionList onModeSelect={onModeSelect} />
         </div>
       </div>

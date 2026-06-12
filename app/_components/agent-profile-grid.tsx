@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 import { AgentProfileDialog } from "@/app/_components/agent-profile-dialog";
@@ -65,7 +65,7 @@ export function AgentProfileGrid() {
             </span>
 
             <span className="absolute right-6 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full border border-border bg-background text-muted-foreground transition-colors group-hover:border-foreground/15 group-hover:bg-foreground group-hover:text-background lg:right-4 lg:size-7">
-              <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
+              <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
             </span>
           </button>
         ))}
