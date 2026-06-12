@@ -7,16 +7,6 @@ import { useState } from "react";
 import { AgentProfileDialog } from "@/app/_components/agent-profile-dialog";
 import { AGENT_PROFILES, type AgentProfile } from "@/app/_lib/agent-profiles";
 
-function getRoleLines(role: string): [string] | [string, string] {
-  const [firstWord, ...remainingWords] = role.split(" ");
-
-  if (firstWord === undefined || remainingWords.length === 0) {
-    return [role];
-  }
-
-  return [firstWord, remainingWords.join(" ")];
-}
-
 export function AgentProfileGrid() {
   const [activeAgent, setActiveAgent] = useState<AgentProfile | null>(null);
 
@@ -43,12 +33,8 @@ export function AgentProfileGrid() {
                 <span className="block text-base font-semibold tracking-tight lg:text-sm">
                   {agent.name}
                 </span>
-                <span className="mt-1 block text-[11px] font-medium leading-[1.25] tracking-[0.04em] text-muted-foreground lg:text-[10px]">
-                  {getRoleLines(agent.role).map((roleLine) => (
-                    <span key={roleLine} className="block">
-                      {roleLine}
-                    </span>
-                  ))}
+                <span className="mt-1 block truncate whitespace-nowrap text-[11px] font-medium leading-[1.25] tracking-[0.04em] text-muted-foreground lg:text-[10px]">
+                  {agent.role}
                 </span>
               </span>
             </span>
