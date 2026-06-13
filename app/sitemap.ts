@@ -1,46 +1,28 @@
 import type { MetadataRoute } from "next";
 
-import { SITE_ROUTES, SITE_URL } from "@/app/lib/site";
+import { SITE_ROUTES, absoluteSiteUrl } from "@/app/lib/site";
+
+const sitemapRoutes = [
+  { route: SITE_ROUTES.home, changeFrequency: "weekly", priority: 1 },
+  { route: SITE_ROUTES.pricing, changeFrequency: "monthly", priority: 0.8 },
+  { route: SITE_ROUTES.viewer, changeFrequency: "monthly", priority: 0.7 },
+  { route: SITE_ROUTES.expertNetwork, changeFrequency: "monthly", priority: 0.6 },
+  { route: SITE_ROUTES.humanExpertsNetwork, changeFrequency: "monthly", priority: 0.6 },
+  { route: SITE_ROUTES.privacy, changeFrequency: "yearly", priority: 0.2 },
+  { route: SITE_ROUTES.terms, changeFrequency: "yearly", priority: 0.2 },
+] satisfies Array<{
+  route: string;
+  changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"];
+  priority: number;
+}>;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
-  return [
-    {
-      url: SITE_URL,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${SITE_URL}${SITE_ROUTES.pricing}`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${SITE_URL}${SITE_ROUTES.lumi}`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${SITE_URL}${SITE_ROUTES.forma}`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${SITE_URL}${SITE_ROUTES.expertNetwork}`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${SITE_URL}${SITE_ROUTES.studio}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.6,
-    },
-  ];
+  return sitemapRoutes.map(({ route, changeFrequency, priority }) => ({
+    url: absoluteSiteUrl(route),
+    lastModified: now,
+    changeFrequency,
+    priority,
+  }));
 }

@@ -1,6 +1,6 @@
 export const COMPANY_NAME = "TexoCAD";
 export const SITE_NAME = COMPANY_NAME;
-export const SITE_URL = "https://texocad.ai";
+export const SITE_URL = "https://www.texocad.ai";
 export const SUPPORT_EMAIL = "support@texocad.ai";
 export const LEGAL_ENTITY_NAME = "ROBOMINDER LTD";
 export const LEGAL_ENTITY_NUMBER = "15332373";
