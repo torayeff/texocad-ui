@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HumanMessage } from "@langchain/core/messages";
 
+import { trackEvent } from "@/app/lib/analytics/client";
 import { CAD_ASSISTANT_ID, type AssistantId } from "@/app/lib/chat/langgraph-config";
 import type {
   AssistantTimer,
@@ -94,11 +95,25 @@ export function useChatSessionController({
   const handleModeSelect = useCallback((mode: AssistantId) => {
     if (mode === assistantId && hasActiveMode) return;
     if (!hasStartedChat) {
+      trackEvent("agent_selected", {
+        agent_id: mode,
+        previous_agent_id: hasActiveMode ? assistantId : undefined,
+        source: hasActiveMode ? "mode_picker" : "empty_state",
+        has_started_chat: false,
+        requires_new_chat_confirmation: false,
+      });
       onModeChange(mode);
       setHasChosenMode(true);
       focusChatInput(chatInputRef);
       return;
     }
+    trackEvent("agent_selected", {
+      agent_id: mode,
+      previous_agent_id: assistantId,
+      source: "mode_picker",
+      has_started_chat: true,
+      requires_new_chat_confirmation: true,
+    });
     setNewChatConfirmationIntent({ kind: "mode", mode });
   }, [assistantId, chatInputRef, hasActiveMode, hasStartedChat, onModeChange]);
 
@@ -135,8 +150,16 @@ export function useChatSessionController({
   const handleConfirmNewChat = useCallback(() => {
     const intent = newChatConfirmationIntent;
     setNewChatConfirmationIntent(null);
-    startNewChat(intent?.kind === "mode" ? intent.mode : (hasActiveMode ? assistantId : CAD_ASSISTANT_ID));
-  }, [assistantId, hasActiveMode, newChatConfirmationIntent, startNewChat]);
+    const nextMode = intent?.kind === "mode" ? intent.mode : (hasActiveMode ? assistantId : CAD_ASSISTANT_ID);
+    trackEvent("agent_selected", {
+      agent_id: nextMode,
+      previous_agent_id: assistantId,
+      source: "new_chat_confirmation",
+      has_started_chat: hasStartedChat,
+      requires_new_chat_confirmation: false,
+    });
+    startNewChat(nextMode);
+  }, [assistantId, hasActiveMode, hasStartedChat, newChatConfirmationIntent, startNewChat]);
 
   const handleCancelNewChat = useCallback(() => {
     setNewChatConfirmationIntent(null);

@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 
 import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
+import { trackEvent } from "@/app/lib/analytics/client";
 
 export function usePublicShareDialog() {
   const {
@@ -19,7 +20,18 @@ export function usePublicShareDialog() {
   const handleOpenShareDialog = useCallback(() => {
     setShareUrl(window.location.href);
     openShareDialog();
+    trackEvent("share_dialog_opened", {
+      artifact_kind: "public",
+      has_existing_share: true,
+    });
   }, [openShareDialog, setShareUrl]);
+
+  const handleCopyShareUrl = useCallback((url?: string | null) => {
+    trackEvent("share_link_copied", {
+      artifact_kind: "public",
+    });
+    copyShareUrl(url);
+  }, [copyShareUrl]);
 
   const handleCloseShareDialog = useCallback(() => {
     closeShareDialog();
@@ -28,7 +40,7 @@ export function usePublicShareDialog() {
   return {
     didCopyShareUrl,
     handleCloseShareDialog,
-    handleCopyShareUrl: copyShareUrl,
+    handleCopyShareUrl,
     handleOpenShareDialog,
     isShareDialogOpen,
     shareError,

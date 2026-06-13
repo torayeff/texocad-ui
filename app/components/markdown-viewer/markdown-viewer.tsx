@@ -19,6 +19,7 @@ import {
 } from "@/app/components/viewer/viewer-styles";
 import { useShareArtifact } from "@/app/hooks/use-share-artifact";
 import { usePublicShareDialog } from "@/app/hooks/use-public-share-dialog";
+import { trackEvent } from "@/app/lib/analytics/client";
 import { cn } from "@/app/lib/cn";
 import type { MarkdownRevisionOption, MarkdownSource } from "@/app/types/markdown-viewer";
 import type { ShareRevision } from "@/app/types/share-artifact";
@@ -145,6 +146,11 @@ export default function MarkdownViewer({
 
   const handleDownload = useCallback(() => {
     if (!source) return;
+    trackEvent("artifact_download_started", {
+      artifact_kind: "markdown",
+      download_kind: "artifact",
+      source_kind: "url",
+    });
     const anchor = document.createElement("a");
     anchor.href = source.url;
     anchor.download = source.label;
@@ -152,6 +158,11 @@ export default function MarkdownViewer({
     document.body.append(anchor);
     anchor.click();
     anchor.remove();
+    trackEvent("artifact_download_succeeded", {
+      artifact_kind: "markdown",
+      download_kind: "artifact",
+      source_kind: "url",
+    });
   }, [source]);
 
   const handleToggleRevisions = useCallback((trigger: HTMLButtonElement) => {

@@ -8,6 +8,7 @@ import { useFileUpload } from "@/app/hooks/chat/use-file-upload";
 import ModelPicker from "@/app/components/chat/model-picker";
 import ReasoningEffortPicker from "@/app/components/chat/reasoning-effort-picker";
 import { AttachmentPill } from "@/app/components/chat/attachment-pill";
+import { trackEvent } from "@/app/lib/analytics/client";
 import {
   MaskComposerBanner,
   maskComposerDisabledReason,
@@ -86,20 +87,38 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const { openSignIn } = useClerk();
-  const { sessionClaims } = useAuth();
+  const { isSignedIn, sessionClaims } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
   const shouldShowModelPicker = isVip && MODELS.length > 1;
   const shouldShowReasoningPicker = !maskComposer && reasoningEfforts.length > 0;
 
   const handleLockedReasoningSelect = useCallback(() => {
     if (reasoningUpsell === "sign-in") {
+      trackEvent("auth_gate_clicked", {
+        action: "sign-in",
+        gate: "reasoning_effort",
+        is_signed_in: Boolean(isSignedIn),
+      });
+      trackEvent("sign_in_opened", {
+        gate: "reasoning_effort",
+        location: "chat_input",
+      });
       void openSignIn();
       return;
     }
     if (reasoningUpsell === "upgrade") {
+      trackEvent("auth_gate_clicked", {
+        action: "upgrade",
+        gate: "reasoning_effort",
+        is_signed_in: Boolean(isSignedIn),
+      });
+      trackEvent("upgrade_clicked", {
+        gate: "reasoning_effort",
+        location: "chat_input",
+      });
       router.push(SITE_ROUTES.pricing);
     }
-  }, [openSignIn, reasoningUpsell, router]);
+  }, [isSignedIn, openSignIn, reasoningUpsell, router]);
 
   const onFileUploaded = useCallback((file: UploadedFile) => {
     setAttachments((prev) => [...prev, file]);

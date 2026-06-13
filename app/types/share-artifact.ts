@@ -13,6 +13,7 @@ export interface ShareRevision {
 }
 
 export interface ShareResponse {
+  alreadyShared?: boolean;
   sharedArtifact?: SharedArtifactResult;
 }
 

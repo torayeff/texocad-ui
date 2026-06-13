@@ -2,6 +2,8 @@
 
 import { useAuth, useClerk } from "@clerk/nextjs";
 
+import { trackEvent } from "@/app/lib/analytics/client";
+
 export function AnonymousEditBanner() {
   const { isLoaded, isSignedIn } = useAuth();
   const { openSignIn } = useClerk();
@@ -14,7 +16,18 @@ export function AnonymousEditBanner() {
         You&apos;re using TexoCAD without an account.{" "}
         <button
           type="button"
-          onClick={() => openSignIn()}
+          onClick={() => {
+            trackEvent("auth_gate_clicked", {
+              action: "sign-in",
+              gate: "anonymous_edit_banner",
+              is_signed_in: false,
+            });
+            trackEvent("sign_in_opened", {
+              gate: "anonymous_edit_banner",
+              location: "anonymous_edit_banner",
+            });
+            openSignIn();
+          }}
           className="font-medium text-foreground underline underline-offset-2 transition-colors hover:text-primary"
         >
           Sign in

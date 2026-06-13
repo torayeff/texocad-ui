@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { AgentProfileDialog } from "@/app/_components/agent-profile-dialog";
 import { AGENT_PROFILES, type AgentProfile } from "@/app/_lib/agent-profiles";
+import { trackEvent } from "@/app/lib/analytics/client";
 
 export function AgentProfileGrid() {
   const [activeAgent, setActiveAgent] = useState<AgentProfile | null>(null);
@@ -17,7 +18,14 @@ export function AgentProfileGrid() {
           <button
             key={agent.name}
             type="button"
-            onClick={() => setActiveAgent(agent)}
+            onClick={() => {
+              trackEvent("agent_profile_opened", {
+                agent_name: agent.name,
+                agent_role: agent.role,
+                is_available: agent.startHref !== null,
+              });
+              setActiveAgent(agent);
+            }}
             aria-haspopup="dialog"
             className="group relative grid h-[10rem] grid-rows-[auto_auto] content-between rounded-2xl border border-border bg-card p-6 pr-14 text-left transition-colors hover:bg-muted/40 lg:h-[8rem] lg:rounded-xl lg:p-4 lg:pr-12"
           >

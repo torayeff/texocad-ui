@@ -3,17 +3,29 @@ import { PricingTable } from "@clerk/nextjs";
 import Link from "next/link";
 import { FaLinkedin, FaXTwitter } from "react-icons/fa6";
 
+import { TrackOnMount } from "@/app/components/analytics/track-on-mount";
+import { TrackedLink } from "@/app/components/analytics/tracked-link";
 import { SiteHeader } from "@/app/components/site-header";
 import { SITE_ROUTES, SUPPORT_EMAIL } from "@/app/lib/site";
+import { PricingAnalyticsBoundary } from "@/app/pricing/_components/pricing-analytics-boundary";
 
 export default async function PricingPage() {
   const { userId, sessionClaims } = await auth();
   const hasGrantedAccess =
     !!userId &&
     (sessionClaims?.freeAccess === true || sessionClaims?.vipAccess === true);
+  const accessState = !userId
+    ? "anonymous"
+    : hasGrantedAccess
+      ? "trial_or_vip"
+      : "signed_in_no_access";
 
   return (
     <main className="flex h-dvh flex-col bg-background text-foreground overflow-hidden">
+      <TrackOnMount
+        eventName="pricing_viewed"
+        properties={{ access_state: accessState }}
+      />
       <SiteHeader />
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="flex flex-col items-center justify-center min-h-full p-6 md:p-8">
@@ -27,12 +39,17 @@ export default async function PricingPage() {
                   You already have unlimited access to TexoCAD Studio. Jump back in and
                   keep turning ideas into CAD-ready designs.
                 </p>
-                <Link
+                <TrackedLink
                   href={SITE_ROUTES.studio}
+                  analytics={{
+                    cta: "go_to_studio",
+                    destination: SITE_ROUTES.studio,
+                    location: "pricing_access_granted",
+                  }}
                   className="inline-flex items-center rounded-lg bg-foreground px-5 py-2.5 text-sm font-medium text-background hover:bg-foreground/90 transition-colors"
                 >
                   Go to Studio
-                </Link>
+                </TrackedLink>
               </>
             ) : (
               <>
@@ -44,7 +61,9 @@ export default async function PricingPage() {
                   100% free trial, no credit card required
                 </div>
                 <div className="w-full">
-                  <PricingTable />
+                  <PricingAnalyticsBoundary accessState={accessState}>
+                    <PricingTable />
+                  </PricingAnalyticsBoundary>
                 </div>
               </>
             )}

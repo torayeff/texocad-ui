@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ShareRevision } from "@/app/types/share-artifact";
+import { trackEvent } from "@/app/lib/analytics/client";
 import {
   CAD_ASSISTANT_ID,
   CLARI_ASSISTANT_ID,
@@ -95,9 +96,27 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
   const sketchRequestVersionRef = useRef(0);
   const modelRequestVersionRef = useRef(0);
   const markdownRequestVersionRef = useRef(0);
+  const trackedArtifactKeysRef = useRef(new Set<string>());
   const isEndToEndMode = isEndToEndAssistantId(studioMode);
 
+  const trackArtifactRevision = useCallback((
+    artifactKind: "cad" | "model" | "sketch" | "markdown",
+    revision: DesignRevisionArtifact | SketchRevisionArtifact | ModelRevisionArtifact | MarkdownRevisionArtifact,
+  ) => {
+    const key = `${artifactKind}:${revision.designId}:${revision.revisionNumber}`;
+    if (trackedArtifactKeysRef.current.has(key)) return;
+    trackedArtifactKeysRef.current.add(key);
+    trackEvent("artifact_revision_received", {
+      agent_id: studioMode,
+      artifact_kind: artifactKind,
+      design_id: revision.designId,
+      export_count: revision.exports.length,
+      revision_number: revision.revisionNumber,
+    });
+  }, [studioMode]);
+
   const handleDesignRevision = useCallback((revision: DesignRevisionArtifact) => {
+    trackArtifactRevision("cad", revision);
     setLiveDesignRevisions((currentRevisions) => {
       const existingRevision = currentRevisions.find((currentRevision) => revisionKey(currentRevision) === revisionKey(revision));
       if (existingRevision && revisionsMatch(existingRevision, revision)) return currentRevisions;
@@ -107,9 +126,10 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       return nextRevisions;
     });
     if (!isEndToEndMode) setStudioMode(CAD_ASSISTANT_ID);
-  }, [isEndToEndMode, setStudioMode]);
+  }, [isEndToEndMode, setStudioMode, trackArtifactRevision]);
 
   const handleSketchRevision = useCallback((revision: SketchRevisionArtifact) => {
+    trackArtifactRevision("sketch", revision);
     setLiveSketchRevisions((currentRevisions) => {
       const existingRevision = currentRevisions.find((currentRevision) => sketchRevisionKey(currentRevision) === sketchRevisionKey(revision));
       if (existingRevision && sketchRevisionsMatch(existingRevision, revision)) return currentRevisions;
@@ -119,9 +139,10 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       return nextRevisions;
     });
     if (!isEndToEndMode) setStudioMode(SKETCH_ASSISTANT_ID);
-  }, [isEndToEndMode, setStudioMode]);
+  }, [isEndToEndMode, setStudioMode, trackArtifactRevision]);
 
   const handleModelRevision = useCallback((revision: ModelRevisionArtifact) => {
+    trackArtifactRevision("model", revision);
     setLiveModelRevisions((currentRevisions) => {
       const existingRevision = currentRevisions.find((currentRevision) => modelRevisionKey(currentRevision) === modelRevisionKey(revision));
       if (existingRevision && modelRevisionsMatch(existingRevision, revision)) return currentRevisions;
@@ -131,9 +152,10 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       return nextRevisions;
     });
     if (!isEndToEndMode) setStudioMode(LUMI_ASSISTANT_ID);
-  }, [isEndToEndMode, setStudioMode]);
+  }, [isEndToEndMode, setStudioMode, trackArtifactRevision]);
 
   const handleMarkdownRevision = useCallback((revision: MarkdownRevisionArtifact) => {
+    trackArtifactRevision("markdown", revision);
     setLiveMarkdownRevisions((currentRevisions) => {
       const existingRevision = currentRevisions.find((currentRevision) => markdownRevisionKey(currentRevision) === markdownRevisionKey(revision));
       if (existingRevision && markdownRevisionsMatch(existingRevision, revision)) return currentRevisions;
@@ -143,7 +165,7 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       return nextRevisions;
     });
     if (!isEndToEndMode) setStudioMode(CLARI_ASSISTANT_ID);
-  }, [isEndToEndMode, setStudioMode]);
+  }, [isEndToEndMode, setStudioMode, trackArtifactRevision]);
 
   const handleDesignRevisionsChange = useCallback((revisions: DesignRevisionArtifact[]) => {
     setHydratedDesignRevisions((currentRevisions) => (
@@ -291,8 +313,14 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
   ].join("|");
   const lumiViewerMode = lumiModeOverride?.atKey === latestLumiArtifactKey ? lumiModeOverride.mode : autoLumiViewerMode;
   const setLumiViewerMode = useCallback((mode: LumiViewerMode) => {
+    trackEvent("viewer_mode_changed", {
+      from_mode: lumiViewerMode,
+      has_model: latestModelRevision !== null,
+      has_sketch: latestSketchRevision !== null,
+      to_mode: mode,
+    });
     setLumiModeOverride({ mode, atKey: latestLumiArtifactKey });
-  }, [latestLumiArtifactKey]);
+  }, [latestLumiArtifactKey, latestModelRevision, latestSketchRevision, lumiViewerMode]);
 
   useEffect(() => {
     designRequestVersionRef.current += 1;

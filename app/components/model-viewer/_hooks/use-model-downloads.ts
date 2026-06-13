@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { trackEvent } from "@/app/lib/analytics/client";
+import { errorKind } from "@/app/lib/analytics/events";
 import { saveSourceModelFile } from "@/app/components/model-viewer/_lib/model-viewer-actions";
+import { sourceFormat } from "@/app/components/model-viewer/_lib/model-source";
 import type { ModelSource } from "@/app/types/model-viewer";
 
 interface UseModelDownloadsOptions {
@@ -35,10 +38,32 @@ export function useModelDownloads({ source, sourceCode }: UseModelDownloadsOptio
     abortDownload();
     const abortController = new AbortController();
     downloadAbortRef.current = abortController;
+    const format = sourceFormat(source);
+    trackEvent("artifact_download_started", {
+      artifact_kind: "model",
+      download_kind: "artifact",
+      format,
+      source_kind: source.kind,
+    });
 
     void saveSourceModelFile(source, abortController.signal)
-      .catch(() => {
+      .then(() => {
+        trackEvent("artifact_download_succeeded", {
+          artifact_kind: "model",
+          download_kind: "artifact",
+          format,
+          source_kind: source.kind,
+        });
+      })
+      .catch((error: unknown) => {
         if (!abortController.signal.aborted) {
+          trackEvent("artifact_download_failed", {
+            artifact_kind: "model",
+            download_kind: "artifact",
+            error_kind: errorKind(error),
+            format,
+            source_kind: source.kind,
+          });
           setDownloadError("Could not download the current model.");
         }
       })
@@ -58,10 +83,28 @@ export function useModelDownloads({ source, sourceCode }: UseModelDownloadsOptio
     abortSourceDownload();
     const abortController = new AbortController();
     sourceDownloadAbortRef.current = abortController;
+    trackEvent("artifact_download_started", {
+      artifact_kind: "cad",
+      download_kind: "source",
+      source_kind: sourceCode.kind,
+    });
 
     void saveSourceModelFile(sourceCode, abortController.signal)
-      .catch(() => {
+      .then(() => {
+        trackEvent("artifact_download_succeeded", {
+          artifact_kind: "cad",
+          download_kind: "source",
+          source_kind: sourceCode.kind,
+        });
+      })
+      .catch((error: unknown) => {
         if (!abortController.signal.aborted) {
+          trackEvent("artifact_download_failed", {
+            artifact_kind: "cad",
+            download_kind: "source",
+            error_kind: errorKind(error),
+            source_kind: sourceCode.kind,
+          });
           setDownloadError("Could not download the source code.");
         }
       })

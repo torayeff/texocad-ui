@@ -16,6 +16,7 @@ import {
   SKETCH_ASSISTANT_ID,
   type AssistantId,
 } from "@/app/lib/chat/langgraph-config";
+import { trackEvent } from "@/app/lib/analytics/client";
 import {
   activeControlClass,
   chatGlassClass,
@@ -293,13 +294,31 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
 
   const handleLockedSelect = useCallback(() => {
     if (lockedAgentAction === "upgrade") {
+      trackEvent("auth_gate_clicked", {
+        action: "upgrade",
+        gate: "agent_mode_picker",
+        is_signed_in: Boolean(isSignedIn),
+      });
+      trackEvent("upgrade_clicked", {
+        gate: "agent_mode_picker",
+        location: "agent_mode_picker",
+      });
       router.push(SITE_ROUTES.pricing);
       close();
       return;
     }
+    trackEvent("auth_gate_clicked", {
+      action: "sign-in",
+      gate: "agent_mode_picker",
+      is_signed_in: Boolean(isSignedIn),
+    });
+    trackEvent("sign_in_opened", {
+      gate: "agent_mode_picker",
+      location: "agent_mode_picker",
+    });
     openSignIn();
     close();
-  }, [close, lockedAgentAction, openSignIn, router]);
+  }, [close, isSignedIn, lockedAgentAction, openSignIn, router]);
 
   return (
     <div ref={containerRef} className="relative">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 import type { BrowserNodeEntry } from "@/app/components/model-viewer/_lib/model-viewer-browser-state";
+import { trackEvent } from "@/app/lib/analytics/client";
 import { initialStatus } from "@/app/components/model-viewer/_lib/model-viewer-state";
 import type { LoadProgress, LoadState, ModelBrowserNode, ModelFormat, ModelSource, ViewPreset } from "@/app/types/model-viewer";
 import { applyExplodeAmount, buildExplodeAssembly } from "@/app/components/model-viewer/_lib/explode-assembly";
@@ -54,7 +55,7 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
     clearBrowserSelectionHighlight,
     handleTransformSelect,
     selectBrowserNode: selectBrowserNodeWithTransform,
-    toggleBrowserNodeVisibility,
+    toggleBrowserNodeVisibility: toggleBrowserNodeVisibilityBase,
   } = useBrowserSelection({
     allPickableMeshesRef,
     browserNodeEntriesRef,
@@ -182,6 +183,10 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
         setActiveViewState,
         view,
       });
+      trackEvent("viewer_control_changed", {
+        control_type: "view_preset",
+        control_value: view,
+      });
     },
     [runtimeRef],
   );
@@ -192,6 +197,10 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
     setExplodeAmountState(nextAmount);
     applyExplodeAmount(explodeAssemblyRef.current, nextAmount);
     detachTransform();
+    trackEvent("viewer_control_changed", {
+      control_type: "explode_amount",
+      control_value: nextAmount,
+    });
   }, [detachTransform]);
 
   const fitView = useCallback(() => {
@@ -213,6 +222,10 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
       if (modelGroupRef.current) {
         applyWireframe(modelGroupRef.current, next);
       }
+      trackEvent("viewer_control_changed", {
+        control_type: "wireframe",
+        control_value: next,
+      });
       return next;
     });
   }, []);
@@ -228,9 +241,23 @@ export function useModelViewerScene({ source }: ModelViewerSceneOptions) {
       if (next) {
         setTransformMode(null);
       }
+      trackEvent("viewer_control_changed", {
+        control_type: "auto_rotate",
+        control_value: next,
+      });
       return next;
     });
   }, [runtimeRef, setTransformMode]);
+
+  const toggleBrowserNodeVisibility = useCallback((id: string) => {
+    const entry = browserNodeEntriesRef.current.get(id);
+    toggleBrowserNodeVisibilityBase(id);
+    if (!entry) return;
+    trackEvent("viewer_control_changed", {
+      control_type: "browser_node_visibility",
+      control_value: entry.visible,
+    });
+  }, [toggleBrowserNodeVisibilityBase]);
 
   return {
     activeView,

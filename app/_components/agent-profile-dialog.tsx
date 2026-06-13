@@ -2,10 +2,11 @@
 
 import { X } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 import type { AgentProfile } from "@/app/_lib/agent-profiles";
+import { TrackedLink } from "@/app/components/analytics/tracked-link";
+import { trackEvent } from "@/app/lib/analytics/client";
 import { cn } from "@/app/lib/cn";
 
 const focusableSelector = [
@@ -198,9 +199,24 @@ export function AgentProfileDialog({
 
         <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">
           {agent.startHref !== null ? (
-            <Link href={agent.startHref} className={primaryActionClass}>
+            <TrackedLink
+              href={agent.startHref}
+              analytics={{
+                cta: "work_with_agent",
+                destination: agent.startHref,
+                location: "agent_profile_dialog",
+              }}
+              onClick={() => {
+                trackEvent("agent_profile_cta_clicked", {
+                  agent_name: agent.name,
+                  destination: agent.startHref ?? undefined,
+                  is_available: true,
+                });
+              }}
+              className={primaryActionClass}
+            >
               Work with {agent.name}
-            </Link>
+            </TrackedLink>
           ) : (
             <button
               type="button"

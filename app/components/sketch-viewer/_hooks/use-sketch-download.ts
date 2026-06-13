@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { trackEvent } from "@/app/lib/analytics/client";
+import { errorKind } from "@/app/lib/analytics/events";
 import { saveBrowserFile } from "@/app/lib/browser-downloads";
 import type { SketchSource } from "@/app/types/sketch-viewer";
 
@@ -24,8 +26,28 @@ export function useSketchDownload(source: SketchSource | null) {
 
     setDownloadError(null);
     setIsDownloading(true);
+    trackEvent("artifact_download_started", {
+      artifact_kind: "sketch",
+      download_kind: "artifact",
+      source_kind: "url",
+    });
     void downloadSketchSource(source)
-      .catch(() => setDownloadError("Could not download the sketch."))
+      .then(() => {
+        trackEvent("artifact_download_succeeded", {
+          artifact_kind: "sketch",
+          download_kind: "artifact",
+          source_kind: "url",
+        });
+      })
+      .catch((error: unknown) => {
+        trackEvent("artifact_download_failed", {
+          artifact_kind: "sketch",
+          download_kind: "artifact",
+          error_kind: errorKind(error),
+          source_kind: "url",
+        });
+        setDownloadError("Could not download the sketch.");
+      })
       .finally(() => setIsDownloading(false));
   };
 

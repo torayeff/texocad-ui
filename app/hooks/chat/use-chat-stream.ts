@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useStream } from "@langchain/react";
 
 import { useLanggraphAuth } from "@/app/hooks/chat/use-langgraph-auth";
+import { trackEvent } from "@/app/lib/analytics/client";
+import { errorKind } from "@/app/lib/analytics/events";
 import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import {
   designRevisionsFromMessages,
@@ -87,6 +89,7 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
   const loadingRunIdRef = useRef<string | null>(null);
   const activeRunLookupRef = useRef<string | null>(null);
   const locallyStartedRunIdsRef = useRef(new Set<string>());
+  const trackedErrorRef = useRef<unknown>(null);
   useEffect(() => {
     onDesignRevisionEventRef.current = options.onDesignRevisionEvent;
     onMarkdownRevisionEventRef.current = options.onMarkdownRevisionEvent;
@@ -121,12 +124,17 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
     const { runId: createdRunId, threadId: createdThreadId } = createdRunIds(run, threadIdRef.current);
     if (!createdThreadId) return;
     applyThreadId(createdThreadId);
+    trackEvent("generation_started", {
+      agent_id: assistantId,
+      run_id: createdRunId ?? undefined,
+      thread_id: createdThreadId,
+    });
     setHasStopRequested(false);
     if (createdRunId) {
       locallyStartedRunIdsRef.current.add(createdRunId);
       setActiveRunId(createdRunId);
     }
-  }, [applyThreadId]);
+  }, [applyThreadId, assistantId]);
 
   const streamOptions = useMemo(() => ({
     client,
@@ -166,10 +174,23 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
     const currentThreadId = threadIdRef.current;
     const currentRunId = activeRunId ?? (currentThreadId ? storedRunId(currentThreadId) : null);
     if (!currentThreadId || !currentRunId) {
+      trackEvent("generation_stopped", {
+        agent_id: assistantId,
+        had_active_run_id: false,
+        stop_mode: "local",
+        thread_id: currentThreadId ?? undefined,
+      });
       void stream.stop();
       return;
     }
 
+    trackEvent("generation_stopped", {
+      agent_id: assistantId,
+      had_active_run_id: true,
+      run_id: currentRunId,
+      stop_mode: "rollback",
+      thread_id: currentThreadId,
+    });
     setHasStopRequested(true);
     // Prevent the SDK's disconnect helper from sending its default interrupt;
     // this stop action intentionally rolls back the run instead.
@@ -183,7 +204,7 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
         locallyStartedRunIdsRef.current.delete(currentRunId);
         activeRunLookupRef.current = currentThreadId;
       });
-  }, [activeRunId, client, stream]);
+  }, [activeRunId, assistantId, client, stream]);
 
   const switchThread = useCallback(
     (nextThreadId: string | null) => {
@@ -199,6 +220,17 @@ export function useChatStream(assistantId: AssistantId, options: UseChatStreamOp
   const { messages: rawMessages, isLoading, error, values } = stream;
   const isHydrating = stream.isThreadLoading;
   const visibleError = hasStopRequested ? null : error;
+
+  useEffect(() => {
+    if (!visibleError || trackedErrorRef.current === visibleError) return;
+    trackedErrorRef.current = visibleError;
+    trackEvent("generation_error", {
+      agent_id: assistantId,
+      error_kind: errorKind(visibleError),
+      thread_id_present: threadId !== null,
+      was_stop_requested: hasStopRequested,
+    });
+  }, [assistantId, hasStopRequested, threadId, visibleError]);
 
   const messages = useMemo(() => {
     if (threadId === null) return [];

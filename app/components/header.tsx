@@ -3,8 +3,10 @@
 import { UserButton, useAuth, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 
+import { TrackedLink } from "@/app/components/analytics/tracked-link";
 import { ThemeLogo } from "@/app/components/theme-logo";
 import { ThemeToggle } from "@/app/components/theme-toggle";
+import { trackEvent } from "@/app/lib/analytics/client";
 import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
 
 const headerGlassClass =
@@ -27,6 +29,9 @@ export function Header() {
       sessionClaims?.vipAccess === true);
 
   const handleSignIn = () => {
+    trackEvent("sign_in_opened", {
+      location: "app_header",
+    });
     clerk.openSignIn();
   };
 
@@ -45,12 +50,22 @@ export function Header() {
 
       <div className="flex shrink-0 items-center gap-0.5">
         {isSignedIn && !hasAccess && (
-          <Link
+          <TrackedLink
             href={SITE_ROUTES.pricing}
+            analytics={{
+              cta: "upgrade",
+              destination: SITE_ROUTES.pricing,
+              location: "app_header",
+            }}
+            onClick={() => {
+              trackEvent("upgrade_clicked", {
+                location: "app_header",
+              });
+            }}
             className={primaryHeaderLinkClass}
           >
             Upgrade
-          </Link>
+          </TrackedLink>
         )}
         {isSignedIn ? (
           <div className="grid size-[1.875rem] place-items-center">

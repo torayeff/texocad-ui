@@ -19,6 +19,8 @@ import {
 } from "@/app/lib/chat/models";
 import type { ReasoningEffortId, ReasoningUpsell } from "@/app/lib/chat/models";
 import { trackMessageSubmitted } from "@/app/lib/chat/analytics";
+import { trackEvent } from "@/app/lib/analytics/client";
+import { humanMessageDisplayParts } from "@/app/lib/chat/message-attachments";
 
 interface ChatSubmitStream {
   submit: (
@@ -86,23 +88,53 @@ export function useChatMessageSubmission({
 
   const handleModelChange = useCallback((modelId: string) => {
     if (!MODELS.some((model) => model.id === modelId)) return;
-    setSelectedModel(modelId);
-  }, []);
+    setSelectedModel((previousModel) => {
+      if (previousModel !== modelId) {
+        trackEvent("model_selected", {
+          agent_id: assistantId,
+          is_vip: isVip,
+          model: modelId,
+          previous_model: previousModel,
+        });
+      }
+      return modelId;
+    });
+  }, [assistantId, isVip]);
 
   const handleReasoningEffortChange = useCallback((effortId: ReasoningEffortId) => {
     if (!isReasoningEffortAllowed(effortId, hasAdvancedReasoning)) return;
-    setSelectedReasoningEffortId(effortId);
-  }, [hasAdvancedReasoning]);
+    setSelectedReasoningEffortId((previousEffort) => {
+      if (previousEffort !== effortId) {
+        trackEvent("reasoning_effort_selected", {
+          agent_id: assistantId,
+          has_advanced_reasoning: hasAdvancedReasoning,
+          reasoning_effort: effortId,
+          previous_reasoning_effort: previousEffort,
+        });
+      }
+      return effortId;
+    });
+  }, [assistantId, hasAdvancedReasoning]);
 
   const sendMessage = useCallback((content: string) => {
     if (isBusy) return false;
     const trimmed = content.trim();
     if (!trimmed) return false;
 
+    const displayParts = humanMessageDisplayParts(trimmed);
     const humanMessage = new HumanMessage(trimmed);
     setHasChosenMode(true);
     trackMessageSubmitted({
-      hasAttachments: trimmed.includes("Attachments:"),
+      agentId: assistantId,
+      attachmentCount: displayParts.attachments.length,
+      hasAttachments: displayParts.attachments.length > 0,
+      isVip,
+      messageLength: displayParts.text.length,
+      model: isVip ? selectedModel : undefined,
+      newThread: urlThreadId === null,
+      reasoningEffort: selectedReasoningEffort,
+      submissionSource: "composer",
+      threadIdPresent: urlThreadId !== null,
     });
     setPendingHumanMessage(humanMessage);
 

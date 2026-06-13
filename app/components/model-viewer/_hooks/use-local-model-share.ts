@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
+import { trackEvent } from "@/app/lib/analytics/client";
+import { errorKind, fileExtension, sizeBucket } from "@/app/lib/analytics/events";
 import type { ModelSource } from "@/app/types/model-viewer";
 import {
   maxLocalModelShareNameChars,
@@ -67,6 +69,10 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
 
     setShareName((currentName) => currentName || defaultShareName(source));
     openShareDialog();
+    trackEvent("share_dialog_opened", {
+      artifact_kind: "model",
+      has_existing_share: false,
+    });
   }, [openShareDialog, source]);
 
   const handleCloseShareDialog = useCallback(() => {
@@ -101,6 +107,8 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
     }
 
     const file = source.file;
+    const extension = fileExtension(file.name);
+    const fileSizeBucket = sizeBucket(file.size);
     if (file.size > maxLocalModelShareUploadBytes) {
       setShareError("Model files must be 100 MB or smaller.");
       return;
@@ -111,6 +119,10 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
     shareAbortRef.current?.abort();
     const abortController = new AbortController();
     shareAbortRef.current = abortController;
+    trackEvent("local_model_share_upload_started", {
+      extension,
+      size_bucket: fileSizeBucket,
+    });
 
     void (async () => {
       const payload: LocalModelShareUploadRequest = {
@@ -128,9 +140,25 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
 
       setShareUrl(finalizedShare.shareUrl);
       onShareCreated?.(finalizedShare.shareUrl);
+      trackEvent("local_model_share_upload_succeeded", {
+        extension,
+        size_bucket: fileSizeBucket,
+      });
+      trackEvent("share_created", {
+        artifact_kind: "model",
+      });
     })()
       .catch((error: unknown) => {
         if (!abortController.signal.aborted) {
+          trackEvent("local_model_share_upload_failed", {
+            error_kind: errorKind(error),
+            extension,
+            size_bucket: fileSizeBucket,
+          });
+          trackEvent("share_failed", {
+            artifact_kind: "model",
+            error_kind: errorKind(error),
+          });
           setShareError(error instanceof Error ? error.message : "Failed to share model.");
         }
       })
@@ -142,6 +170,13 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
       });
   }, [isSharing, onShareCreated, resetShareDialogStatus, setShareError, setShareUrl, shareName, source]);
 
+  const handleCopyShareUrl = useCallback((url?: string | null) => {
+    trackEvent("share_link_copied", {
+      artifact_kind: "model",
+    });
+    copyShareUrl(url);
+  }, [copyShareUrl]);
+
   useEffect(() => {
     return () => {
       shareAbortRef.current?.abort();
@@ -151,7 +186,7 @@ export function useLocalModelShare({ onShareCreated, source }: UseLocalModelShar
   return {
     didCopyShareUrl,
     handleCloseShareDialog,
-    handleCopyShareUrl: copyShareUrl,
+    handleCopyShareUrl,
     handleOpenShareDialog,
     handleShareSubmit,
     isShareDialogOpen,

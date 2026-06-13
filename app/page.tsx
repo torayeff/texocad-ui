@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FaLinkedin, FaXTwitter } from "react-icons/fa6";
 
 import { AgentProfileGrid } from "@/app/_components/agent-profile-grid";
 import { ExpertNetworkBanner } from "@/app/_components/expert-network-banner";
 import { HeroPointCloud } from "@/app/_components/hero-point-cloud";
+import { TrackedAnchor, TrackedLink } from "@/app/components/analytics/tracked-link";
 import { SiteHeader } from "@/app/components/site-header";
 import {
   SITE_DESCRIPTION,
@@ -59,12 +59,17 @@ export default function Home() {
               Turn sketches, ideas, and requirements into clear product specs, 3D models, CAD files, and simulation-ready designs with AI agents and expert humans.
             </p>
             <div className="mt-7 flex">
-              <Link
+              <TrackedLink
                 href={SITE_ROUTES.studio}
+                analytics={{
+                  cta: "start_building",
+                  destination: SITE_ROUTES.studio,
+                  location: "homepage_hero",
+                }}
                 className="inline-flex items-center justify-center rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-[0_16px_40px_rgb(0_0_0_/_0.12)] transition-[background-color,box-shadow,transform] hover:-translate-y-0.5 hover:bg-foreground/90 hover:shadow-[0_20px_48px_rgb(0_0_0_/_0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 Start Building
-              </Link>
+              </TrackedLink>
             </div>
           </div>
 
@@ -89,42 +94,67 @@ export default function Home() {
         </section>
 
         <footer className="mx-auto mt-auto flex w-full max-w-7xl justify-center gap-6 px-[var(--app-chrome-gutter)] pb-6 text-xs font-normal text-foreground/35 sm:justify-end lg:pb-4">
-          <a
+          <TrackedAnchor
             href={`mailto:${SUPPORT_EMAIL}`}
+            analytics={{
+              cta: "support_email",
+              destination: `mailto:${SUPPORT_EMAIL}`,
+              location: "homepage_footer",
+            }}
             className="transition-colors hover:text-foreground/60"
           >
             Support
-          </a>
-          <Link
+          </TrackedAnchor>
+          <TrackedLink
             href={SITE_ROUTES.privacy}
+            analytics={{
+              cta: "privacy_policy",
+              destination: SITE_ROUTES.privacy,
+              location: "homepage_footer",
+            }}
             className="transition-colors hover:text-foreground/60"
           >
             Privacy Policy
-          </Link>
-          <Link
+          </TrackedLink>
+          <TrackedLink
             href={SITE_ROUTES.terms}
+            analytics={{
+              cta: "terms_conditions",
+              destination: SITE_ROUTES.terms,
+              location: "homepage_footer",
+            }}
             className="transition-colors hover:text-foreground/60"
           >
             Terms & Conditions
-          </Link>
-          <a
+          </TrackedLink>
+          <TrackedAnchor
             href="https://www.linkedin.com/company/texocad/"
             target="_blank"
             rel="noopener noreferrer"
+            analytics={{
+              cta: "linkedin",
+              destination: "https://www.linkedin.com/company/texocad/",
+              location: "homepage_footer",
+            }}
             className="transition-colors hover:text-foreground/60"
             aria-label="TexoCAD on LinkedIn"
           >
             <FaLinkedin size={14} aria-hidden="true" />
-          </a>
-          <a
+          </TrackedAnchor>
+          <TrackedAnchor
             href="https://x.com/texocad"
             target="_blank"
             rel="noopener noreferrer"
+            analytics={{
+              cta: "x",
+              destination: "https://x.com/texocad",
+              location: "homepage_footer",
+            }}
             className="transition-colors hover:text-foreground/60"
             aria-label="TexoCAD on X"
           >
             <FaXTwitter size={14} aria-hidden="true" />
-          </a>
+          </TrackedAnchor>
         </footer>
       </main>
     </>

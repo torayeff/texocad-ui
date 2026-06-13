@@ -5,6 +5,8 @@ import {
   getOrCreateAnonymousSession,
   setAnonymousSessionCookie,
 } from "@/app/lib/server/anonymous-session";
+import { captureServerEvent } from "@/app/lib/server/analytics";
+import { durationBucket, errorKind } from "@/app/lib/analytics/events";
 
 export const runtime = "nodejs";
 
@@ -57,12 +59,22 @@ function responseHeadersFromUpstream(response: Response) {
 }
 
 async function proxyLangGraphRequest(request: NextRequest, context: LangGraphProxyContext) {
+  const startedAt = performance.now();
   const { path = [] } = await context.params;
+  const distinctId = request.headers.get("x-posthog-distinct-id") ?? undefined;
   let upstreamUrl: URL;
   try {
     upstreamUrl = langGraphUpstreamUrl(path, request.nextUrl.search);
   } catch (error) {
     console.error("LangGraph proxy is not configured:", error);
+    await captureServerEvent("api_langgraph_proxy", {
+      duration_bucket: durationBucket(performance.now() - startedAt),
+      error_kind: errorKind(error),
+      method: request.method,
+      path_depth: path.length,
+      status: 500,
+      success: false,
+    }, { distinctId });
     return NextResponse.json({ error: "LangGraph proxy is not configured." }, { status: 500 });
   }
 
@@ -74,6 +86,14 @@ async function proxyLangGraphRequest(request: NextRequest, context: LangGraphPro
       : await getOrCreateAnonymousSession(request);
   } catch (error) {
     console.error("Anonymous session is not configured:", error);
+    await captureServerEvent("api_langgraph_proxy", {
+      duration_bucket: durationBucket(performance.now() - startedAt),
+      error_kind: errorKind(error),
+      method: request.method,
+      path_depth: path.length,
+      status: 500,
+      success: false,
+    }, { distinctId });
     return NextResponse.json({ error: "Anonymous sessions are not configured." }, { status: 500 });
   }
 
@@ -91,7 +111,20 @@ async function proxyLangGraphRequest(request: NextRequest, context: LangGraphPro
     redirect: "manual",
   };
 
-  const upstreamResponse = await fetch(upstreamUrl, init);
+  let upstreamResponse: Response;
+  try {
+    upstreamResponse = await fetch(upstreamUrl, init);
+  } catch (error) {
+    await captureServerEvent("api_langgraph_proxy", {
+      duration_bucket: durationBucket(performance.now() - startedAt),
+      error_kind: errorKind(error),
+      method: request.method,
+      path_depth: path.length,
+      status: 502,
+      success: false,
+    }, { distinctId });
+    throw error;
+  }
   const response = new Response(upstreamResponse.body, {
     headers: responseHeadersFromUpstream(upstreamResponse),
     status: upstreamResponse.status,
@@ -101,6 +134,14 @@ async function proxyLangGraphRequest(request: NextRequest, context: LangGraphPro
   if (anonymousSession?.shouldSetCookie) {
     setAnonymousSessionCookie(response, anonymousSession.token);
   }
+
+  await captureServerEvent("api_langgraph_proxy", {
+    duration_bucket: durationBucket(performance.now() - startedAt),
+    method: request.method,
+    path_depth: path.length,
+    status: upstreamResponse.status,
+    success: upstreamResponse.ok,
+  }, { distinctId });
 
   return response;
 }

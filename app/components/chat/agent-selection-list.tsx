@@ -14,6 +14,7 @@ import {
   SKETCH_ASSISTANT_ID,
   type AssistantId,
 } from "@/app/lib/chat/langgraph-config";
+import { trackEvent } from "@/app/lib/analytics/client";
 import { cn } from "@/app/lib/cn";
 import { toolTooltipClass } from "@/app/lib/chat/chat-styles";
 import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
@@ -200,9 +201,27 @@ export function AgentSelectionList({
 
   const handleLockedAgentSelect = () => {
     if (lockedAgentAction === "upgrade") {
+      trackEvent("auth_gate_clicked", {
+        action: "upgrade",
+        gate: "agent_selection",
+        is_signed_in: Boolean(isSignedIn),
+      });
+      trackEvent("upgrade_clicked", {
+        gate: "agent_selection",
+        location: "agent_selection",
+      });
       router.push(SITE_ROUTES.pricing);
       return;
     }
+    trackEvent("auth_gate_clicked", {
+      action: "sign-in",
+      gate: "agent_selection",
+      is_signed_in: Boolean(isSignedIn),
+    });
+    trackEvent("sign_in_opened", {
+      gate: "agent_selection",
+      location: "agent_selection",
+    });
     openSignIn();
   };
 

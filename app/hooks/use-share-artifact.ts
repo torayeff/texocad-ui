@@ -3,6 +3,8 @@
 import { useCallback, useRef, useState } from "react";
 
 import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
+import { trackEvent } from "@/app/lib/analytics/client";
+import { errorKind } from "@/app/lib/analytics/events";
 import { ensureAnonymousSession } from "@/app/lib/chat/anonymous-session";
 import type { ShareResponse, ShareRevision } from "@/app/types/share-artifact";
 
@@ -73,6 +75,10 @@ export function useShareArtifact<TSource>({
 
     setShareUrl(null);
     openShareDialog();
+    trackEvent("share_dialog_opened", {
+      artifact_kind: artifactKind,
+      has_existing_share: shareUrl !== null,
+    });
 
     const requestVersion = requestVersionRef.current + 1;
     requestVersionRef.current = requestVersion;
@@ -90,6 +96,9 @@ export function useShareArtifact<TSource>({
 
         if (data?.sharedArtifact?.shareUrl) {
           if (requestVersionRef.current !== requestVersion) return;
+          trackEvent("share_existing_found", {
+            artifact_kind: artifactKind,
+          });
           setShareResult({
             revisionKey: requestRevisionKey,
             url: data.sharedArtifact.shareUrl,
@@ -107,7 +116,7 @@ export function useShareArtifact<TSource>({
           setShareName((currentName) => currentName || requestDefaultName);
         }
       });
-  }, [activeRevisionKey, artifactKind, defaultShareName, openShareDialog, setShareUrl, shareError, shareRevision, source]);
+  }, [activeRevisionKey, artifactKind, defaultShareName, openShareDialog, setShareUrl, shareError, shareRevision, shareUrl, source]);
 
   const handleCloseShareDialog = useCallback(() => {
     if (isSharing) return;
@@ -152,6 +161,10 @@ export function useShareArtifact<TSource>({
         }
 
         if (requestVersionRef.current !== requestVersion) return;
+        trackEvent("share_created", {
+          already_shared: data.alreadyShared,
+          artifact_kind: artifactKind,
+        });
         setShareResult({
           revisionKey: requestRevisionKey,
           url: data.sharedArtifact.shareUrl,
@@ -160,6 +173,10 @@ export function useShareArtifact<TSource>({
       })
       .catch((error: unknown) => {
         if (requestVersionRef.current !== requestVersion) return;
+        trackEvent("share_failed", {
+          artifact_kind: artifactKind,
+          error_kind: errorKind(error),
+        });
         setShareError(error instanceof Error ? error.message : shareError);
       })
       .finally(() => {
@@ -169,8 +186,11 @@ export function useShareArtifact<TSource>({
 
   const handleCopyShareUrl = useCallback(() => {
     if (!shareUrl) return;
+    trackEvent("share_link_copied", {
+      artifact_kind: artifactKind,
+    });
     copyShareUrl(shareUrl);
-  }, [copyShareUrl, shareUrl]);
+  }, [artifactKind, copyShareUrl, shareUrl]);
 
   return {
     didCopyShareUrl,
