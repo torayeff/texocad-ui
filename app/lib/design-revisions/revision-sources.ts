@@ -11,7 +11,6 @@ import type {
   SketchRevisionArtifact,
   StoredBlobArtifact,
 } from "@/app/types/design-artifact";
-import { ensureAnonymousSession } from "@/app/lib/chat/anonymous-session";
 import type { MarkdownRevisionOption, MarkdownSource } from "@/app/types/markdown-viewer";
 import type { ModelSource, ViewerRevisionOption } from "@/app/types/model-viewer";
 import type { SketchRevisionOption, SketchSource } from "@/app/types/sketch-viewer";
@@ -211,7 +210,6 @@ export function markdownRevisionOptionsFromArtifacts(revisions: MarkdownRevision
 }
 
 async function signBlobName(blobName: string): Promise<string | null> {
-  await ensureAnonymousSession();
   const response = await fetch(`/api/blob?blobName=${encodeURIComponent(blobName)}`);
   if (!response.ok) return null;
   const data = (await response.json()) as { sasUrl?: string };

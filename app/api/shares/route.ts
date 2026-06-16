@@ -73,7 +73,7 @@ function shareResultResponse(result: Awaited<ReturnType<typeof createOrGetShared
 
 export async function GET(request: Request) {
   const startedAt = performance.now();
-  const userId = await resolveRequestOwnerId(request);
+  const userId = await resolveRequestOwnerId();
   if (!userId) {
     await captureShareLookup(startedAt, 401, false, undefined, { error: "unauthorized" });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -119,7 +119,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const startedAt = performance.now();
-  const userId = await resolveRequestOwnerId(request);
+  const userId = await resolveRequestOwnerId();
   if (!userId) {
     await captureShareCreate(startedAt, 401, false, undefined, { error: "unauthorized" });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

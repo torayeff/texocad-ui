@@ -353,7 +353,6 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
               isLocked={
                 shouldLockRestrictedAgents
                 && option.mode !== null
-                && option.mode !== CLARI_ASSISTANT_ID
               }
               lockedTooltip={lockedAgentTooltip}
               option={option}

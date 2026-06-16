@@ -5,7 +5,6 @@ import { useCallback, useRef, useState } from "react";
 import { useShareDialogState } from "@/app/hooks/use-share-dialog-state";
 import { trackEvent } from "@/app/lib/analytics/client";
 import { errorKind } from "@/app/lib/analytics/events";
-import { ensureAnonymousSession } from "@/app/lib/chat/anonymous-session";
 import type { ShareResponse, ShareRevision } from "@/app/types/share-artifact";
 
 interface ShareResult {
@@ -86,8 +85,7 @@ export function useShareArtifact<TSource>({
     const requestDefaultName = defaultShareName(source);
     const params = new URLSearchParams(shareRevisionParams(artifactKind, shareRevision));
 
-    void ensureAnonymousSession()
-      .then(() => fetch(`/api/shares?${params.toString()}`))
+    void fetch(`/api/shares?${params.toString()}`)
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as ShareResponse & { error?: string } | null;
         if (!response.ok) {
@@ -139,8 +137,7 @@ export function useShareArtifact<TSource>({
     requestVersionRef.current = requestVersion;
     const requestRevisionKey = activeRevisionKey;
 
-    void ensureAnonymousSession()
-      .then(() => fetch("/api/shares", {
+    void fetch("/api/shares", {
         method: "POST",
         body: JSON.stringify({
           ...shareKindParams(artifactKind),
@@ -153,7 +150,7 @@ export function useShareArtifact<TSource>({
         headers: {
           "Content-Type": "application/json",
         },
-      }))
+      })
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as Partial<ShareResponse> & { error?: string } | null;
         if (!response.ok || !data?.sharedArtifact?.shareUrl) {

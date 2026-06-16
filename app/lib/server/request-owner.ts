@@ -1,10 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 
-import { anonymousSessionFromRequest } from "@/app/lib/server/anonymous-session";
-
-export async function resolveRequestOwnerId(request: Request) {
+export async function resolveRequestOwnerId() {
   const { userId } = await auth();
-  if (userId) return userId;
-
-  return (await anonymousSessionFromRequest(request))?.ownerId ?? null;
+  return userId ?? null;
 }

@@ -1,5 +1,4 @@
 import type { UploadedFile } from "@/app/types/chat";
-import { ensureAnonymousSession } from "@/app/lib/chat/anonymous-session";
 
 const SAFE_FILENAME_REPLACEMENTS = /[^a-zA-Z0-9._-]/g;
 
@@ -9,8 +8,6 @@ export function sanitizeUploadFilename(name: string): string {
 
 export async function uploadFileToBlob(file: File): Promise<UploadedFile> {
   const sanitized = sanitizeUploadFilename(file.name);
-
-  await ensureAnonymousSession();
 
   const response = await fetch("/api/blob", {
     method: "POST",

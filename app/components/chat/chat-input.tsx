@@ -87,7 +87,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const { openSignIn } = useClerk();
-  const { isSignedIn, sessionClaims } = useAuth();
+  const { isLoaded, isSignedIn, sessionClaims } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
   const shouldShowModelPicker = isVip && MODELS.length > 1;
   const shouldShowReasoningPicker = !maskComposer && reasoningEfforts.length > 0;
@@ -120,9 +120,27 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
     }
   }, [isSignedIn, openSignIn, reasoningUpsell, router]);
 
+  const requireSignIn = useCallback((gate: "composer" | "file_upload") => {
+    if (!isLoaded) return true;
+    if (isSignedIn) return false;
+    trackEvent("auth_gate_clicked", {
+      action: "sign-in",
+      gate,
+      is_signed_in: false,
+    });
+    trackEvent("sign_in_opened", {
+      gate,
+      location: "chat_input",
+    });
+    void openSignIn();
+    return true;
+  }, [isLoaded, isSignedIn, openSignIn]);
+
   const onFileUploaded = useCallback((file: UploadedFile) => {
     setAttachments((prev) => [...prev, file]);
   }, []);
+
+  const shouldUploadFile = useCallback(() => !requireSignIn("file_upload"), [requireSignIn]);
 
   const removeAttachment = useCallback((url: string) => {
     setAttachments((prev) => prev.filter((a) => a.url !== url));
@@ -132,14 +150,19 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
     fileInputRef,
     isUploading,
     isDragging,
-    triggerFileSelect,
+    triggerFileSelect: openFilePicker,
     handleFileChange,
     handleDragOver,
     handleDragEnter,
     handleDragLeave,
     handleDrop,
     acceptedTypes,
-  } = useFileUpload(onFileUploaded);
+  } = useFileUpload(onFileUploaded, shouldUploadFile);
+
+  const triggerFileSelect = useCallback(() => {
+    if (requireSignIn("file_upload")) return;
+    openFilePicker();
+  }, [openFilePicker, requireSignIn]);
 
   React.useImperativeHandle(ref, () => ({
     setPrompt: (text: string) => {
@@ -165,6 +188,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
   const isComposerBusy = isBusy || maskComposer?.isSubmitting === true;
 
   const sendMessage = useCallback(() => {
+    if (requireSignIn("composer")) return;
     if (maskComposer) {
       if (!canSubmitMaskEdit) return;
       const parts = [input.trim()];
@@ -203,7 +227,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [input, attachments, canSubmitMaskEdit, hasContent, isBusy, maskComposer, onSubmit]);
+  }, [input, attachments, canSubmitMaskEdit, hasContent, isBusy, maskComposer, onSubmit, requireSignIn]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

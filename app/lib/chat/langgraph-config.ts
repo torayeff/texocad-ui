@@ -1,5 +1,4 @@
-export const LANGGRAPH_API_URL =
-  process.env.NEXT_PUBLIC_LANGGRAPH_PROXY_URL ?? "/api/langgraph";
+export const LANGGRAPH_DIRECT_API_URL = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL;
 
 export type AssistantId = "cad" | "sketch" | "lumi" | "forma" | "clari";
 

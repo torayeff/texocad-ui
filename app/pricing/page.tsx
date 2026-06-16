@@ -15,7 +15,7 @@ export default async function PricingPage() {
     !!userId &&
     (sessionClaims?.freeAccess === true || sessionClaims?.vipAccess === true);
   const accessState = !userId
-    ? "anonymous"
+    ? "signed_out"
     : hasGrantedAccess
       ? "trial_or_vip"
       : "signed_in_no_access";

@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid storage URL" }, { status: 400 });
   }
 
-  const ownerId = await resolveRequestOwnerId(request);
+  const ownerId = await resolveRequestOwnerId();
   if (!ownerId) {
     await captureBlobRead(startedAt, 401, false, "unauthorized");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const startedAt = performance.now();
-  const ownerId = await resolveRequestOwnerId(request);
+  const ownerId = await resolveRequestOwnerId();
   if (!ownerId) {
     await captureBlobUpload(startedAt, 401, false, "unauthorized");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

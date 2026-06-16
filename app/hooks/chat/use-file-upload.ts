@@ -28,7 +28,10 @@ function isAcceptedFile(file: File): boolean {
   );
 }
 
-export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
+export function useFileUpload(
+  onUploaded: (file: UploadedFile) => void,
+  shouldUpload: (source: UploadSource) => boolean = () => true,
+) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadBatchCount, setUploadBatchCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -65,6 +68,7 @@ export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
   const processFiles = useCallback(
     async (files: File[], source: UploadSource) => {
       if (files.length === 0) return;
+      if (!shouldUpload(source)) return;
       setUploadBatchCount((count) => count + 1);
       try {
         for (const file of files) {
@@ -74,7 +78,7 @@ export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
         setUploadBatchCount((count) => Math.max(0, count - 1));
       }
     },
-    [processFile],
+    [processFile, shouldUpload],
   );
 
   const triggerFileSelect = useCallback(() => {

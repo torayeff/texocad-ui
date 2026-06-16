@@ -21,10 +21,10 @@ export interface AnalyticsEventProperties {
     gate?: string;
   };
   pricing_viewed: {
-    access_state: "anonymous" | "subscriber" | "trial_or_vip" | "signed_in_no_access";
+    access_state: "signed_out" | "subscriber" | "trial_or_vip" | "signed_in_no_access";
   };
   checkout_started: {
-    access_state: "anonymous" | "subscriber" | "trial_or_vip" | "signed_in_no_access";
+    access_state: "signed_out" | "subscriber" | "trial_or_vip" | "signed_in_no_access";
     location: string;
   };
   agent_profile_opened: {

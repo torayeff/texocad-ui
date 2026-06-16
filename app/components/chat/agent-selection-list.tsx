@@ -234,7 +234,6 @@ export function AgentSelectionList({
             isLocked={
               shouldLockRestrictedAgents
               && option.mode !== null
-              && option.mode !== CLARI_ASSISTANT_ID
             }
             lockedTooltip={lockedAgentTooltip}
             option={option}
