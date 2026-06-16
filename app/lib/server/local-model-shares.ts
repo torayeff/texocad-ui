@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import {
   BlobSASPermissions,
   BlobServiceClient,
@@ -79,6 +79,40 @@ function blobNameFor(slug: string, extension: LocalModelShareExtension) {
   return `${localSharePrefix}/${slug}.${extension}`;
 }
 
+function finalizeTokenPayload(slug: string, extension: LocalModelShareExtension, expiresAtMs: number) {
+  return `${slug}.${extension}.${expiresAtMs}`;
+}
+
+function signFinalizeToken(
+  slug: string,
+  extension: LocalModelShareExtension,
+  expiresAtMs: number,
+) {
+  const { key } = publicStorageConfig();
+  const payload = finalizeTokenPayload(slug, extension, expiresAtMs);
+  const signature = createHmac("sha256", key).update(payload).digest("base64url");
+  return `${expiresAtMs}.${signature}`;
+}
+
+function isValidFinalizeToken(
+  token: string,
+  slug: string,
+  extension: LocalModelShareExtension,
+) {
+  const [expiresAtRaw, signature] = token.split(".");
+  if (!expiresAtRaw || !signature) return false;
+
+  const expiresAtMs = Number(expiresAtRaw);
+  if (!Number.isSafeInteger(expiresAtMs) || expiresAtMs <= Date.now()) {
+    return false;
+  }
+
+  const expectedSignature = signFinalizeToken(slug, extension, expiresAtMs).split(".")[1];
+  const actual = Buffer.from(signature, "base64url");
+  const expected = Buffer.from(expectedSignature, "base64url");
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
 function getContainerClient() {
   const config = publicStorageConfig();
   return BlobServiceClient.fromConnectionString(config.connectionString).getContainerClient(config.publicContainerName);
@@ -113,6 +147,7 @@ async function createUploadTarget(
       return {
         expiresAt: expiresOn.toISOString(),
         extension,
+        finalizeToken: signFinalizeToken(uploadSlug, extension, expiresOn.getTime()),
         slug: uploadSlug,
         uploadUrl: `${blobClient.url}?${sas}`,
       };
@@ -166,6 +201,13 @@ export async function finalizeLocalModelShareUpload(
 ): Promise<LocalModelShareSuccessResponse> {
   if (!isValidLocalModelShareSlug(body.slug) || !isLocalModelShareExtension(body.extension)) {
     throw new LocalModelShareError("Invalid share upload request.", 400);
+  }
+
+  if (
+    typeof body.finalizeToken !== "string" ||
+    !isValidFinalizeToken(body.finalizeToken, body.slug, body.extension)
+  ) {
+    throw new LocalModelShareError("Invalid or expired share upload request.", 400);
   }
 
   const shareName = body.shareName.trim();

@@ -16,10 +16,6 @@ export function isAssistantId(value: unknown): value is AssistantId {
     || value === CLARI_ASSISTANT_ID;
 }
 
-export function isEndToEndAssistantId(value: unknown): value is typeof LUMI_ASSISTANT_ID | typeof FORMA_ASSISTANT_ID {
-  return value === LUMI_ASSISTANT_ID || value === FORMA_ASSISTANT_ID;
-}
-
 export function assistantIdFromParam(value: string | null | undefined): AssistantId | null {
   return isAssistantId(value) ? value : null;
 }

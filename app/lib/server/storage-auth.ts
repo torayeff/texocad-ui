@@ -88,7 +88,7 @@ export function hashUserId(userId: string) {
 //   designs: users/{hash}/designs/{designId}/revisions/{n}/{exports|source}/{file}
 export function isAuthorizedUserBlob(blobName: string, userHash: string) {
   const parts = blobName.split("/");
-  if (parts.some((part) => part.length === 0)) return false;
+  if (parts.some((part) => part.length === 0 || part === "." || part === "..")) return false;
 
   const [root, hash, kind, ...rest] = parts;
   if (root !== "users" || hash !== userHash) return false;

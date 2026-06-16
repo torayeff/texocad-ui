@@ -106,6 +106,7 @@ export async function finalizeLocalModelShareUpload(
     action: "finalizeUpload",
     extension: upload.extension,
     fileName: file.name,
+    finalizeToken: upload.finalizeToken,
     shareName,
     slug: upload.slug,
   };

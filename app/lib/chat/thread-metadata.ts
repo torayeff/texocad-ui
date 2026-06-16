@@ -1,11 +1,6 @@
 import type { Client } from "@langchain/langgraph-sdk";
 
-import { CAD_ASSISTANT_ID, LUMI_ASSISTANT_ID, SKETCH_ASSISTANT_ID, isAssistantId, type AssistantId } from "@/app/lib/chat/langgraph-config";
-import {
-  designRevisionsFromMessages,
-  modelRevisionsFromMessages,
-  sketchRevisionsFromMessages,
-} from "@/app/lib/design-revisions/design-artifacts";
+import { isAssistantId, type AssistantId } from "@/app/lib/chat/langgraph-config";
 import { isRecord } from "@/app/lib/type-guards";
 
 export const THREAD_AGENT_MODE_METADATA_KEY = "agent_mode";
@@ -44,18 +39,8 @@ function modeFromThreadMetadata(thread: ThreadMetadata | null | undefined): Assi
   return isAssistantId(graphId) ? graphId : null;
 }
 
-function modeFromThreadValues(thread: ThreadMetadata | null | undefined): AssistantId | null {
-  if (!thread || !isRecord(thread.values)) return null;
-  const messages = thread.values.messages;
-  if (!Array.isArray(messages)) return null;
-  if (modelRevisionsFromMessages(messages).length > 0) return LUMI_ASSISTANT_ID;
-  if (sketchRevisionsFromMessages(messages).length > 0) return SKETCH_ASSISTANT_ID;
-  if (designRevisionsFromMessages(messages).length > 0) return CAD_ASSISTANT_ID;
-  return null;
-}
-
 export function modeFromThread(thread: ThreadMetadata | null | undefined): AssistantId | null {
-  return modeFromThreadMetadata(thread) ?? modeFromThreadValues(thread);
+  return modeFromThreadMetadata(thread);
 }
 
 export async function readThreadMode(client: Client, threadId: string): Promise<AssistantId | null> {

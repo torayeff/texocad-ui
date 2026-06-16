@@ -11,6 +11,7 @@ export interface LocalModelShareFinalizeRequest {
   action: "finalizeUpload";
   extension: LocalModelShareExtension;
   fileName: string;
+  finalizeToken: string;
   shareName: string;
   slug: string;
 }
@@ -18,6 +19,7 @@ export interface LocalModelShareFinalizeRequest {
 export interface LocalModelShareUploadResponse {
   expiresAt: string;
   extension: LocalModelShareExtension;
+  finalizeToken: string;
   slug: string;
   uploadUrl: string;
 }

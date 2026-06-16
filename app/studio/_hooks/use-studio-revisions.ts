@@ -4,14 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ShareRevision } from "@/app/types/share-artifact";
 import { trackEvent } from "@/app/lib/analytics/client";
-import {
-  CAD_ASSISTANT_ID,
-  CLARI_ASSISTANT_ID,
-  LUMI_ASSISTANT_ID,
-  SKETCH_ASSISTANT_ID,
-  isEndToEndAssistantId,
-  type AssistantId,
-} from "@/app/lib/chat/langgraph-config";
+import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import {
   latestDesignRevision,
   latestMarkdownRevision as getLatestMarkdownRevision,
@@ -74,7 +67,7 @@ function modelRevisionOptionsFromArtifacts(revisions: ModelRevisionArtifact[]): 
     .sort((a, b) => b.revisionNumber - a.revisionNumber);
 }
 
-export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode: AssistantId) => void) {
+export function useStudioRevisions(studioMode: AssistantId) {
   const [signedRevisionSources, setSignedRevisionSources] = useState<SignedRevisionSources | null>(null);
   const [signedSketchRevisionSources, setSignedSketchRevisionSources] = useState<SignedSketchRevisionSources[]>([]);
   const [signedModelRevisionSources, setSignedModelRevisionSources] = useState<SignedModelRevisionSources | null>(null);
@@ -97,7 +90,6 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
   const modelRequestVersionRef = useRef(0);
   const markdownRequestVersionRef = useRef(0);
   const trackedArtifactKeysRef = useRef(new Set<string>());
-  const isEndToEndMode = isEndToEndAssistantId(studioMode);
 
   const trackArtifactRevision = useCallback((
     artifactKind: "cad" | "model" | "sketch" | "markdown",
@@ -125,8 +117,7 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       nextRevisions.push(revision);
       return nextRevisions;
     });
-    if (!isEndToEndMode) setStudioMode(CAD_ASSISTANT_ID);
-  }, [isEndToEndMode, setStudioMode, trackArtifactRevision]);
+  }, [trackArtifactRevision]);
 
   const handleSketchRevision = useCallback((revision: SketchRevisionArtifact) => {
     trackArtifactRevision("sketch", revision);
@@ -138,8 +129,7 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       nextRevisions.push(revision);
       return nextRevisions;
     });
-    if (!isEndToEndMode) setStudioMode(SKETCH_ASSISTANT_ID);
-  }, [isEndToEndMode, setStudioMode, trackArtifactRevision]);
+  }, [trackArtifactRevision]);
 
   const handleModelRevision = useCallback((revision: ModelRevisionArtifact) => {
     trackArtifactRevision("model", revision);
@@ -151,8 +141,7 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       nextRevisions.push(revision);
       return nextRevisions;
     });
-    if (!isEndToEndMode) setStudioMode(LUMI_ASSISTANT_ID);
-  }, [isEndToEndMode, setStudioMode, trackArtifactRevision]);
+  }, [trackArtifactRevision]);
 
   const handleMarkdownRevision = useCallback((revision: MarkdownRevisionArtifact) => {
     trackArtifactRevision("markdown", revision);
@@ -164,8 +153,7 @@ export function useStudioRevisions(studioMode: AssistantId, setStudioMode: (mode
       nextRevisions.push(revision);
       return nextRevisions;
     });
-    if (!isEndToEndMode) setStudioMode(CLARI_ASSISTANT_ID);
-  }, [isEndToEndMode, setStudioMode, trackArtifactRevision]);
+  }, [trackArtifactRevision]);
 
   const handleDesignRevisionsChange = useCallback((revisions: DesignRevisionArtifact[]) => {
     setHydratedDesignRevisions((currentRevisions) => (

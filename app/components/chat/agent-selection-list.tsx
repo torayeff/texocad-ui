@@ -8,12 +8,14 @@ import type { LucideIcon } from "lucide-react";
 
 import {
   CAD_ASSISTANT_ID,
-  CLARI_ASSISTANT_ID,
-  FORMA_ASSISTANT_ID,
-  LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
   type AssistantId,
 } from "@/app/lib/chat/langgraph-config";
+import {
+  LEGACY_AGENT_CONFIGS,
+  PRIMARY_AGENT_CONFIGS,
+  type AgentConfig,
+} from "@/app/lib/chat/agent-config";
 import { trackEvent } from "@/app/lib/analytics/client";
 import { cn } from "@/app/lib/cn";
 import { toolTooltipClass } from "@/app/lib/chat/chat-styles";
@@ -24,64 +26,12 @@ const lockedTooltipClass = cn(
   "bottom-[calc(100%+0.375rem)] top-auto group-hover/locked:opacity-100 group-focus-within/locked:opacity-100",
 );
 
-interface AgentSelectionOption {
-  avatarUrl?: string;
-  description: string;
-  icon?: LucideIcon;
-  label: string;
-  mode: AssistantId | null;
-  role: string;
-}
+const LEGACY_AGENT_ICONS: Partial<Record<AssistantId, LucideIcon>> = {
+  [SKETCH_ASSISTANT_ID]: ImageIcon,
+  [CAD_ASSISTANT_ID]: Box,
+};
 
-const PRIMARY_AGENT_OPTIONS: AgentSelectionOption[] = [
-  {
-    avatarUrl: "/images/agents/clari.png",
-    label: "Clari",
-    role: "Requirements engineer",
-    description: "Briefs with requirements and success criteria.",
-    mode: CLARI_ASSISTANT_ID,
-  },
-  {
-    avatarUrl: "/images/agents/lumi.png",
-    label: "Lumi",
-    role: "Concept engineer",
-    description: "Images and GLB-ready 3D assets.",
-    mode: LUMI_ASSISTANT_ID,
-  },
-  {
-    avatarUrl: "/images/agents/forma.png",
-    label: "Forma",
-    role: "CAD engineer",
-    description: "CAD parts and STEP-ready assemblies.",
-    mode: FORMA_ASSISTANT_ID,
-  },
-  {
-    avatarUrl: "/images/agents/nexis.png",
-    label: "Nexis",
-    role: "Simulation engineer",
-    description: "Tests designs, processes, and performance.",
-    mode: null,
-  },
-];
-
-const LEGACY_AGENT_OPTIONS: AgentSelectionOption[] = [
-  {
-    icon: ImageIcon,
-    label: "Sketch",
-    role: "Legacy image agent",
-    description: "Concept sketches.",
-    mode: SKETCH_ASSISTANT_ID,
-  },
-  {
-    icon: Box,
-    label: "CAD",
-    role: "Legacy CAD agent",
-    description: "BREP CAD designs.",
-    mode: CAD_ASSISTANT_ID,
-  },
-];
-
-function AgentIcon({ option }: { option: AgentSelectionOption }) {
+function AgentIcon({ option }: { option: AgentConfig }) {
   if (option.avatarUrl) {
     return (
       <Image
@@ -94,9 +44,9 @@ function AgentIcon({ option }: { option: AgentSelectionOption }) {
     );
   }
 
-  if (!option.icon) return null;
+  const Icon = option.mode ? LEGACY_AGENT_ICONS[option.mode] : undefined;
+  if (!Icon) return null;
 
-  const Icon = option.icon;
   return (
     <span className="grid size-10 shrink-0 place-items-center rounded-full border border-border/45 bg-muted/70 text-muted-foreground">
       <Icon size={16} strokeWidth={1.7} />
@@ -115,7 +65,7 @@ function AgentOptionButton({
   isLocked?: boolean;
   isLegacy?: boolean;
   lockedTooltip?: string;
-  option: AgentSelectionOption;
+  option: AgentConfig;
   onLockedSelect?: () => void;
   onModeSelect: (mode: AssistantId) => void;
 }) {
@@ -126,7 +76,7 @@ function AgentOptionButton({
     <button
       type="button"
       disabled={isComingSoon}
-      aria-label={isLocked ? `${option.label} (locked)` : undefined}
+      aria-label={isLocked ? `${option.name} (locked)` : undefined}
       onClick={() => {
         if (isLocked) {
           onLockedSelect?.();
@@ -148,7 +98,7 @@ function AgentOptionButton({
       <AgentIcon option={option} />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="text-sm font-semibold tracking-[-0.01em] text-foreground">{option.label}</span>
+          <span className="text-sm font-semibold tracking-[-0.01em] text-foreground">{option.name}</span>
           <span className="text-[11px] font-medium text-muted-foreground">{option.role}</span>
         </span>
         <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
@@ -228,9 +178,9 @@ export function AgentSelectionList({
   return (
     <div className="w-full max-w-xl space-y-4">
       <section className="grid gap-2">
-        {PRIMARY_AGENT_OPTIONS.map((option) => (
+        {PRIMARY_AGENT_CONFIGS.map((option) => (
           <AgentOptionButton
-            key={option.label}
+            key={option.key}
             isLocked={
               shouldLockRestrictedAgents
               && option.mode !== null
@@ -248,9 +198,9 @@ export function AgentSelectionList({
           Legacy agents
         </h3>
         <div className="grid gap-2 sm:grid-cols-2">
-          {LEGACY_AGENT_OPTIONS.map((option) => (
+          {LEGACY_AGENT_CONFIGS.map((option) => (
             <AgentOptionButton
-              key={option.label}
+              key={option.key}
               isLocked={shouldLockRestrictedAgents}
               lockedTooltip={lockedAgentTooltip}
               option={option}

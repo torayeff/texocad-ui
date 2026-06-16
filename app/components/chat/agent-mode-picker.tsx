@@ -1,21 +1,25 @@
 "use client";
 
 import { useCallback } from "react";
-import type { ComponentType } from "react";
 import NextImage from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { Box, Check, ChevronDown, Image, Lock } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/app/lib/cn";
 import {
   CAD_ASSISTANT_ID,
-  CLARI_ASSISTANT_ID,
-  FORMA_ASSISTANT_ID,
-  LUMI_ASSISTANT_ID,
   SKETCH_ASSISTANT_ID,
   type AssistantId,
 } from "@/app/lib/chat/langgraph-config";
+import {
+  LEGACY_AGENT_CONFIGS,
+  PRIMARY_AGENT_CONFIGS,
+  agentConfigForMode,
+  agentLabelForMode,
+  type AgentConfig,
+} from "@/app/lib/chat/agent-config";
 import { trackEvent } from "@/app/lib/analytics/client";
 import {
   activeControlClass,
@@ -31,128 +35,26 @@ const lockedTooltipClass = cn(
   "bottom-[calc(100%+0.375rem)] top-auto group-hover/locked:opacity-100 group-focus-within/locked:opacity-100",
 );
 
-interface AgentIconProps {
-  size?: number;
-  strokeWidth?: number;
-  className?: string;
-}
-
-function LumiPortraitIcon({ size = 14, className }: AgentIconProps) {
-  return (
-    <NextImage
-      src="/images/agents/lumi.png"
-      alt=""
-      width={size}
-      height={size}
-      className={cn("rounded-full object-cover ring-1 ring-border/50", className)}
-    />
-  );
-}
-
-function FormaPortraitIcon({ size = 14, className }: AgentIconProps) {
-  return (
-    <NextImage
-      src="/images/agents/forma.png"
-      alt=""
-      width={size}
-      height={size}
-      className={cn("rounded-full object-cover ring-1 ring-border/50", className)}
-    />
-  );
-}
-
-function ClariPortraitIcon({ size = 14, className }: AgentIconProps) {
-  return (
-    <NextImage
-      src="/images/agents/clari.png"
-      alt=""
-      width={size}
-      height={size}
-      className={cn("rounded-full object-cover ring-1 ring-border/50", className)}
-    />
-  );
-}
-
-function NexisPortraitIcon({ size = 14, className }: AgentIconProps) {
-  return (
-    <NextImage
-      src="/images/agents/nexis.png"
-      alt=""
-      width={size}
-      height={size}
-      className={cn("rounded-full object-cover ring-1 ring-border/50", className)}
-    />
-  );
-}
-
-interface AgentModeOption {
-  icon: ComponentType<AgentIconProps>;
-  iconKind: "glyph" | "portrait";
-  label: string;
-  mode: AssistantId | null;
-  role: string;
-}
-
 interface AgentModePickerProps {
   activeMode: AssistantId;
   onModeChange: (mode: AssistantId) => void;
 }
 
-const PRIMARY_AGENT_MODE_OPTIONS: AgentModeOption[] = [
-  {
-    icon: ClariPortraitIcon,
-    iconKind: "portrait",
-    label: "Clari",
-    mode: CLARI_ASSISTANT_ID,
-    role: "Requirements engineer",
-  },
-  {
-    icon: LumiPortraitIcon,
-    iconKind: "portrait",
-    label: "Lumi",
-    mode: LUMI_ASSISTANT_ID,
-    role: "Concept engineer",
-  },
-  {
-    icon: FormaPortraitIcon,
-    iconKind: "portrait",
-    label: "Forma",
-    mode: FORMA_ASSISTANT_ID,
-    role: "CAD engineer",
-  },
-  {
-    icon: NexisPortraitIcon,
-    iconKind: "portrait",
-    label: "Nexis",
-    mode: null,
-    role: "Simulation engineer",
-  },
-];
-
-const LEGACY_AGENT_MODE_OPTIONS: AgentModeOption[] = [
-  {
-    icon: Image,
-    iconKind: "glyph",
-    label: "Sketch (Legacy)",
-    mode: SKETCH_ASSISTANT_ID,
-    role: "Concept sketches",
-  },
-  {
-    icon: Box,
-    iconKind: "glyph",
-    label: "CAD (Legacy)",
-    mode: CAD_ASSISTANT_ID,
-    role: "BREP CAD",
-  },
-];
-
-const AGENT_MODE_OPTIONS = [
-  ...PRIMARY_AGENT_MODE_OPTIONS,
-  ...LEGACY_AGENT_MODE_OPTIONS,
-];
+const LEGACY_AGENT_ICONS: Partial<Record<AssistantId, LucideIcon>> = {
+  [SKETCH_ASSISTANT_ID]: Image,
+  [CAD_ASSISTANT_ID]: Box,
+};
 
 function activeModeOption(activeMode: AssistantId) {
-  return AGENT_MODE_OPTIONS.find((option) => option.mode === activeMode) ?? AGENT_MODE_OPTIONS[0];
+  return agentConfigForMode(activeMode);
+}
+
+function optionLabel(option: AgentConfig) {
+  return option.mode ? agentLabelForMode(option.mode) : option.name;
+}
+
+function optionSubtitle(option: AgentConfig) {
+  return option.isLegacy ? option.description : option.role;
 }
 
 function AgentModeIcon({
@@ -161,20 +63,29 @@ function AgentModeIcon({
   placement,
 }: {
   isSelected?: boolean;
-  option: AgentModeOption;
+  option: AgentConfig;
   placement: "option" | "trigger";
 }) {
-  const Icon = option.icon;
   const isTrigger = placement === "trigger";
   const frameSizeClass = isTrigger ? "size-[1.375rem]" : "size-6";
 
-  if (option.iconKind === "portrait") {
+  if (option.avatarUrl) {
+    const size = isTrigger ? 22 : 24;
     return (
       <span className={cn("grid shrink-0 place-items-center overflow-hidden rounded-full", frameSizeClass)}>
-        <Icon size={isTrigger ? 22 : 24} className="size-full" />
+        <NextImage
+          src={option.avatarUrl}
+          alt=""
+          width={size}
+          height={size}
+          className="size-full rounded-full object-cover ring-1 ring-border/50"
+        />
       </span>
     );
   }
+
+  const Icon = option.mode ? LEGACY_AGENT_ICONS[option.mode] : undefined;
+  if (!Icon) return null;
 
   return (
     <span
@@ -206,10 +117,11 @@ function AgentModeOptionButton({
   lockedTooltip?: string;
   onLockedSelect?: () => void;
   onSelect: (mode: AssistantId) => void;
-  option: AgentModeOption;
+  option: AgentConfig;
 }) {
   const isSelected = option.mode === activeMode;
   const isUnavailable = isComingSoon || isLocked;
+  const label = optionLabel(option);
 
   return (
     <button
@@ -217,7 +129,7 @@ function AgentModeOptionButton({
       role="option"
       disabled={isComingSoon}
       aria-selected={isSelected}
-      aria-label={isComingSoon ? `${option.label} (coming soon)` : isLocked ? `${option.label} (locked)` : undefined}
+      aria-label={isComingSoon ? `${label} (coming soon)` : isLocked ? `${label} (locked)` : undefined}
       onClick={() => {
         if (isLocked) {
           onLockedSelect?.();
@@ -238,7 +150,7 @@ function AgentModeOptionButton({
         <span className="min-w-0">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className={cn("truncate font-medium", isSelected ? "text-background" : "text-foreground")}>
-              {option.label}
+              {label}
             </span>
             {isComingSoon ? (
               <span className="inline-flex shrink-0 items-center rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
@@ -247,7 +159,7 @@ function AgentModeOptionButton({
             ) : null}
           </span>
           <span className={cn("block truncate text-[10px] font-normal leading-[0.875rem]", isSelected ? "text-background/70" : "text-muted-foreground")}>
-            {option.role}
+            {optionSubtitle(option)}
           </span>
         </span>
       </span>
@@ -330,7 +242,7 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
         className="-ml-2 flex h-8 items-center gap-2 rounded-[calc(var(--viewer-control-radius)-0.125rem)] px-2.5 text-[13px] font-semibold tracking-[-0.01em] text-foreground transition-colors hover:bg-muted"
       >
         <AgentModeIcon option={selected} placement="trigger" />
-        <span className="truncate">{selected.label}</span>
+        <span className="truncate">{optionLabel(selected)}</span>
         <ChevronDown
           size={12}
           className={`text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -345,11 +257,11 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
             "absolute left-0 top-[calc(100%+0.375rem)] z-30 grid w-56 gap-1 rounded-[var(--viewer-control-radius)] bg-background/95 p-1 text-foreground shadow-[0_14px_36px_rgb(0_0_0_/_0.16)]",
           )}
         >
-          {PRIMARY_AGENT_MODE_OPTIONS.map((option) => (
+          {PRIMARY_AGENT_CONFIGS.map((option) => (
             <AgentModeOptionButton
-              key={option.label}
+              key={option.key}
               activeMode={activeMode}
-              isComingSoon={option.mode === null}
+              isComingSoon={option.isComingSoon === true}
               isLocked={
                 shouldLockRestrictedAgents
                 && option.mode !== null
@@ -369,12 +281,12 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
             <span className="h-px flex-1 bg-border/60" />
           </div>
 
-          {LEGACY_AGENT_MODE_OPTIONS.map((option) => (
+          {LEGACY_AGENT_CONFIGS.map((option) => (
             <AgentModeOptionButton
-              key={option.mode}
+              key={option.key}
               activeMode={activeMode}
               isLocked={shouldLockRestrictedAgents}
-              isLegacy
+              isLegacy={option.isLegacy}
               lockedTooltip={lockedAgentTooltip}
               option={option}
               onLockedSelect={handleLockedSelect}

@@ -2,7 +2,6 @@
 
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import { usePathname, useSearchParams } from "next/navigation";
 import { PanelBottomOpen, PanelRightOpen } from "lucide-react";
@@ -30,6 +29,12 @@ import {
 } from "@/app/lib/chat/chat-url";
 import { readThreadMode } from "@/app/lib/chat/thread-metadata";
 import type { ChatHandle } from "@/app/types/chat";
+import type {
+  DesignRevisionArtifact,
+  MarkdownRevisionArtifact,
+  ModelRevisionArtifact,
+  SketchRevisionArtifact,
+} from "@/app/types/design-artifact";
 import LumiViewer from "@/app/studio/_components/lumi-viewer";
 import { useStudioRevisions } from "@/app/studio/_hooks/use-studio-revisions";
 import { useSplitLayout } from "@/app/hooks/use-split-layout";
@@ -70,6 +75,22 @@ function viewerKindForAssistant(mode: AssistantId): StudioViewerKind {
   }
 }
 
+function viewerKindForDesignArtifact(): StudioViewerKind {
+  return "cad";
+}
+
+function viewerKindForSketchArtifact(): StudioViewerKind {
+  return "sketch";
+}
+
+function viewerKindForModelArtifact(): StudioViewerKind {
+  return "lumi";
+}
+
+function viewerKindForMarkdownArtifact(): StudioViewerKind {
+  return "markdown";
+}
+
 export default function StudioClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -78,6 +99,9 @@ export default function StudioClient() {
   );
   const [studioMode, setStudioModeState] = useState<AssistantId>(
     () => initialAgentMode ?? CAD_ASSISTANT_ID,
+  );
+  const [viewerKind, setViewerKind] = useState<StudioViewerKind>(
+    () => viewerKindForAssistant(initialAgentMode ?? CAD_ASSISTANT_ID),
   );
   const [isMaskSubmitting, setIsMaskSubmitting] = useState(false);
   const [maskComposer, setMaskComposer] = useState<SketchMaskComposerState | null>(null);
@@ -102,9 +126,9 @@ export default function StudioClient() {
     setStudioModeState(CAD_ASSISTANT_ID);
     replaceStudioAgentUrl(null);
   }, [replaceStudioAgentUrl]);
-  const revisions = useStudioRevisions(studioMode, setStudioMode);
-  const viewerKind = viewerKindForAssistant(studioMode);
+  const revisions = useStudioRevisions(studioMode);
   const shouldMountChat = initialThreadId === null || isInitialThreadModeResolved;
+  const canSubmitSketchMask = studioMode === SKETCH_ASSISTANT_ID || studioMode === LUMI_ASSISTANT_ID;
 
   useEffect(() => {
     if (!initialThreadId) {
@@ -133,6 +157,26 @@ export default function StudioClient() {
     revisions.clearViewerRevisions();
   }, [revisions]);
 
+  const handleDesignRevision = useCallback((revision: DesignRevisionArtifact) => {
+    setViewerKind(viewerKindForDesignArtifact());
+    revisions.handleDesignRevision(revision);
+  }, [revisions]);
+
+  const handleSketchRevision = useCallback((revision: SketchRevisionArtifact) => {
+    setViewerKind(viewerKindForSketchArtifact());
+    revisions.handleSketchRevision(revision);
+  }, [revisions]);
+
+  const handleModelRevision = useCallback((revision: ModelRevisionArtifact) => {
+    setViewerKind(viewerKindForModelArtifact());
+    revisions.handleModelRevision(revision);
+  }, [revisions]);
+
+  const handleMarkdownRevision = useCallback((revision: MarkdownRevisionArtifact) => {
+    setViewerKind(viewerKindForMarkdownArtifact());
+    revisions.handleMarkdownRevision(revision);
+  }, [revisions]);
+
   const handleSketchMaskSubmit = useCallback(async ({ prompt, mask }: SketchMaskEditRequest) => {
     if (!revisions.activeSketchExport) {
       throw new Error("No active sketch image is available to edit.");
@@ -141,11 +185,6 @@ export default function StudioClient() {
     setIsMaskSubmitting(true);
     try {
       const uploadedMask = await uploadFileToBlob(mask);
-      if (viewerKind !== "lumi") {
-        flushSync(() => {
-          setStudioMode(SKETCH_ASSISTANT_ID);
-        });
-      }
       const submitted = chatRef.current?.submitMessage([
         "Edit the active sketch using this mask.",
         `Input image: ${revisions.activeSketchExport.blobName}`,
@@ -159,7 +198,7 @@ export default function StudioClient() {
     } finally {
       setIsMaskSubmitting(false);
     }
-  }, [revisions.activeSketchExport, setStudioMode, viewerKind]);
+  }, [revisions.activeSketchExport]);
 
   const handleMaskEditorChange = useCallback((state: SketchMaskComposerState | null) => {
     setMaskComposer(state);
@@ -200,7 +239,7 @@ export default function StudioClient() {
                 revisions: revisions.modelRevisionOptions,
               }}
               onMaskEditorChange={handleMaskEditorChange}
-              onSubmitMaskEdit={revisions.activeSketchExport ? handleSketchMaskSubmit : undefined}
+              onSubmitMaskEdit={canSubmitSketchMask && revisions.activeSketchExport ? handleSketchMaskSubmit : undefined}
               onViewerModeChange={revisions.setLumiViewerMode}
               sketchSource={revisions.sketchSource}
               sketchRevisions={{
@@ -231,7 +270,7 @@ export default function StudioClient() {
             <SketchViewer
               isMaskSubmitting={isMaskSubmitting}
               onMaskEditorChange={handleMaskEditorChange}
-              onSubmitMaskEdit={revisions.activeSketchExport ? handleSketchMaskSubmit : undefined}
+              onSubmitMaskEdit={canSubmitSketchMask && revisions.activeSketchExport ? handleSketchMaskSubmit : undefined}
               source={revisions.sketchSource}
               revisions={{
                 activeRevisionKey: revisions.activeSketchRevisionKey,
@@ -307,15 +346,15 @@ export default function StudioClient() {
               hasInitialAgentMode={initialAgentMode !== null}
               initialThreadId={initialThreadId}
               maskComposer={maskComposer}
-              onDesignRevisionEvent={revisions.handleDesignRevision}
+              onDesignRevisionEvent={handleDesignRevision}
               onDesignRevisionsChange={revisions.handleDesignRevisionsChange}
-              onMarkdownRevisionEvent={revisions.handleMarkdownRevision}
+              onMarkdownRevisionEvent={handleMarkdownRevision}
               onMarkdownRevisionsChange={revisions.handleMarkdownRevisionsChange}
               onModeChange={setStudioMode}
               onModeReset={resetStudioMode}
-              onModelRevisionEvent={revisions.handleModelRevision}
+              onModelRevisionEvent={handleModelRevision}
               onModelRevisionsChange={revisions.handleModelRevisionsChange}
-              onSketchRevisionEvent={revisions.handleSketchRevision}
+              onSketchRevisionEvent={handleSketchRevision}
               onSketchRevisionsChange={revisions.handleSketchRevisionsChange}
               onClearViewer={handleClearViewer}
               onToggleCollapse={splitLayout.toggleChatCollapsed}

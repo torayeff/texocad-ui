@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 
 import { cn } from "@/app/lib/cn";
-import { CAD_ASSISTANT_ID, CLARI_ASSISTANT_ID, FORMA_ASSISTANT_ID, LUMI_ASSISTANT_ID, SKETCH_ASSISTANT_ID, type AssistantId } from "@/app/lib/chat/langgraph-config";
+import { agentLabelForMode } from "@/app/lib/chat/agent-config";
+import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import { chatGlassClass } from "@/app/lib/chat/chat-styles";
 import type { NewChatConfirmationIntent } from "@/app/types/chat";
 
@@ -22,12 +23,7 @@ const focusableSelector = [
 ].join(",");
 
 function agentLabel(mode: AssistantId) {
-  if (mode === SKETCH_ASSISTANT_ID) return "Sketch (Legacy)";
-  if (mode === CAD_ASSISTANT_ID) return "CAD (Legacy)";
-  if (mode === LUMI_ASSISTANT_ID) return "Lumi";
-  if (mode === FORMA_ASSISTANT_ID) return "Forma";
-  if (mode === CLARI_ASSISTANT_ID) return "Clari";
-  return mode;
+  return agentLabelForMode(mode);
 }
 
 export function NewChatConfirmationDialog({
