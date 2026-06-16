@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import type { ChangeEvent, DragEvent } from "react";
 import type { UploadedFile } from "@/app/types/chat";
 import { uploadFileToBlob } from "@/app/lib/chat/blob-upload";
 import { trackEvent } from "@/app/lib/analytics/client";
@@ -29,9 +30,10 @@ function isAcceptedFile(file: File): boolean {
 
 export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadBatchCount, setUploadBatchCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounterRef = useRef(0);
+  const isUploading = uploadBatchCount > 0;
 
   const processFile = useCallback(
     async (file: File, source: UploadSource) => {
@@ -45,7 +47,6 @@ export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
         trackEvent("file_upload_rejected", properties);
         return;
       }
-      setIsUploading(true);
       try {
         const uploaded = await uploadFileToBlob(file);
         onUploaded(uploaded);
@@ -56,11 +57,24 @@ export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
           error_kind: errorKind(err),
         });
         console.error("File upload failed:", err);
-      } finally {
-        setIsUploading(false);
       }
     },
     [onUploaded],
+  );
+
+  const processFiles = useCallback(
+    async (files: File[], source: UploadSource) => {
+      if (files.length === 0) return;
+      setUploadBatchCount((count) => count + 1);
+      try {
+        for (const file of files) {
+          await processFile(file, source);
+        }
+      } finally {
+        setUploadBatchCount((count) => Math.max(0, count - 1));
+      }
+    },
+    [processFile],
   );
 
   const triggerFileSelect = useCallback(() => {
@@ -68,28 +82,27 @@ export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
   }, []);
 
   const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? []);
       e.target.value = "";
-      processFile(file, "file_picker");
+      void processFiles(files, "file_picker");
     },
-    [processFile],
+    [processFiles],
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
   }, []);
 
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
+  const handleDragEnter = useCallback((e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     dragCounterRef.current++;
     if (dragCounterRef.current === 1) setIsDragging(true);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     dragCounterRef.current--;
@@ -97,15 +110,14 @@ export function useFileUpload(onUploaded: (file: UploadedFile) => void) {
   }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
+    (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
       dragCounterRef.current = 0;
       setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file) processFile(file, "drag_drop");
+      void processFiles(Array.from(e.dataTransfer.files), "drag_drop");
     },
-    [processFile],
+    [processFiles],
   );
 
   return {

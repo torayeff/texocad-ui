@@ -231,6 +231,7 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
           ref={fileInputRef}
           type="file"
           accept={acceptedTypes}
+          multiple
           onChange={handleFileChange}
           className="hidden"
         />
@@ -275,8 +276,8 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(function Cha
                 type="button"
                 disabled={isUploading}
                 onClick={triggerFileSelect}
-                aria-label="Attach file"
-                tooltip="Attach file"
+                aria-label="Attach files"
+                tooltip="Attach files"
                 className={composerButtonClass}
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />}
