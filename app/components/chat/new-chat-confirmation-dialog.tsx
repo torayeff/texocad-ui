@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 
 import { cn } from "@/app/lib/cn";
 import { agentLabelForMode } from "@/app/lib/chat/agent-config";
-import type { AssistantId } from "@/app/lib/chat/langgraph-config";
 import { chatGlassClass } from "@/app/lib/chat/chat-styles";
 import type { NewChatConfirmationIntent } from "@/app/types/chat";
 
@@ -22,10 +21,6 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-function agentLabel(mode: AssistantId) {
-  return agentLabelForMode(mode);
-}
-
 export function NewChatConfirmationDialog({
   intent,
   onCancel,
@@ -37,10 +32,10 @@ export function NewChatConfirmationDialog({
 }) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const title = intent.kind === "mode"
-    ? `Start a new ${agentLabel(intent.mode)} chat?`
+    ? `Start a new ${agentLabelForMode(intent.mode)} chat?`
     : "Start a new chat?";
   const description = intent.kind === "mode"
-    ? `Switching to ${agentLabel(intent.mode)} will start a new chat. Saved chats stay available in History.`
+    ? `Switching to ${agentLabelForMode(intent.mode)} will start a new chat. Saved chats stay available in History.`
     : "A new chat will be started in this panel. Saved chats stay available in History.";
 
   useEffect(() => {

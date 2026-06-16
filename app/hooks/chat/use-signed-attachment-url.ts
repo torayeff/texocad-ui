@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export function useSignedAttachmentUrl(url: string) {
-  const [signedUrl, setSignedUrl] = useState(() => url);
+  const [signedUrl, setSignedUrl] = useState<{ sourceUrl: string; url: string } | null>(null);
 
   useEffect(() => {
     if (!url || url.startsWith("data:") || url.includes("?")) {
@@ -15,10 +15,10 @@ export function useSignedAttachmentUrl(url: string) {
     void fetch(`/api/blob?${params.toString()}`)
       .then((response) => response.ok ? response.json() as Promise<{ sasUrl?: string }> : null)
       .then((data) => {
-        if (!cancelled) setSignedUrl(data?.sasUrl ?? url);
+        if (!cancelled) setSignedUrl({ sourceUrl: url, url: data?.sasUrl ?? url });
       })
       .catch(() => {
-        if (!cancelled) setSignedUrl(url);
+        if (!cancelled) setSignedUrl({ sourceUrl: url, url });
       });
 
     return () => {
@@ -26,5 +26,5 @@ export function useSignedAttachmentUrl(url: string) {
     };
   }, [url]);
 
-  return signedUrl;
+  return signedUrl?.sourceUrl === url ? signedUrl.url : url;
 }

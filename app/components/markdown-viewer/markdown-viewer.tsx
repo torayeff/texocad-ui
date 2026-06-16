@@ -265,6 +265,7 @@ export default function MarkdownViewer({
             <RevisionMenu
               ref={panelRef}
               activeRevisionKey={revisions.activeRevisionKey}
+              id="markdown-revision-menu"
               isLatestRevisionSelected={revisions.isLatestRevisionSelected}
               onClose={() => setRevisionsOpen(false)}
               onSelectLatestRevision={revisions.onSelectLatestRevision}

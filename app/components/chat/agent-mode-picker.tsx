@@ -2,8 +2,6 @@
 
 import { useCallback } from "react";
 import NextImage from "next/image";
-import { useRouter } from "next/navigation";
-import { useAuth, useClerk } from "@clerk/nextjs";
 import { Box, Check, ChevronDown, Image, Lock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -20,7 +18,6 @@ import {
   agentLabelForMode,
   type AgentConfig,
 } from "@/app/lib/chat/agent-config";
-import { trackEvent } from "@/app/lib/analytics/client";
 import {
   activeControlClass,
   chatGlassClass,
@@ -28,7 +25,7 @@ import {
   toolTooltipClass,
 } from "@/app/lib/chat/chat-styles";
 import { useDropdown } from "@/app/hooks/chat/use-dropdown";
-import { CLERK_PLAN_SLUG, SITE_ROUTES } from "@/app/lib/site";
+import { useAgentAccessGate } from "@/app/hooks/chat/use-agent-access-gate";
 
 const lockedTooltipClass = cn(
   toolTooltipClass,
@@ -45,16 +42,12 @@ const LEGACY_AGENT_ICONS: Partial<Record<AssistantId, LucideIcon>> = {
   [CAD_ASSISTANT_ID]: Box,
 };
 
-function activeModeOption(activeMode: AssistantId) {
-  return agentConfigForMode(activeMode);
-}
-
 function optionLabel(option: AgentConfig) {
   return option.mode ? agentLabelForMode(option.mode) : option.name;
 }
 
 function optionSubtitle(option: AgentConfig) {
-  return option.isLegacy ? option.description : option.role;
+  return option.group === "legacy" ? option.description : option.role;
 }
 
 function AgentModeIcon({
@@ -179,58 +172,21 @@ function AgentModeOptionButton({
 
 export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerProps) {
   const { isOpen, containerRef, toggle, close } = useDropdown();
-  const { has, isLoaded, isSignedIn, sessionClaims } = useAuth();
-  const { openSignIn } = useClerk();
-  const router = useRouter();
-  const selected = activeModeOption(activeMode);
-  const hasAgentAccess = Boolean(
-    isSignedIn
-    && (
-      has?.({ plan: CLERK_PLAN_SLUG })
-      || sessionClaims?.freeAccess === true
-      || sessionClaims?.vipAccess === true
-    ),
-  );
-  const lockedAgentAction = !isLoaded || hasAgentAccess
-    ? null
-    : (isSignedIn ? "upgrade" : "sign-in");
-  const shouldLockRestrictedAgents = lockedAgentAction !== null;
-  const lockedAgentTooltip = lockedAgentAction === "upgrade"
-    ? "Upgrade to unlock"
-    : "Sign in to unlock";
+  const selected = agentConfigForMode(activeMode);
+  const {
+    handleLockedAgentSelect,
+    lockedAgentTooltip,
+    shouldLockRestrictedAgents,
+  } = useAgentAccessGate({
+    gate: "agent_mode_picker",
+    location: "agent_mode_picker",
+    onAfterAction: close,
+  });
 
   const handleSelect = useCallback((mode: AssistantId) => {
     onModeChange(mode);
     close();
   }, [onModeChange, close]);
-
-  const handleLockedSelect = useCallback(() => {
-    if (lockedAgentAction === "upgrade") {
-      trackEvent("auth_gate_clicked", {
-        action: "upgrade",
-        gate: "agent_mode_picker",
-        is_signed_in: Boolean(isSignedIn),
-      });
-      trackEvent("upgrade_clicked", {
-        gate: "agent_mode_picker",
-        location: "agent_mode_picker",
-      });
-      router.push(SITE_ROUTES.pricing);
-      close();
-      return;
-    }
-    trackEvent("auth_gate_clicked", {
-      action: "sign-in",
-      gate: "agent_mode_picker",
-      is_signed_in: Boolean(isSignedIn),
-    });
-    trackEvent("sign_in_opened", {
-      gate: "agent_mode_picker",
-      location: "agent_mode_picker",
-    });
-    openSignIn();
-    close();
-  }, [close, isSignedIn, lockedAgentAction, openSignIn, router]);
 
   return (
     <div ref={containerRef} className="relative">
@@ -261,14 +217,14 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
             <AgentModeOptionButton
               key={option.key}
               activeMode={activeMode}
-              isComingSoon={option.isComingSoon === true}
+              isComingSoon={option.mode === null}
               isLocked={
                 shouldLockRestrictedAgents
                 && option.mode !== null
               }
               lockedTooltip={lockedAgentTooltip}
               option={option}
-              onLockedSelect={handleLockedSelect}
+              onLockedSelect={handleLockedAgentSelect}
               onSelect={handleSelect}
             />
           ))}
@@ -286,10 +242,10 @@ export function AgentModePicker({ activeMode, onModeChange }: AgentModePickerPro
               key={option.key}
               activeMode={activeMode}
               isLocked={shouldLockRestrictedAgents}
-              isLegacy={option.isLegacy}
+              isLegacy={option.group === "legacy"}
               lockedTooltip={lockedAgentTooltip}
               option={option}
-              onLockedSelect={handleLockedSelect}
+              onLockedSelect={handleLockedAgentSelect}
               onSelect={handleSelect}
             />
           ))}

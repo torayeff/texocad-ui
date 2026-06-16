@@ -12,6 +12,7 @@ import { cn } from "@/app/lib/cn";
 
 interface RevisionMenuProps {
   activeRevisionKey: string | null;
+  id?: string;
   isLatestRevisionSelected: boolean;
   revisions: ViewerRevisionOption[];
   style?: CSSProperties;
@@ -23,6 +24,7 @@ interface RevisionMenuProps {
 
 export const RevisionMenu = forwardRef<HTMLDivElement, RevisionMenuProps>(function RevisionMenu({
   activeRevisionKey,
+  id = "revision-menu",
   isLatestRevisionSelected,
   revisions,
   style,
@@ -38,7 +40,7 @@ export const RevisionMenu = forwardRef<HTMLDivElement, RevisionMenuProps>(functi
       ref={ref}
       className={cn(controlMenuPopoverClass, "max-h-80 overflow-y-auto")}
       style={style}
-      id="revision-menu"
+      id={id}
       role="menu"
       aria-label="Revisions"
     >

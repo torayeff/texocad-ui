@@ -218,6 +218,14 @@ export function useStudioRevisions(studioMode: AssistantId) {
     [hydratedModelRevisions, liveModelRevisions],
   );
   const latestModelRevision = useMemo(() => getLatestModelRevision(modelRevisions), [modelRevisions]);
+  const viewableModelRevisions = useMemo(
+    () => modelRevisions.filter((revision) => revision.exports.some(isGlbExport)),
+    [modelRevisions],
+  );
+  const latestViewableModelRevision = useMemo(
+    () => getLatestModelRevision(viewableModelRevisions),
+    [viewableModelRevisions],
+  );
   const markdownRevisions = useMemo(
     () => mergeMarkdownRevisions(hydratedMarkdownRevisions, liveMarkdownRevisions),
     [hydratedMarkdownRevisions, liveMarkdownRevisions],
@@ -257,6 +265,14 @@ export function useStudioRevisions(studioMode: AssistantId) {
       thumbnailUrl: signedSketchSourcesByKey.get(revision.key)?.imageSource?.url ?? null,
     }))
   ), [signedSketchSourcesByKey, sketchRevisions]);
+  const viewableSketchRevisions = useMemo(
+    () => sketchRevisions.filter((revision) => revision.exports.some(isSketchImageExport)),
+    [sketchRevisions],
+  );
+  const latestViewableSketchRevision = useMemo(
+    () => getLatestSketchRevision(viewableSketchRevisions),
+    [viewableSketchRevisions],
+  );
   const modelRevisionOptions = useMemo(() => modelRevisionOptionsFromArtifacts(modelRevisions), [modelRevisions]);
   const markdownRevisionOptions = useMemo(() => markdownRevisionOptionsFromArtifacts(markdownRevisions), [markdownRevisions]);
   const viewerSource = signedRevisionSources?.key === activeRevisionKey ? signedRevisionSources.viewerSource : null;
@@ -290,8 +306,8 @@ export function useStudioRevisions(studioMode: AssistantId) {
     relatedArtifacts: activeMarkdownRevision.exports.filter((artifact) => artifact !== activeMarkdownExport && isSketchImageExport(artifact)),
   } : null;
 
-  const autoLumiViewerMode: LumiViewerMode = latestModelRevision
-    ? (latestSketchRevision && latestSketchRevision.revisionNumber > latestModelRevision.revisionNumber
+  const autoLumiViewerMode: LumiViewerMode = latestViewableModelRevision
+    ? (latestViewableSketchRevision && latestViewableSketchRevision.revisionNumber > latestViewableModelRevision.revisionNumber
       ? "sketch"
       : "model")
     : "sketch";
@@ -316,10 +332,15 @@ export function useStudioRevisions(studioMode: AssistantId) {
 
     if (!activeRevision || !activeRevisionKey) return;
 
-    void getSignedRevisionSources(activeRevision, activeRevisionKey).then((sources) => {
-      if (snapshotVersion !== designRequestVersionRef.current) return;
-      setSignedRevisionSources(sources);
-    });
+    void getSignedRevisionSources(activeRevision, activeRevisionKey)
+      .then((sources) => {
+        if (snapshotVersion !== designRequestVersionRef.current) return;
+        setSignedRevisionSources(sources);
+      })
+      .catch(() => {
+        if (snapshotVersion !== designRequestVersionRef.current) return;
+        setSignedRevisionSources(null);
+      });
   }, [activeRevision, activeRevisionKey]);
 
   useEffect(() => {
@@ -335,10 +356,15 @@ export function useStudioRevisions(studioMode: AssistantId) {
 
     void Promise.all(
       revisionsToSign.map(({ key, revision }) => getSignedSketchRevisionSources(revision, key)),
-    ).then((sources) => {
-      if (snapshotVersion !== sketchRequestVersionRef.current) return;
-      setSignedSketchRevisionSources(sources.filter((source): source is SignedSketchRevisionSources => source !== null));
-    });
+    )
+      .then((sources) => {
+        if (snapshotVersion !== sketchRequestVersionRef.current) return;
+        setSignedSketchRevisionSources(sources.filter((source): source is SignedSketchRevisionSources => source !== null));
+      })
+      .catch(() => {
+        if (snapshotVersion !== sketchRequestVersionRef.current) return;
+        setSignedSketchRevisionSources([]);
+      });
   }, [sketchRevisions]);
 
   useEffect(() => {
@@ -347,10 +373,15 @@ export function useStudioRevisions(studioMode: AssistantId) {
 
     if (!activeModelRevision || !activeModelRevisionKey) return;
 
-    void getSignedModelRevisionSources(activeModelRevision, activeModelRevisionKey).then((sources) => {
-      if (snapshotVersion !== modelRequestVersionRef.current) return;
-      setSignedModelRevisionSources(sources);
-    });
+    void getSignedModelRevisionSources(activeModelRevision, activeModelRevisionKey)
+      .then((sources) => {
+        if (snapshotVersion !== modelRequestVersionRef.current) return;
+        setSignedModelRevisionSources(sources);
+      })
+      .catch(() => {
+        if (snapshotVersion !== modelRequestVersionRef.current) return;
+        setSignedModelRevisionSources(null);
+      });
   }, [activeModelRevision, activeModelRevisionKey]);
 
   useEffect(() => {
@@ -359,10 +390,15 @@ export function useStudioRevisions(studioMode: AssistantId) {
 
     if (!activeMarkdownRevision || !activeMarkdownRevisionKey) return;
 
-    void getSignedMarkdownRevisionSources(activeMarkdownRevision, activeMarkdownRevisionKey).then((sources) => {
-      if (snapshotVersion !== markdownRequestVersionRef.current) return;
-      setSignedMarkdownRevisionSources(sources);
-    });
+    void getSignedMarkdownRevisionSources(activeMarkdownRevision, activeMarkdownRevisionKey)
+      .then((sources) => {
+        if (snapshotVersion !== markdownRequestVersionRef.current) return;
+        setSignedMarkdownRevisionSources(sources);
+      })
+      .catch(() => {
+        if (snapshotVersion !== markdownRequestVersionRef.current) return;
+        setSignedMarkdownRevisionSources(null);
+      });
   }, [activeMarkdownRevision, activeMarkdownRevisionKey]);
 
   return {
@@ -388,8 +424,8 @@ export function useStudioRevisions(studioMode: AssistantId) {
     handleSelectSketchRevision: setSelectedSketchRevisionKey,
     handleSketchRevision,
     handleSketchRevisionsChange,
-    hasModel: modelRevisions.length > 0,
-    hasSketch: sketchRevisions.length > 0,
+    hasModel: viewableModelRevisions.length > 0,
+    hasSketch: viewableSketchRevisions.length > 0,
     isLatestModelRevisionSelected: selectedModelRevisionKey === null || selectedModelRevision === null,
     isLatestMarkdownRevisionSelected: selectedMarkdownRevisionKey === null || selectedMarkdownRevision === null,
     isLatestRevisionSelected: selectedRevisionKey === null || selectedRevision === null,

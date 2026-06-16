@@ -44,7 +44,7 @@ export function isGlbExport(artifact: StoredBlobArtifact) {
   return isGlbExportByName(artifact.filename, artifact.contentType);
 }
 
-export function isSourceCode(artifact: StoredBlobArtifact) {
+function isSourceCode(artifact: StoredBlobArtifact) {
   const filename = artifact.filename.toLowerCase();
   return filename.endsWith(".py") || artifact.contentType.startsWith("text/x-python");
 }

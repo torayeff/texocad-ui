@@ -40,7 +40,7 @@ export function isMarkdownRevisionArtifact(value: unknown): value is MarkdownRev
   return isRevisionArtifact(value, MARKDOWN_REVISION_TYPE);
 }
 
-export function isTexocadRevisionArtifact(value: unknown): value is TexocadRevisionArtifact {
+function isTexocadRevisionArtifact(value: unknown): value is TexocadRevisionArtifact {
   return (
     isDesignRevisionArtifact(value) ||
     isSketchRevisionArtifact(value) ||

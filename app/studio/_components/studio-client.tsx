@@ -27,6 +27,7 @@ import {
   THREAD_QUERY_PARAM,
   chatUrlWithAgent,
 } from "@/app/lib/chat/chat-url";
+import { agentConfigForMode } from "@/app/lib/chat/agent-config";
 import { readThreadMode } from "@/app/lib/chat/thread-metadata";
 import type { ChatHandle } from "@/app/types/chat";
 import type {
@@ -45,14 +46,8 @@ const ModelViewer = dynamic(
   { ssr: false },
 );
 
-const AGENT_AVATAR_URLS: Partial<Record<AssistantId, string>> = {
-  [LUMI_ASSISTANT_ID]: "/images/agents/lumi.png",
-  [FORMA_ASSISTANT_ID]: "/images/agents/forma.png",
-  [CLARI_ASSISTANT_ID]: "/images/agents/clari.png",
-};
-
 function agentAvatarUrl(mode: AssistantId) {
-  return AGENT_AVATAR_URLS[mode];
+  return agentConfigForMode(mode).avatarUrl;
 }
 
 type StudioViewerKind = "cad" | "sketch" | "lumi" | "markdown";
@@ -75,22 +70,6 @@ function viewerKindForAssistant(mode: AssistantId): StudioViewerKind {
   }
 }
 
-function viewerKindForDesignArtifact(): StudioViewerKind {
-  return "cad";
-}
-
-function viewerKindForSketchArtifact(): StudioViewerKind {
-  return "sketch";
-}
-
-function viewerKindForModelArtifact(): StudioViewerKind {
-  return "lumi";
-}
-
-function viewerKindForMarkdownArtifact(): StudioViewerKind {
-  return "markdown";
-}
-
 export default function StudioClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -100,9 +79,7 @@ export default function StudioClient() {
   const [studioMode, setStudioModeState] = useState<AssistantId>(
     () => initialAgentMode ?? CAD_ASSISTANT_ID,
   );
-  const [viewerKind, setViewerKind] = useState<StudioViewerKind>(
-    () => viewerKindForAssistant(initialAgentMode ?? CAD_ASSISTANT_ID),
-  );
+  const [artifactViewerKind, setArtifactViewerKind] = useState<StudioViewerKind | null>(null);
   const [isMaskSubmitting, setIsMaskSubmitting] = useState(false);
   const [maskComposer, setMaskComposer] = useState<SketchMaskComposerState | null>(null);
   const [initialThreadId] = useState(() => searchParams.get(THREAD_QUERY_PARAM));
@@ -120,15 +97,18 @@ export default function StudioClient() {
   }, [pathname]);
   const setStudioMode = useCallback((mode: AssistantId) => {
     setStudioModeState(mode);
+    setArtifactViewerKind(null);
     replaceStudioAgentUrl(mode);
   }, [replaceStudioAgentUrl]);
   const resetStudioMode = useCallback(() => {
     setStudioModeState(CAD_ASSISTANT_ID);
+    setArtifactViewerKind(null);
     replaceStudioAgentUrl(null);
   }, [replaceStudioAgentUrl]);
   const revisions = useStudioRevisions(studioMode);
   const shouldMountChat = initialThreadId === null || isInitialThreadModeResolved;
   const canSubmitSketchMask = studioMode === SKETCH_ASSISTANT_ID || studioMode === LUMI_ASSISTANT_ID;
+  const viewerKind = artifactViewerKind ?? viewerKindForAssistant(studioMode);
 
   useEffect(() => {
     if (!initialThreadId) {
@@ -158,22 +138,22 @@ export default function StudioClient() {
   }, [revisions]);
 
   const handleDesignRevision = useCallback((revision: DesignRevisionArtifact) => {
-    setViewerKind(viewerKindForDesignArtifact());
+    setArtifactViewerKind("cad");
     revisions.handleDesignRevision(revision);
   }, [revisions]);
 
   const handleSketchRevision = useCallback((revision: SketchRevisionArtifact) => {
-    setViewerKind(viewerKindForSketchArtifact());
+    setArtifactViewerKind("sketch");
     revisions.handleSketchRevision(revision);
   }, [revisions]);
 
   const handleModelRevision = useCallback((revision: ModelRevisionArtifact) => {
-    setViewerKind(viewerKindForModelArtifact());
+    setArtifactViewerKind("lumi");
     revisions.handleModelRevision(revision);
   }, [revisions]);
 
   const handleMarkdownRevision = useCallback((revision: MarkdownRevisionArtifact) => {
-    setViewerKind(viewerKindForMarkdownArtifact());
+    setArtifactViewerKind("markdown");
     revisions.handleMarkdownRevision(revision);
   }, [revisions]);
 

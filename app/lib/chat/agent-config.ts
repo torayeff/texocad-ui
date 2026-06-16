@@ -37,8 +37,6 @@ export interface AgentConfig {
   examples?: readonly AgentExamplePrompt[];
   greeting?: AgentGreeting;
   group: "primary" | "legacy";
-  isComingSoon?: boolean;
-  isLegacy?: boolean;
   key: string;
   mode: AssistantId | null;
   name: string;
@@ -176,7 +174,6 @@ export const AGENT_CONFIGS: readonly AgentConfig[] = [
     avatarUrl: "/images/agents/nexis.png",
     description: "Tests designs, processes, and performance.",
     group: "primary",
-    isComingSoon: true,
     key: "nexis",
     mode: null,
     name: "Nexis",
@@ -222,7 +219,6 @@ export const AGENT_CONFIGS: readonly AgentConfig[] = [
       },
     ],
     group: "legacy",
-    isLegacy: true,
     key: "sketch",
     mode: SKETCH_ASSISTANT_ID,
     name: "Sketch",
@@ -243,7 +239,6 @@ export const AGENT_CONFIGS: readonly AgentConfig[] = [
       },
     ],
     group: "legacy",
-    isLegacy: true,
     key: "cad",
     mode: CAD_ASSISTANT_ID,
     name: "CAD",
@@ -253,7 +248,7 @@ export const AGENT_CONFIGS: readonly AgentConfig[] = [
 
 export const PRIMARY_AGENT_CONFIGS = AGENT_CONFIGS.filter((agent) => agent.group === "primary");
 export const LEGACY_AGENT_CONFIGS = AGENT_CONFIGS.filter((agent) => agent.group === "legacy");
-export const RUNNABLE_AGENT_CONFIGS = AGENT_CONFIGS.filter((agent) => agent.mode !== null);
+const RUNNABLE_AGENT_CONFIGS = AGENT_CONFIGS.filter((agent) => agent.mode !== null);
 
 export function agentConfigForMode(mode: AssistantId): AgentConfig {
   const config = RUNNABLE_AGENT_CONFIGS.find((agent) => agent.mode === mode);
@@ -265,7 +260,7 @@ export function agentConfigForMode(mode: AssistantId): AgentConfig {
 
 export function agentLabelForMode(mode: AssistantId) {
   const config = agentConfigForMode(mode);
-  return config.isLegacy ? `${config.name} (Legacy)` : config.name;
+  return config.group === "legacy" ? `${config.name} (Legacy)` : config.name;
 }
 
 export function agentProfileStartHref(agent: AgentConfig) {

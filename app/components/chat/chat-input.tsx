@@ -13,7 +13,12 @@ import {
   MaskComposerBanner,
   maskComposerDisabledReason,
 } from "@/app/components/chat/mask-composer-banner";
-import { MODELS } from "@/app/lib/chat/models";
+import {
+  MODELS,
+  type ReasoningEffortId,
+  type ReasoningEffortOption,
+  type ReasoningUpsell,
+} from "@/app/lib/chat/models";
 import {
   chatContentRailClass,
   composerButtonClass,
@@ -23,11 +28,6 @@ import { attachmentMarkdown } from "@/app/lib/chat/message-attachments";
 import { SITE_ROUTES } from "@/app/lib/site";
 import type { SketchMaskComposerState } from "@/app/types/sketch-viewer";
 import type { ChatInputHandle, UploadedFile } from "@/app/types/chat";
-import type {
-  ReasoningEffortId,
-  ReasoningEffortOption,
-  ReasoningUpsell,
-} from "@/app/lib/chat/models";
 
 interface ChatInputProps {
   isBusy: boolean;

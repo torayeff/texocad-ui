@@ -1,9 +1,9 @@
-export type AnalyticsPropertyValue = string | number | boolean | null | undefined;
+type AnalyticsPropertyValue = string | number | boolean | null | undefined;
 
-export type ArtifactKind = "cad" | "model" | "sketch" | "markdown";
-export type AuthGateAction = "sign-in" | "upgrade";
-export type DownloadKind = "artifact" | "source";
-export type ShareKind = "model" | "sketch" | "markdown" | "public";
+type ArtifactKind = "cad" | "model" | "sketch" | "markdown";
+type AuthGateAction = "sign-in" | "upgrade";
+type DownloadKind = "artifact" | "source";
+type ShareKind = "model" | "sketch" | "markdown" | "public";
 export type UploadSource = "drag_drop" | "file_picker" | "mask_edit" | "local_model_share";
 
 export interface AnalyticsEventProperties {
@@ -211,7 +211,7 @@ export interface AnalyticsEventProperties {
   };
 }
 
-export interface ApiOutcomeProperties {
+interface ApiOutcomeProperties {
   duration_bucket: string;
   error_kind?: string;
   status: number;

@@ -100,6 +100,12 @@ export function useSketchMaskEditor({
     onMaskEditorChange,
   ]);
 
+  useEffect(() => {
+    return () => {
+      onMaskEditorChange?.(null);
+    };
+  }, [onMaskEditorChange]);
+
   return {
     hasMask,
     handleCloseMaskEditor,

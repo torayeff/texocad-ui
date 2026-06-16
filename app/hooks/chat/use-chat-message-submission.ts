@@ -16,8 +16,9 @@ import {
   isReasoningEffortAllowed,
   lockedReasoningEffortsForAccess,
   reasoningEffortsForAccess,
+  type ReasoningEffortId,
+  type ReasoningUpsell,
 } from "@/app/lib/chat/models";
-import type { ReasoningEffortId, ReasoningUpsell } from "@/app/lib/chat/models";
 import { trackMessageSubmitted } from "@/app/lib/chat/analytics";
 import { trackEvent } from "@/app/lib/analytics/client";
 import { humanMessageDisplayParts } from "@/app/lib/chat/message-attachments";

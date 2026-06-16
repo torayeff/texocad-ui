@@ -1,4 +1,4 @@
-import { AGENT_CONFIGS, agentProfileStartHref } from "@/app/lib/chat/agent-config";
+import { AGENT_CONFIGS, agentProfileStartHref, type AgentConfig } from "@/app/lib/chat/agent-config";
 
 export interface AgentProfile {
   name: string;
@@ -18,17 +18,26 @@ export interface AgentProfile {
   startHref: string | null;
 }
 
+interface ProfiledAgentConfig extends AgentConfig {
+  avatarUrl: string;
+  profile: NonNullable<AgentConfig["profile"]>;
+}
+
+function hasProfile(agent: AgentConfig): agent is ProfiledAgentConfig {
+  return Boolean(agent.profile && agent.avatarUrl);
+}
+
 export const AGENT_PROFILES: readonly AgentProfile[] = AGENT_CONFIGS
-  .filter((agent) => agent.profile && agent.avatarUrl)
+  .filter(hasProfile)
   .map((agent) => ({
     name: agent.name,
     role: agent.role,
-    tagline: agent.profile!.tagline,
-    bio: agent.profile!.bio,
-    image: agent.avatarUrl!,
-    cardSkills: agent.profile!.cardSkills,
-    coreSkills: agent.profile!.coreSkills,
-    outputs: agent.profile!.outputs,
-    bestFor: agent.profile!.bestFor,
+    tagline: agent.profile.tagline,
+    bio: agent.profile.bio,
+    image: agent.avatarUrl,
+    cardSkills: agent.profile.cardSkills,
+    coreSkills: agent.profile.coreSkills,
+    outputs: agent.profile.outputs,
+    bestFor: agent.profile.bestFor,
     startHref: agentProfileStartHref(agent),
   }));
