@@ -17,6 +17,7 @@ import {
   SUPPORT_EMAIL,
   absoluteSiteUrl,
 } from "@/app/lib/site";
+import { AnnouncementBanner } from "@/app/components/announcement-banner";
 import { PostHogIdentity } from "@/app/components/posthog-identity";
 import ThemeProvider from "@/app/components/theme-provider";
 import "./globals.css";
@@ -180,7 +181,10 @@ export default function RootLayout({
         />
         <ClerkProvider>
           <PostHogIdentity />
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <AnnouncementBanner />
+            {children}
+          </ThemeProvider>
         </ClerkProvider>
         <Analytics />
       </body>
