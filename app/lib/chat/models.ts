@@ -4,7 +4,13 @@ export interface ModelOption {
   provider: string;
 }
 
-export type ReasoningEffortId = "none" | "low" | "medium" | "high" | "xhigh";
+export type ReasoningEffortId =
+  | "none"
+  | "low"
+  | "medium"
+  | "high"
+  | "xhigh"
+  | "max";
 
 export interface ReasoningEffortOption {
   id: ReasoningEffortId;
@@ -13,17 +19,18 @@ export interface ReasoningEffortOption {
 }
 
 export const MODELS: ModelOption[] = [
-  { id: "gpt-5.5", label: "GPT-5.5", provider: "OpenAI" },
+  { id: "gpt-5.6-sol", label: "GPT-5.6-Sol", provider: "OpenAI" },
 ];
 
-export const DEFAULT_MODEL_ID = "gpt-5.5";
+export const DEFAULT_MODEL_ID = "gpt-5.6-sol";
 
 export const REASONING_EFFORTS: ReasoningEffortOption[] = [
   { id: "none", label: "None", description: "Fastest responses" },
   { id: "low", label: "Low", description: "Light reasoning" },
   { id: "medium", label: "Medium", description: "Balanced reasoning" },
-  { id: "high", label: "High", description: "Deeper reasoning" },
-  { id: "xhigh", label: "XHigh", description: "Maximum reasoning" },
+  { id: "high", label: "High", description: "High reasoning" },
+  { id: "xhigh", label: "XHigh", description: "Extra high reasoning" },
+  { id: "max", label: "Max", description: "Maximum reasoning" },
 ];
 
 export const DEFAULT_REASONING_EFFORT_ID: ReasoningEffortId = "low";
@@ -36,12 +43,16 @@ export type ReasoningUpsell = "sign-in" | "upgrade";
 
 export function reasoningEffortsForAccess(hasAdvancedReasoning: boolean) {
   if (hasAdvancedReasoning) return REASONING_EFFORTS;
-  return REASONING_EFFORTS.filter((effort) => FREE_REASONING_EFFORT_IDS.has(effort.id));
+  return REASONING_EFFORTS.filter((effort) =>
+    FREE_REASONING_EFFORT_IDS.has(effort.id),
+  );
 }
 
 export function lockedReasoningEffortsForAccess(hasAdvancedReasoning: boolean) {
   if (hasAdvancedReasoning) return [];
-  return REASONING_EFFORTS.filter((effort) => !FREE_REASONING_EFFORT_IDS.has(effort.id));
+  return REASONING_EFFORTS.filter(
+    (effort) => !FREE_REASONING_EFFORT_IDS.has(effort.id),
+  );
 }
 
 export function isReasoningEffortAllowed(
