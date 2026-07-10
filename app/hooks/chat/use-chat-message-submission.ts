@@ -64,7 +64,11 @@ export function useChatMessageSubmission({
 }: UseChatMessageSubmissionOptions) {
   const { has, isLoaded, isSignedIn, sessionClaims } = useAuth();
   const isVip = sessionClaims?.vipAccess === true;
-  const hasAdvancedReasoning = Boolean(isVip || has?.({ plan: CLERK_PLAN_SLUG }));
+  const hasAdvancedReasoning = Boolean(
+    isVip
+    || sessionClaims?.freeAccess === true
+    || has?.({ plan: CLERK_PLAN_SLUG }),
+  );
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL_ID);
   const [selectedReasoningEffortId, setSelectedReasoningEffortId] =
     useState<ReasoningEffortId>(DEFAULT_REASONING_EFFORT_ID);
