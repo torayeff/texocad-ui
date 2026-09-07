@@ -19,10 +19,10 @@ export interface ReasoningEffortOption {
 }
 
 export const MODELS: ModelOption[] = [
-  { id: "gpt-5.6-sol", label: "GPT-5.6-Sol", provider: "OpenAI" },
+  { id: "gpt-6-astra", label: "GPT-6-astra", provider: "OpenAI" },
 ];
 
-export const DEFAULT_MODEL_ID = "gpt-5.6-sol";
+export const DEFAULT_MODEL_ID = "gpt-6-astra";
 
 export const REASONING_EFFORTS: ReasoningEffortOption[] = [
   { id: "none", label: "None", description: "Fastest responses" },
