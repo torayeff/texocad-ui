@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function MaintenancePage() {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background px-6 text-foreground">
+    <main className="flex min-h-[var(--app-viewport-height)] items-center justify-center bg-background px-6 text-foreground">
       <section className="mx-auto flex max-w-md flex-col items-center text-center">
         <ThemeLogo alt="" width={36} height={36} priority />
         <p className="mt-6 text-sm font-medium text-muted-foreground">

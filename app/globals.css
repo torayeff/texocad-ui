@@ -18,6 +18,10 @@
   --viewer-modal-background: rgb(255 255 255 / 0.78);
   --viewer-field-background: rgb(255 255 255 / 0.5);
   --app-chrome-gutter: 1rem;
+  /* First-paint estimate of AnnouncementBanner's height; the banner sets the measured value.
+     Set to 0px when the banner is removed. */
+  --announcement-height: 5rem;
+  --app-viewport-height: calc(100dvh - var(--announcement-height));
 }
 
 .dark {
@@ -40,6 +44,12 @@
 @media (min-width: 48rem) {
   :root {
     --app-chrome-gutter: 1.5rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --announcement-height: 3.5rem;
   }
 }
 

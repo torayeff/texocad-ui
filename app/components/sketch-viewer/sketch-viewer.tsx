@@ -129,7 +129,7 @@ export default function SketchViewer({
           <img
             src={source.url}
             alt={source.label}
-            className="h-auto w-auto max-w-[min(1024px,calc(100vw-2rem))] max-h-[calc(100dvh-12rem)] object-contain"
+            className="h-auto w-auto max-w-[min(1024px,calc(100vw-2rem))] max-h-[calc(var(--app-viewport-height)-12rem)] object-contain"
           />
         ) : (
           <ViewerEmptyAnimation />

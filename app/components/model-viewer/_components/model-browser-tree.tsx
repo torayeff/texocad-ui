@@ -32,7 +32,7 @@ interface BrowserNodeRowProps {
 
 const browserTreeClass = cn(
   viewerGlassClass,
-  "flex max-h-[min(26rem,calc(100dvh-8rem-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] w-[min(15rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[var(--viewer-control-radius)] text-foreground sm:max-h-[min(30rem,calc(100dvh-5rem))]",
+  "flex max-h-[min(26rem,calc(var(--app-viewport-height)-8rem-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] w-[min(15rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[var(--viewer-control-radius)] text-foreground sm:max-h-[min(30rem,calc(var(--app-viewport-height)-5rem))]",
 );
 
 function collectExpandedIds(nodes: ModelBrowserNode[], expandedIds = new Set<string>()): Set<string> {

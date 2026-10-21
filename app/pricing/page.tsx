@@ -21,7 +21,7 @@ export default async function PricingPage() {
       : "signed_in_no_access";
 
   return (
-    <main className="flex h-dvh flex-col bg-background text-foreground overflow-hidden">
+    <main className="flex h-[var(--app-viewport-height)] flex-col bg-background text-foreground overflow-hidden">
       <TrackOnMount
         eventName="pricing_viewed"
         properties={{ access_state: accessState }}

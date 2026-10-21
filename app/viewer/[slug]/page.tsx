@@ -85,7 +85,7 @@ export default async function ViewerPage({ params }: ViewerPageProps) {
   }
 
   return (
-    <main className="fixed left-0 top-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground">
+    <main className="fixed left-0 top-[var(--announcement-height)] flex h-[var(--app-viewport-height)] w-full flex-col overflow-hidden bg-background text-foreground">
       <Header />
       <div className="min-h-0 flex-1">
         {sharedArtifactViewer(sharedArtifact)}

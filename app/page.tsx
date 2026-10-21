@@ -46,7 +46,7 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="flex min-h-dvh flex-col bg-background text-foreground lg:h-dvh lg:overflow-hidden">
+      <main className="flex min-h-[var(--app-viewport-height)] flex-col bg-background text-foreground lg:h-[var(--app-viewport-height)] lg:overflow-hidden">
         <ExpertNetworkBanner />
         <SiteHeader />
 

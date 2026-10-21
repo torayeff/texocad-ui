@@ -203,7 +203,7 @@ export const SketchMaskEditor = forwardRef<SketchMaskEditorHandle, SketchMaskEdi
         src={source.url}
         alt={source.label}
         onLoad={resetCanvases}
-        className="h-auto w-auto max-w-[min(1024px,calc(100vw-2rem))] max-h-[calc(100dvh-12rem)] select-none object-contain"
+        className="h-auto w-auto max-w-[min(1024px,calc(100vw-2rem))] max-h-[calc(var(--app-viewport-height)-12rem)] select-none object-contain"
         draggable={false}
       />
       <canvas

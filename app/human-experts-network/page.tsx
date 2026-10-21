@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function HumanExpertsNetworkPage() {
   return (
-    <main className="flex min-h-dvh flex-col overflow-hidden bg-background text-foreground">
+    <main className="flex min-h-[var(--app-viewport-height)] flex-col overflow-hidden bg-background text-foreground">
       <Script src="https://tally.so/widgets/embed.js" strategy="afterInteractive" />
       <SiteHeader />
       <iframe

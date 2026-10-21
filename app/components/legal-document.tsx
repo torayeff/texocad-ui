@@ -30,7 +30,7 @@ export function LegalDocument({
   children,
 }: LegalDocumentProps) {
   return (
-    <main className="min-h-dvh md:h-dvh flex flex-col bg-background text-foreground">
+    <main className="min-h-[var(--app-viewport-height)] md:h-[var(--app-viewport-height)] flex flex-col bg-background text-foreground">
       <Header />
       <div className="flex-1 overflow-y-auto min-h-0">
         <article className="mx-auto w-full max-w-5xl px-6 py-10 md:px-8 md:py-14">

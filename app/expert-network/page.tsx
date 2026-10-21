@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function ExpertNetworkPage() {
   return (
-    <main className="flex min-h-dvh flex-col overflow-hidden bg-background text-foreground">
+    <main className="flex min-h-[var(--app-viewport-height)] flex-col overflow-hidden bg-background text-foreground">
       <SiteHeader />
       <iframe
         src={TALLY_FORM_URL}

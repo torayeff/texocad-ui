@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function ExpertNetworkSuccessPage() {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background px-6 py-12 text-foreground">
+    <main className="flex min-h-[var(--app-viewport-height)] items-center justify-center bg-background px-6 py-12 text-foreground">
       <section className="w-full max-w-lg rounded-3xl border border-border bg-card p-8 text-center shadow-[0_24px_80px_rgb(0_0_0_/_0.08)] sm:p-10">
         <Link
           href={SITE_ROUTES.home}
