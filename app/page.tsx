@@ -4,6 +4,7 @@ import { FaLinkedin, FaXTwitter } from "react-icons/fa6";
 import { AgentProfileGrid } from "@/app/_components/agent-profile-grid";
 import { ExpertNetworkBanner } from "@/app/_components/expert-network-banner";
 import { HeroPointCloud } from "@/app/_components/hero-point-cloud";
+import { OpenSourceOverlay } from "@/app/_components/open-source-overlay";
 import { TrackedAnchor, TrackedLink } from "@/app/components/analytics/tracked-link";
 import { SiteHeader } from "@/app/components/site-header";
 import {
@@ -46,7 +47,11 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="flex min-h-[var(--app-viewport-height)] flex-col bg-background text-foreground lg:h-[var(--app-viewport-height)] lg:overflow-hidden">
+      <div
+        inert
+        aria-hidden="true"
+        className="flex h-[var(--app-viewport-height)] flex-col overflow-hidden bg-background text-foreground"
+      >
         <ExpertNetworkBanner />
         <SiteHeader />
 
@@ -156,7 +161,8 @@ export default function Home() {
             <FaXTwitter size={14} aria-hidden="true" />
           </TrackedAnchor>
         </footer>
-      </main>
+      </div>
+      <OpenSourceOverlay />
     </>
   );
 }
